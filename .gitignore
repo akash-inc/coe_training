@@ -16,6 +16,7 @@
 **/dist/
 **/build/
 **/.cache/
+**/.vite/
 **/.turbo/
 **/.next/
 **/coverage/
@@ -26,4 +27,5 @@
 
 # Editor/IDE folders
 **/.vscode/
+**/.cursor/
 **/.idea/
