@@ -1,0 +1,57 @@
+.card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--bg) 92%, var(--accent) 8%);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.card-title {
+  margin-bottom: 14px;
+}
+
+.card-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.card-image {
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+
+.card-details {
+  display: grid;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.card-details a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.card-details a:hover {
+  text-decoration: underline;
+}
+
+.card input[type='text'] {
+  margin-top: 10px;
+  width: 100%;
+  max-width: 340px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+}
+
+@media (max-width: 640px) {
+  .card-content {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,156 @@
+name: Accessibility Regression
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  a11y_regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve baseline commit
+        id: baseline
+        run: |
+          if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD^)" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "reason=No previous commit available for regression comparison." >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip message when baseline unavailable
+        if: steps.baseline.outputs.skip == 'true'
+        run: echo "${{ steps.baseline.outputs.reason }}"
+
+      - name: Create baseline worktree
+        if: steps.baseline.outputs.skip != 'true'
+        run: |
+          rm -rf baseline-src
+          git worktree add --detach baseline-src "${{ steps.baseline.outputs.sha }}"
+          ls -la baseline-src
+
+      - name: Install baseline dependencies
+        if: steps.baseline.outputs.skip != 'true'
+        run: cd "baseline-src/Day 3/practice-app" && npm ci
+
+      - name: Build baseline app
+        if: steps.baseline.outputs.skip != 'true'
+        run: cd "baseline-src/Day 3/practice-app" && npm run build
+
+      - name: Collect baseline Lighthouse report
+        if: steps.baseline.outputs.skip != 'true'
+        run: cd "baseline-src/Day 3/practice-app" && npx @lhci/cli@0.15.x collect --staticDistDir=./dist --url=http://localhost/ --numberOfRuns=1
+
+      - name: Install current dependencies
+        working-directory: Day 3/practice-app
+        run: npm ci
+
+      - name: Build current app
+        working-directory: Day 3/practice-app
+        run: npm run build
+
+      - name: Collect current Lighthouse report
+        working-directory: Day 3/practice-app
+        run: npx @lhci/cli@0.15.x collect --staticDistDir=./dist --url=http://localhost/ --numberOfRuns=1
+
+      - name: Compare accessibility regression
+        if: steps.baseline.outputs.skip != 'true'
+        working-directory: Day 3/practice-app
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          function listJsonFiles(dir) {
+            if (!fs.existsSync(dir)) return [];
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            const files = [];
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) files.push(...listJsonFiles(fullPath));
+              if (entry.isFile() && entry.name.endsWith('.json')) files.push(fullPath);
+            }
+            return files;
+          }
+
+          function readA11yScore(reportDir) {
+            const jsonFiles = listJsonFiles(reportDir);
+            for (const file of jsonFiles) {
+              try {
+                const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+                const score = data?.categories?.accessibility?.score;
+                if (typeof score === 'number') {
+                  return { score, file };
+                }
+              } catch {}
+            }
+            return null;
+          }
+
+          const baselineDir = path.resolve(process.cwd(), '../../baseline-src/Day 3/practice-app/.lighthouseci');
+          const currentDir = path.resolve(process.cwd(), './.lighthouseci');
+
+          const baseline = readA11yScore(baselineDir);
+          const current = readA11yScore(currentDir);
+
+          if (!baseline) {
+            console.error(`Could not find baseline accessibility score in ${baselineDir}`);
+            process.exit(1);
+          }
+
+          if (!current) {
+            console.error(`Could not find current accessibility score in ${currentDir}`);
+            process.exit(1);
+          }
+
+          console.log(`Baseline accessibility score: ${baseline.score} (${baseline.file})`);
+          console.log(`Current accessibility score: ${current.score} (${current.file})`);
+
+          if (current.score < baseline.score) {
+            console.error(`Accessibility regression detected: ${current.score} < ${baseline.score}`);
+            process.exit(1);
+          }
+
+          console.log('No accessibility regression detected.');
+          EOF
+
+      - name: Upload current report to temporary public storage
+        if: always()
+        working-directory: Day 3/practice-app
+        run: npx @lhci/cli@0.15.x upload --target=temporary-public-storage --inputDir=./.lighthouseci
+
+      - name: Debug Lighthouse output paths
+        if: always()
+        run: |
+          ls -la "baseline-src/Day 3/practice-app/.lighthouseci" || true
+          ls -la "Day 3/practice-app/.lighthouseci" || true
+
+      - name: Upload baseline Lighthouse artifacts
+        if: always() && steps.baseline.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-lighthouse
+          path: "${{ github.workspace }}/baseline-src/Day 3/practice-app/.lighthouseci"
+          include-hidden-files: true
+          if-no-files-found: warn
+
+      - name: Upload current Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-lighthouse
+          path: "${{ github.workspace }}/Day 3/practice-app/.lighthouseci"
+          include-hidden-files: true
+          if-no-files-found: warn
