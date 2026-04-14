@@ -131,12 +131,6 @@ jobs:
         working-directory: Day 3/practice-app
         run: npx @lhci/cli@0.15.x upload --target=temporary-public-storage --inputDir=./.lighthouseci
 
-      - name: Debug Lighthouse output paths
-        if: always()
-        run: |
-          ls -la "baseline-src/Day 3/practice-app/.lighthouseci" || true
-          ls -la "Day 3/practice-app/.lighthouseci" || true
-
       - name: Upload baseline Lighthouse artifacts
         if: always() && steps.baseline.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
