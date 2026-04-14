@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest",
-    "test:a11y": "jest src/tests/jestAxeTests src/tests/axeCoreTests",
+    "test:a11y": "jest src/tests/jest-axe-tests src/tests/axe-core-tests",
     "test:watch": "jest --watch",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",

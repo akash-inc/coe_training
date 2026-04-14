@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { MusicCard } from './assets/data'
 import { defaultNewCardCoverImage, musicCards } from './assets/data'
-import Card from './Card'
-import Form, { type MusicCardFormInput } from './Form'
+import Card from './components/Card'
+import Form, { type MusicCardFormInput } from './components/Form'
 
 export default function App() {
   const [cards, setCards] = useState<MusicCard[]>(musicCards)

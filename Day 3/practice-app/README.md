@@ -13,7 +13,7 @@
 ### Useful References
 
 - [Cypress accessibility notes](https://github.com/akash-inc/coe_training/blob/main/Day%203/practice-app/src/tests/cypress/CYPRESS_ACCESSIBILITY.md)
-- [Pa11y overview](https://github.com/akash-inc/coe_training/blob/main/Day%203/practice-app/public/P11Y/P11Y_OVERVIEW.md)
+- [Pa11y overview](https://github.com/akash-inc/coe_training/blob/main/Day%203/practice-app/public/p11y/P11Y_OVERVIEW.md)
 - [jest-axe README](https://github.com/NickColley/jest-axe#readme)
 - [axe-core rules](https://dequeuniversity.com/rules/axe/)
 

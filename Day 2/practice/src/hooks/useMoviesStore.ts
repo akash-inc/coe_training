@@ -17,7 +17,7 @@ function loadSessionMovies(): Movie[] {
   }
 }
 
-export default function useMoviesStore() {
+export function useMoviesStore() {
   const [userMovies, setUserMovies] = useState<Movie[]>(loadSessionMovies);
 
   const allMovies = useMemo(() => [...netflixMovies, ...userMovies], [userMovies]);

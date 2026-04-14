@@ -1,22 +1,19 @@
-import * as axe from 'axe-core'
+import Form from "../../components/Form";
 import { render } from '@testing-library/react'
-import Form from '../../Form'
+import { axe, toHaveNoViolations } from 'jest-axe'
+expect.extend(toHaveNoViolations)
 
-describe('Form', () => {
-  const axeOptions = {
-    rules: {
-      'color-contrast': { enabled: false },
-    },
-  }
+describe('Form', () => {  
 
   it('should have no accessibility violations', async () => {
-    const { container } = render(<Form/>);
-    const results = await axe.run(container, axeOptions)
-    expect(results.violations.length).toBe(0)
+    const { container } = render(<Form />);
+    const results = await axe(container)
+
+    expect(results).toHaveNoViolations()
     expect(container.querySelector('label[for="song-title"]')).not.toBeNull()
     expect(container.querySelector('label[for="song-artist"]')).not.toBeNull()
     expect(container.querySelector('label[for="song-album"]')).not.toBeNull()
     expect(container.querySelector('label[for="song-genre"]')).not.toBeNull()
     expect(container.querySelector('label[for="song-year"]')).not.toBeNull()
   })
-})
+});

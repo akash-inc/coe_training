@@ -1,7 +1,7 @@
 import AddMovieForm from "./components/AddMovieForm";
 import MovieTableSection from "./components/MovieTableSection";
 import "./App.css";
-import useMoviesStore from "./hooks/useMoviesStore";
+import { useMoviesStore } from "./hooks/useMoviesStore";
 
 export default function App() {
   const { allMovies, addMovie } = useMoviesStore();

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { MusicCard } from './assets/data'
+import type { MusicCard } from '../assets/data'
 import './Card.css'
 
 type CardProps = {

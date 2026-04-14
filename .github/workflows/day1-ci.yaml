@@ -1,0 +1,35 @@
+name: Day 1 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  day1-checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - name: fizz-buzz-kata
+            working_directory: "Day 1/fizz-buzz-kata"
+            check_command: npm test -- --ci --runInBand
+          - name: string-calculator
+            working_directory: "Day 1/string-calculator"
+            check_command: npm test -- --ci --runInBand
+          - name: my-app-with-cke5
+            working_directory: "Day 1/my-app-with-cke5"
+            check_command: npm run lint && npm run build
+    name: day1-${{ matrix.project.name }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.project.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Run project checks
+        run: ${{ matrix.project.check_command }}
