@@ -239,7 +239,7 @@ export default function AddMovieForm({ onAddMovie }: AddMovieFormProps) {
       <h2>Add Movie</h2>
       <form className="add-movie-form" onSubmit={handleSubmit}>
         {TEXT_FIELDS.map(({ key, label, type = "text", required, min, max, step }) => (
-          <label key={key}>
+          <label key={key} className="add-movie-field">
             {label}
             <input
               id={`add-movie-field-${key}`}
@@ -260,7 +260,7 @@ export default function AddMovieForm({ onAddMovie }: AddMovieFormProps) {
           </label>
         ))}
         {BOOLEAN_FIELDS.map(({ key, label }) => (
-          <label key={key}>
+          <label key={key} className="add-movie-field">
             {label}
             <select name={key} value={formState[key]} onChange={handleSelectChange}>
               <option value="yes">Yes</option>
@@ -268,7 +268,11 @@ export default function AddMovieForm({ onAddMovie }: AddMovieFormProps) {
             </select>
           </label>
         ))}
-        <button type="submit">Add Movie</button>
+        <div className="add-movie-actions">
+          <button type="submit" className="add-movie-submit">
+            Add Movie
+          </button>
+        </div>
       </form>
       {submitError ? (
         <p id="add-movie-form-error" className="form-error" role="alert" aria-atomic="true">

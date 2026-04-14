@@ -19,3 +19,40 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
+  day2-lighthouse-absolute:
+    runs-on: ubuntu-latest
+    needs: day2-practice-checks
+    defaults:
+      run:
+        working-directory: "Day 2/practice"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - name: Prepare Lighthouse output directory
+        run: mkdir -p lhci-reports
+      - name: Collect Lighthouse reports
+        run: npx @lhci/cli@0.15.x collect --staticDistDir=./dist --url=http://localhost/ --numberOfRuns=1 --outputDir=./lhci-reports
+      - name: Assert Lighthouse absolute thresholds
+        run: npx @lhci/cli@0.15.x assert --assertions.categories:accessibility=error:0.9 --assertions.categories:performance=warn:0.6 --assertions.categories:best-practices=warn:0.8 --assertions.categories:seo=warn:0.8 --inputPath=./lhci-reports/*.json
+      - name: Upload Lighthouse results to temporary public storage
+        if: always()
+        run: npx @lhci/cli@0.15.x upload --target=temporary-public-storage --inputDir=./lhci-reports
+      - name: Debug Lighthouse output path
+        if: always()
+        run: |
+          pwd
+          ls -la
+          ls -la lhci-reports || true
+      - name: Upload Day 2 Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day2-lighthouse-temp
+          path: "${{ github.workspace }}/Day 2/practice/.lighthouseci"
+          include-hidden-files: true
+          if-no-files-found: warn
