@@ -5,13 +5,13 @@ describe('Music cards', () => {
   })
 
   it('lists cards from app data', () => {
-    cy.contains('h2.card-title', 'Blinding Lights').should('be.visible')
-    cy.contains('h2.card-title', 'Bad Guy').should('be.visible')
+    cy.contains('h3.card-title', 'Blinding Lights').should('be.visible')
+    cy.contains('h3.card-title', 'Bad Guy').should('be.visible')
   })
 
   it('shows artist inside the Blinding Lights card', () => {
-    cy.contains('h2.card-title', 'Blinding Lights')
-      .closest('section.card')
+    cy.contains('h3.card-title', 'Blinding Lights')
+      .closest('article.card')
       .should('be.visible')
       .within(() => {
         cy.contains('The Weeknd')
@@ -19,11 +19,21 @@ describe('Music cards', () => {
   })
 
   it('marks external streaming links safely', () => {
-    cy.contains('h2.card-title', 'Blinding Lights')
-      .closest('section.card')
+    cy.contains('h3.card-title', 'Blinding Lights')
+      .closest('article.card')
       .within(() => {
         cy.contains('a', 'YouTube').should('have.attr', 'rel', 'noopener noreferrer')
         cy.contains('a', 'Spotify').should('have.attr', 'rel', 'noopener noreferrer')
       })
+  })
+
+  it('can filter by search and genre', () => {
+    cy.get('#card-search').type('queen')
+    cy.contains('h3.card-title', 'Bohemian Rhapsody').should('be.visible')
+    cy.contains('h3.card-title', 'Bad Guy').should('not.exist')
+
+    cy.get('#card-search').clear()
+    cy.get('#genre-filter').select('Rock')
+    cy.contains('h3.card-title', 'Bohemian Rhapsody').should('be.visible')
   })
 })

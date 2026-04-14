@@ -10,7 +10,9 @@ describe('Form', () => {
   }
 
   it('should have no accessibility violations', async () => {
-    const { container } = render(<Form/>);
+    const { container } = render(
+      <Form editingCard={null} onCancelEdit={() => {}} onSaveCard={() => {}} />,
+    )
     const results = await axe.run(container, axeOptions)
     expect(results.violations.length).toBe(0)
     expect(container.querySelector('label[for="song-title"]')).not.toBeNull()
