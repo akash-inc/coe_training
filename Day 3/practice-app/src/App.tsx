@@ -38,9 +38,6 @@ export default function App() {
 
   return (
     <div className="app">
-    <button onClick={() => {
-      setCards([])
-    }}></button>
         {cards.map(song => (
           <Card key={song.id} song={song} />
         ))}
