@@ -19,3 +19,17 @@ jobs:
       - run: npm ci
       - name: Run Vitest
         run: npm run test
+
+  day4-accessible-outside-in-tdd:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "Day 4/accessible-outside-in-tdd"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Run lint, tests, and build
+        run: npm run ci
