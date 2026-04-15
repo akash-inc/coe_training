@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 import { server } from '../../mocks/server'
-import { useWeather } from './useWeather'
+import { useWeather } from './hooks/useWeather'
 
 beforeAll(() => server.listen())
 

@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '../../mocks/server'
-import { getWeather } from './weatherService'
+import { getWeather } from './services/weatherService'
 
 beforeAll(() => server.listen())
 

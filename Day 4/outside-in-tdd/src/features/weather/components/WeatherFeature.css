@@ -1,0 +1,67 @@
+.weather-feature {
+  display: grid;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--social-bg);
+}
+
+.weather-feature__loading {
+  margin: 0;
+  color: var(--text);
+}
+
+.weather-feature__error {
+  margin: 0;
+  color: #c62828;
+}
+
+.weather-search {
+  display: grid;
+  gap: 8px;
+}
+
+.weather-search__label {
+  color: var(--text-h);
+  text-align: left;
+}
+
+.weather-search__input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+}
+
+.weather-search__button {
+  justify-self: start;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+}
+
+.weather-result {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.weather-result__city,
+.weather-result__temperature {
+  margin: 0;
+  color: var(--text-h);
+}
+
+.weather-result__temperature {
+  font-weight: 600;
+}
