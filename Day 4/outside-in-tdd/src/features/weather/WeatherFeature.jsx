@@ -1,3 +1,11 @@
+import { WeatherSearch } from './WeatherSearch'
+
 export function WeatherFeature() {
-  return <div>Weather feature</div>
+  const handleSearch = () => {}
+
+  return (
+    <div>
+      <WeatherSearch onSearch={handleSearch} />
+    </div>
+  )
 }
