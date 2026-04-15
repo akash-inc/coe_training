@@ -14,7 +14,7 @@ export default function FilterPanel({
   onGenreChange,
 }: FilterPanelProps) {
   return (
-    <form className="filter-panel" role="search" onSubmit={event => event.preventDefault()}>
+    <div className="filter-panel" role="search" aria-label="Movie filters">
       <div className="filter-field">
         <label htmlFor="card-search">Search by title, artist, album, or genre</label>
         <input
@@ -42,6 +42,6 @@ export default function FilterPanel({
           ))}
         </select>
       </div>
-    </form>
+    </div>
   )
 }
