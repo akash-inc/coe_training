@@ -1,13 +1,24 @@
+import { ComboboxInput } from './ComboboxInput'
+import { ComboboxList } from './ComboboxList'
+
 export function ComboboxFeature() {
   return (
     <section>
-      <label htmlFor="job-role-search">Search roles</label>
-      <input
-        id="job-role-search"
-        type="text"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded="false"
+      <ComboboxInput
+        inputId="job-role-search"
+        label="Search roles"
+        value=""
+        isExpanded={false}
+        controlsId="job-role-list"
+        activeDescendantId={undefined}
+        onChange={() => {}}
+        onKeyDown={() => {}}
+      />
+      <ComboboxList
+        listboxId="job-role-list"
+        optionIdPrefix="job-role-option"
+        options={[]}
+        activeIndex={-1}
       />
     </section>
   )
