@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { ComboboxList } from './components/ComboboxList'
+import { ComboboxList } from '../components/ComboboxList'
 
 describe('ComboboxList', () => {
   it('does not render listbox when there are no options', () => {
@@ -34,5 +34,4 @@ describe('ComboboxList', () => {
     expect(options[0]).toHaveAttribute('aria-selected', 'true')
     expect(options[1]).toHaveAttribute('aria-selected', 'false')
   })
-
 })
