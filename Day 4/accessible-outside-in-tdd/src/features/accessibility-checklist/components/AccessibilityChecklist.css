@@ -1,0 +1,139 @@
+.accessibility-checklist {
+  width: calc(100% - 2rem);
+  max-width: none;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.8rem;
+  padding: 1rem;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.accessibility-checklist__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.accessibility-checklist__header > div:first-child {
+  flex: 1 1 22rem;
+}
+
+.accessibility-checklist__header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.accessibility-checklist__header p {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.accessibility-checklist__progress {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.accessibility-checklist__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+.accessibility-checklist__groups {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.accessibility-checklist__group {
+  border: 1px solid #dbe2ea;
+  border-radius: 0.65rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+}
+
+.accessibility-checklist__group h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.accessibility-checklist__group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.accessibility-checklist__group li {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.5rem;
+  background: #fff;
+}
+
+.accessibility-checklist__group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+
+.accessibility-checklist__group input[type='checkbox'] {
+  margin-top: 0.15rem;
+}
+
+.accessibility-checklist__item-content {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.accessibility-checklist__item-title {
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.accessibility-checklist__criterion {
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.accessibility-checklist__empty {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #166534;
+}
+
+@media (max-width: 600px) {
+  .accessibility-checklist {
+    width: calc(100% - 1rem);
+    padding: 0.8rem;
+  }
+
+  .accessibility-checklist__progress {
+    white-space: normal;
+    border-radius: 0.65rem;
+  }
+
+  .accessibility-checklist__groups {
+    grid-template-columns: 1fr;
+  }
+}
