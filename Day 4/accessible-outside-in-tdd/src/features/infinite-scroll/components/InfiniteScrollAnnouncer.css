@@ -1,0 +1,51 @@
+.infinite-scroll-announcer {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.infinite-scroll-announcer :where(ul) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.infinite-scroll-announcer :where(li) {
+  border: 1px solid #d4d4d8;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+}
+
+.infinite-scroll-announcer :where(button) {
+  width: fit-content;
+  border: 1px solid #2563eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.infinite-scroll-announcer :where(button:disabled) {
+  border-color: #a1a1aa;
+  background: #a1a1aa;
+  cursor: not-allowed;
+}
+
+.infinite-scroll-announcer__sentinel {
+  height: 1px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import './InfiniteScrollAnnouncer.css'
 
 export function InfiniteScrollAnnouncer({
   hasMore,
@@ -48,14 +49,15 @@ export function InfiniteScrollAnnouncer({
   }, [isLoading, loadingAnnouncement, loadedAnnouncement])
 
   return (
-    <section>
+    <section className="infinite-scroll-announcer">
       {children}
       <div
         ref={statusRef}
+        className="infinite-scroll-announcer__status sr-only"
         role="status"
         aria-live="polite"
       ></div>
-      <div ref={sentinelRef} aria-hidden="true"></div>
+      <div ref={sentinelRef} className="infinite-scroll-announcer__sentinel" aria-hidden="true"></div>
     </section>
   )
 }
