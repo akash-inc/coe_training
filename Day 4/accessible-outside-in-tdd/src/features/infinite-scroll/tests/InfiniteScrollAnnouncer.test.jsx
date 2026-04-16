@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 import { InfiniteScrollAnnouncer } from '../components/InfiniteScrollAnnouncer'
 
@@ -51,7 +51,17 @@ describe('InfiniteScrollAnnouncer', () => {
     expect(liveRegion).toHaveTextContent('')
   })
 
-  it.todo('O: creates an IntersectionObserver and starts observing sentinel')
+  it('O: creates an IntersectionObserver and starts observing sentinel', () => {
+    render(
+      <InfiniteScrollAnnouncer {...defaultProps}>
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    expect(MockIntersectionObserver.instances).toHaveLength(1)
+    const observer = MockIntersectionObserver.instances[0]
+    expect(observer.observe).toHaveBeenCalledTimes(1)
+  })
   it.todo('M: calls onLoadMore when sentinel intersects and hasMore is true')
   it.todo('B: does not load when hasMore is false')
   it.todo('B: does not load while isLoading is true')
