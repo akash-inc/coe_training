@@ -1,23 +1,19 @@
-# React + Vite
+# Accessible Outside-In TDD
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Practice repository for building accessibility-first UI features using Outside-In TDD.
 
-Currently, two official plugins are available:
+## Accessible chart documentation
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Detailed implementation notes: `src/features/charts/ACCESSIBILITY.md`
+- Component: `src/features/charts/components/AccessiblePipelineChart.jsx`
+- Tests: `src/features/charts/tests/AccessiblePipelineChart.test.jsx`
 
-## React Compiler
+## Super short summary (non-technical)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Our chart is accessible because people can understand it in multiple ways: clear text explanation, keyboard controls, and a readable table with the same numbers.
 
-## Expanding the ESLint configuration
+## Learning resources
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
-
-### Content to read later on:
-
-https://inclusive-components.design
-https://www.highcharts.com/blog/best-practices/best-chart-accessibility-practices/
-https://www.a11y-collective.com/blog/accessible-charts/
+- [Inclusive Components](https://inclusive-components.design)
+- [Highcharts accessibility best practices](https://www.highcharts.com/blog/best-practices/best-chart-accessibility-practices/)
+- [A11y Collective: accessible charts](https://www.a11y-collective.com/blog/accessible-charts/)
