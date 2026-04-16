@@ -10,8 +10,11 @@ export function ComboboxInput({
 }) {
   return (
     <>
-      <label htmlFor={inputId}>{label}</label>
+      <label className="combobox-feature__label" htmlFor={inputId}>
+        {label}
+      </label>
       <input
+        className="combobox-feature__input"
         id={inputId}
         type="text"
         role="combobox"

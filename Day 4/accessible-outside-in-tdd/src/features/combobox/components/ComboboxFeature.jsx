@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ComboboxInput } from './ComboboxInput'
 import { ComboboxList } from './ComboboxList'
+import './ComboboxFeature.css'
 
 const JOB_ROLE_SUGGESTIONS = [
   'Frontend Developer',
@@ -59,7 +60,7 @@ export function ComboboxFeature() {
   }
 
   return (
-    <section>
+    <section className="combobox-feature">
       <ComboboxInput
         inputId="job-role-search"
         label="Search roles"

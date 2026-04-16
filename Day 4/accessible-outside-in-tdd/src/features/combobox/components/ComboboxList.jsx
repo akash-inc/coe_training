@@ -4,13 +4,14 @@ export function ComboboxList({ listboxId, optionIdPrefix, options, activeIndex }
   }
 
   return (
-    <ul id={listboxId} role="listbox">
+    <ul className="combobox-feature__list" id={listboxId} role="listbox">
       {options.map((option, index) => {
         const optionId = `${optionIdPrefix}-${index}`
         const isActive = index === activeIndex
 
         return (
           <li
+            className="combobox-feature__option"
             id={optionId}
             key={option}
             role="option"
