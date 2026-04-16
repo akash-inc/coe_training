@@ -17,3 +17,5 @@ Our chart is accessible because people can understand it in multiple ways: clear
 - [Inclusive Components](https://inclusive-components.design)
 - [Highcharts accessibility best practices](https://www.highcharts.com/blog/best-practices/best-chart-accessibility-practices/)
 - [A11y Collective: accessible charts](https://www.a11y-collective.com/blog/accessible-charts/)
+- [https://www.deque.com/blog/accessibility-mobile-web-pinch-zoom-tutorial/](https://www.deque.com/blog/accessibility-mobile-web-pinch-zoom-tutorial/)
+
