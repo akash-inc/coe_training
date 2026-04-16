@@ -1,0 +1,176 @@
+.application-board {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.application-board h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.application-board__summary {
+  margin: 0;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.application-board__instructions {
+  margin: 0;
+  padding-left: 1rem;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.application-board__instructions li + li {
+  margin-top: 0.2rem;
+}
+
+.application-board__columns {
+  display: grid;
+  gap: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  overflow: visible;
+  background: #f8fafc;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.application-board__column {
+  border-right: 1px solid #dbe2ea;
+  padding: 0.75rem;
+  background: #f3f4f6;
+  overflow: visible;
+}
+
+.application-board__column:last-child {
+  border-right: 0;
+}
+
+.application-board__column h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.application-board__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.application-board__card {
+  border: 1px solid #d9dde3;
+  border-radius: 0.35rem;
+  padding: 0.65rem;
+  background: #fff;
+}
+
+.application-board__card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.application-board__card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #0f6691;
+}
+
+.application-board__company {
+  margin: 0.45rem 0 0.3rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.application-board__description {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: #4b5563;
+}
+
+.application-board__actions {
+  position: relative;
+}
+
+.application-board__move-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.application-board__move-button:hover {
+  border-color: #93c5fd;
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.application-board__move-button:focus-visible {
+  outline: 3px solid #bfdbfe;
+  outline-offset: 1px;
+}
+
+.application-board__menu {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0.3rem;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  min-width: 11rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.45rem;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
+  z-index: 5;
+}
+
+.application-board__menu li + li {
+  margin-top: 0.2rem;
+}
+
+.application-board__menu-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  padding: 0.35rem 0.45rem;
+  background: #fff;
+  color: #334155;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.application-board__menu-item:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.application-board__menu-item:focus-visible {
+  outline: 3px solid #bfdbfe;
+  outline-offset: 1px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
