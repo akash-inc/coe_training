@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 import { InfiniteScrollAnnouncer } from '../components/InfiniteScrollAnnouncer'
 
@@ -62,10 +62,119 @@ describe('InfiniteScrollAnnouncer', () => {
     const observer = MockIntersectionObserver.instances[0]
     expect(observer.observe).toHaveBeenCalledTimes(1)
   })
-  it.todo('M: calls onLoadMore when sentinel intersects and hasMore is true')
-  it.todo('B: does not load when hasMore is false')
-  it.todo('B: does not load while isLoading is true')
-  it.todo('I: announces loading message when isLoading becomes true')
-  it.todo('I: announces loaded message when loading finishes')
-  it.todo('E: disconnects observer on unmount to avoid leaks')
+  it('M: calls onLoadMore when sentinel intersects and hasMore is true', () => {
+    const onLoadMore = vi.fn()
+
+    render(
+      <InfiniteScrollAnnouncer {...defaultProps} onLoadMore={onLoadMore}>
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    const observer = MockIntersectionObserver.instances[0]
+
+    act(() => {
+      observer.trigger([{ isIntersecting: true }])
+    })
+
+    expect(onLoadMore).toHaveBeenCalledTimes(1)
+  })
+
+  it('B: does not load when hasMore is false', () => {
+    const onLoadMore = vi.fn()
+
+    render(
+      <InfiniteScrollAnnouncer
+        {...defaultProps}
+        hasMore={false}
+        onLoadMore={onLoadMore}
+      >
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    const observer = MockIntersectionObserver.instances[0]
+
+    act(() => {
+      observer.trigger([{ isIntersecting: true }])
+    })
+
+    expect(onLoadMore).not.toHaveBeenCalled()
+  })
+
+  it('B: does not load while isLoading is true', () => {
+    const onLoadMore = vi.fn()
+
+    render(
+      <InfiniteScrollAnnouncer
+        {...defaultProps}
+        isLoading
+        onLoadMore={onLoadMore}
+      >
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    const observer = MockIntersectionObserver.instances[0]
+
+    act(() => {
+      observer.trigger([{ isIntersecting: true }])
+    })
+
+    expect(onLoadMore).not.toHaveBeenCalled()
+  })
+
+  it('I: announces loading message when isLoading becomes true', () => {
+    const { rerender } = render(
+      <InfiniteScrollAnnouncer {...defaultProps} isLoading={false}>
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    rerender(
+      <InfiniteScrollAnnouncer {...defaultProps} isLoading>
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading more results...')
+  })
+
+  it('I: announces loaded message when loading finishes', () => {
+    const { rerender } = render(
+      <InfiniteScrollAnnouncer
+        {...defaultProps}
+        isLoading
+        loadedAnnouncement=""
+      >
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    rerender(
+      <InfiniteScrollAnnouncer
+        {...defaultProps}
+        isLoading={false}
+        loadedAnnouncement="12 more results loaded."
+      >
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent('12 more results loaded.')
+  })
+
+  it('E: disconnects observer on unmount to avoid leaks', () => {
+    const { unmount } = render(
+      <InfiniteScrollAnnouncer {...defaultProps}>
+        <div>Results</div>
+      </InfiniteScrollAnnouncer>,
+    )
+
+    const observer = MockIntersectionObserver.instances[0]
+
+    unmount()
+
+    expect(observer.disconnect).toHaveBeenCalledTimes(1)
+  })
 })
