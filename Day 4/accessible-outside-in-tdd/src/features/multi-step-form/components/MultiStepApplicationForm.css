@@ -1,0 +1,140 @@
+.multi-step-form {
+  width: min(42rem, 100%);
+  margin: 2rem auto;
+  padding: 2rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.multi-step-form__title {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.2vw, 2.25rem);
+  line-height: 1.2;
+  color: #111827;
+}
+
+.multi-step-form__status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.multi-step-form__label {
+  margin-top: 0.2rem;
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.multi-step-form__input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  color: #111827;
+  background: #fff;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.multi-step-form .combobox-feature__label {
+  margin-top: 0.2rem;
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.multi-step-form .combobox-feature__input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  color: #111827;
+  background: #fff;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.multi-step-form .combobox-feature__input:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+.multi-step-form__combobox {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.multi-step-form .combobox-feature__list {
+  margin: 0;
+}
+
+.multi-step-form__input--textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.multi-step-form__input:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+.multi-step-form__button {
+  justify-self: start;
+  margin-top: 0.45rem;
+  min-height: 46px;
+  border: 1px solid #2563eb;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.multi-step-form__button:hover {
+  filter: brightness(0.97);
+}
+
+.multi-step-form__button:focus-visible {
+  outline: 3px solid #bfdbfe;
+  outline-offset: 2px;
+}
+
+.multi-step-form__review {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.multi-step-form__review p {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+  color: #1f2937;
+}
+
+@media (max-width: 640px) {
+  .multi-step-form {
+    margin: 1rem auto;
+    padding: 1rem;
+    border-radius: 0.75rem;
+  }
+}
