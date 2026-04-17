@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 export default function MultiStepApplicationForm() {
   const [step, setStep] = useState(1)
+  const [isSubmitted, setIsSubmitted] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -18,14 +19,16 @@ export default function MultiStepApplicationForm() {
       <section aria-labelledby="step-title">
         <h2 id="step-title">Review</h2>
         <div role="status" aria-live="polite">
-          Step 4 of 4
+          {isSubmitted ? 'Application submitted' : 'Step 4 of 4'}
         </div>
 
         <p>{formData.fullName}</p>
         <p>{formData.email}</p>
         <p>{formData.desiredRole}</p>
 
-        <button type="button">Submit</button>
+        <button type="button" onClick={() => setIsSubmitted(true)}>
+          Submit
+        </button>
       </section>
     )
   }
