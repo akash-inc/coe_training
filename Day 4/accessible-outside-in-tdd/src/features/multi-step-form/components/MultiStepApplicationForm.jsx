@@ -1,4 +1,37 @@
+import { useState } from 'react'
+
 export default function MultiStepApplicationForm() {
+  const [step, setStep] = useState(1)
+
+  if (step === 2) {
+    return (
+      <section aria-labelledby="step-title">
+        <h2 id="step-title">Role preferences</h2>
+        <div role="status" aria-live="polite">
+          Step 2 of 4
+        </div>
+
+        <label htmlFor="desired-role">Desired role</label>
+        <input id="desired-role" name="desiredRole" type="text" />
+
+        <label htmlFor="work-type">Work type</label>
+        <select id="work-type" name="workType" defaultValue="">
+          <option value="" disabled>
+            Select work type
+          </option>
+          <option value="remote">Remote</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="onsite">Onsite</option>
+        </select>
+
+        <label htmlFor="expected-salary">Expected salary</label>
+        <input id="expected-salary" name="expectedSalary" type="text" />
+
+        <button type="button">Next</button>
+      </section>
+    )
+  }
+
   return (
     <section aria-labelledby="step-title">
       <h2 id="step-title">Personal details</h2>
@@ -15,7 +48,9 @@ export default function MultiStepApplicationForm() {
       <label htmlFor="phone">Phone</label>
       <input id="phone" name="phone" type="tel" />
 
-      <button type="button">Next</button>
+      <button type="button" onClick={() => setStep(2)}>
+        Next
+      </button>
     </section>
   )
 }
