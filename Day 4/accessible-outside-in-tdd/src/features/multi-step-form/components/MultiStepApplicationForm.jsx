@@ -3,6 +3,25 @@ import { useState } from 'react'
 export default function MultiStepApplicationForm() {
   const [step, setStep] = useState(1)
 
+  if (step === 3) {
+    return (
+      <section aria-labelledby="step-title">
+        <h2 id="step-title">Resume details</h2>
+        <div role="status" aria-live="polite">
+          Step 3 of 4
+        </div>
+
+        <label htmlFor="linkedin">LinkedIn</label>
+        <input id="linkedin" name="linkedin" type="text" />
+
+        <label htmlFor="summary">Summary</label>
+        <textarea id="summary" name="summary" />
+
+        <button type="button">Next</button>
+      </section>
+    )
+  }
+
   if (step === 2) {
     return (
       <section aria-labelledby="step-title">
@@ -27,7 +46,9 @@ export default function MultiStepApplicationForm() {
         <label htmlFor="expected-salary">Expected salary</label>
         <input id="expected-salary" name="expectedSalary" type="text" />
 
-        <button type="button">Next</button>
+        <button type="button" onClick={() => setStep(3)}>
+          Next
+        </button>
       </section>
     )
   }
