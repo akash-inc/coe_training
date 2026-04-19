@@ -1,5 +1,5 @@
 self.onmessage = (event) => {
-  const { items } = event.data
+  const { items, requestId } = event.data
   let total = 0
 
   for (const item of items) {
@@ -11,6 +11,7 @@ self.onmessage = (event) => {
   }
 
   self.postMessage({
+    requestId,
     averageScore: Number((total / Math.max(items.length, 1)).toFixed(2)),
   })
 }

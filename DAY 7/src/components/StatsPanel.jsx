@@ -1,11 +1,59 @@
-import { useMemo } from 'react'
-import { expensiveStats } from './performanceData.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { markRender } from './RenderCounter.js'
 import ExerciseStatusToggle from './ExerciseStatusToggle.jsx'
 
 function StatsPanel({ items, isImplementedProperly, onToggleStatus }) {
   markRender('StatsPanel')
-  const summary = useMemo(() => expensiveStats(items), [items])
+  const [workerAverageScore, setWorkerAverageScore] = useState(0)
+  const workerRef = useRef(null)
+  const activeRequestIdRef = useRef(0)
+
+  const summary = useMemo(() => {
+    let hotCount = 0
+    let coldCount = 0
+
+    for (const item of items) {
+      if (item.category === 'hot') {
+        hotCount += 1
+      } else {
+        coldCount += 1
+      }
+    }
+
+    return { hotCount, coldCount }
+  }, [items])
+
+  useEffect(() => {
+    workerRef.current = new Worker(
+      new URL('../workers/analysis.worker.js', import.meta.url),
+      { type: 'module' },
+    )
+
+    const worker = workerRef.current
+    worker.onmessage = (event) => {
+      const { requestId, averageScore } = event.data
+      if (requestId === activeRequestIdRef.current) {
+        setWorkerAverageScore(averageScore)
+      }
+    }
+
+    return () => {
+      worker.terminate()
+      workerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!workerRef.current) {
+      return
+    }
+
+    activeRequestIdRef.current += 1
+    workerRef.current.postMessage({
+      requestId: activeRequestIdRef.current,
+      items,
+    })
+  }, [items])
 
   return (
     <section className="panel">
@@ -33,7 +81,7 @@ function StatsPanel({ items, isImplementedProperly, onToggleStatus }) {
         </div>
         <div>
           <dt>Average score</dt>
-          <dd>{summary.avgScore}</dd>
+          <dd>{workerAverageScore}</dd>
         </div>
       </dl>
     </section>
