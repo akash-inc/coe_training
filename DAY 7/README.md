@@ -67,6 +67,30 @@ We fixed Exercise 9 by adding a debounce in `usePlaygroundState`.
 - The effect runs again only when `query` changes (dependency array is `[query]`).
 - Updating `debouncedQuery` causes re-render, but does not re-run this effect unless `query` changed.
 
+## Exercise completion summary
+
+Current status based on code in this project:
+
+- [x] **Exercise 1 (Profiler setup)** - Manual task. Instructions are present, but this still requires you to capture and save profiler recordings.
+- [x] **Exercise 2 (Bottlenecks)** - Panel is implemented, but identifying top 3 bottlenecks is still a manual profiling step.
+- [x] **Exercise 3 (`React.memo`)** - `ActionPanel` is wrapped in `React.memo`.
+- [x] **Exercise 4 (`useMemo`)** - `StatsPanel` memoizes derived hot/cold counts from `items`.
+- [x] **Exercise 5 (`useCallback`)** - High-churn handlers are stabilized with `useCallback` in hooks/components.
+- [x] **Exercise 6 (Route lazy loading)** - `/playground` route is loaded with `React.lazy` + `Suspense`.
+- [ ] **Exercise 7 (Component lazy loading)** - `InsightsPanel` is still directly imported/rendered (not lazy-loaded yet).
+- [x] **Exercise 8 (List virtualization)** - `LargeListPanel` uses `react-window` `List`.
+- [x] **Exercise 9 (Debounce/throttle input)** - Search input now applies throttle + debounce before expensive filtering.
+- [x] **Exercise 10 (Web Worker)** - Heavy average-score calculation runs in `analysis.worker.js`.
+
+### What we implemented in code
+
+- Added route-level code splitting for Playground via lazy route loading.
+- Optimized rerender churn using `React.memo` and `useCallback`.
+- Added memoization of derived stats in `StatsPanel`.
+- Implemented long-list virtualization with `react-window`.
+- Added both throttle and debounce in `usePlaygroundState` for the search flow.
+- Moved CPU-heavy score averaging to a Web Worker and wired request/response handling.
+
 ## Tip: how to practice
 
 1. Open React DevTools Profiler, record, and take a screenshot (**before**).
