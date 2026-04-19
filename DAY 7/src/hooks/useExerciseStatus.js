@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 const INITIAL_EXERCISE_STATUS = {
   1: false,
@@ -16,12 +16,12 @@ const INITIAL_EXERCISE_STATUS = {
 function useExerciseStatus() {
   const [exerciseStatus, setExerciseStatus] = useState(INITIAL_EXERCISE_STATUS)
 
-  const toggleExerciseStatus = (exerciseNumber) => {
+  const toggleExerciseStatus = useCallback((exerciseNumber) => {
     setExerciseStatus((previous) => ({
       ...previous,
       [exerciseNumber]: !previous[exerciseNumber],
     }))
-  }
+  }, [])
 
   return { exerciseStatus, toggleExerciseStatus }
 }

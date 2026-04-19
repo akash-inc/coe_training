@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { buildItems, expensiveFilter } from '../components/performanceData.js'
 
 const ALL_ITEMS = buildItems(2400)
@@ -51,17 +51,17 @@ function usePlaygroundState() {
 
   const filteredItems = expensiveFilter(ALL_ITEMS, debouncedQuery)
 
-  const handleQueryChange = (event) => {
+  const handleQueryChange = useCallback((event) => {
     setQuery(event.target.value)
-  }
+  }, [])
 
-  const incrementCount = () => {
+  const incrementCount = useCallback(() => {
     setCount((value) => value + 1)
-  }
+  }, [])
 
-  const toggleDetails = () => {
+  const toggleDetails = useCallback(() => {
     setShowDetails((value) => !value)
-  }
+  }, [])
 
   return {
     query,
