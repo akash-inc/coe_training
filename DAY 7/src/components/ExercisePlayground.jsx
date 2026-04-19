@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import ActionPanel from './ActionPanel.jsx'
 import ExerciseInfoPanel from './ExerciseInfoPanel.jsx'
 import ExerciseStatusGuidePanel from './ExerciseStatusGuidePanel.jsx'
@@ -8,18 +7,20 @@ import ProfilerChecklist from './ProfilerChecklist.jsx'
 import RenderStatsPanel from './RenderStatsPanel.jsx'
 import SearchPerformancePanel from './SearchPerformancePanel.jsx'
 import StatsPanel from './StatsPanel.jsx'
-import { buildItems, expensiveFilter } from './performanceData.js'
 import useExerciseStatus from '../hooks/useExerciseStatus.js'
-
-const ALL_ITEMS = buildItems(2400)
+import usePlaygroundState from '../hooks/usePlaygroundState.js'
 
 function ExercisePlayground() {
-  const [query, setQuery] = useState('')
-  const [count, setCount] = useState(0)
-  const [showDetails, setShowDetails] = useState(true)
+  const {
+    query,
+    count,
+    showDetails,
+    filteredItems,
+    handleQueryChange,
+    incrementCount,
+    toggleDetails,
+  } = usePlaygroundState()
   const { exerciseStatus, toggleExerciseStatus } = useExerciseStatus()
-
-  const filteredItems = expensiveFilter(ALL_ITEMS, query)
 
   return (
     <div className="playground-grid">
@@ -32,7 +33,7 @@ function ExercisePlayground() {
 
       <SearchPerformancePanel
         query={query}
-        onQueryChange={(event) => setQuery(event.target.value)}
+        onQueryChange={handleQueryChange}
         filteredItemsCount={filteredItems.length}
         isImplementedProperly={exerciseStatus[9]}
         onToggleStatus={() => toggleExerciseStatus(9)}
@@ -40,8 +41,8 @@ function ExercisePlayground() {
 
       <ActionPanel
         count={count}
-        onIncrement={() => setCount((value) => value + 1)}
-        onToggle={() => setShowDetails((value) => !value)}
+        onIncrement={incrementCount}
+        onToggle={toggleDetails}
         showDetails={showDetails}
         exercise3Done={exerciseStatus[3]}
         exercise5Done={exerciseStatus[5]}
