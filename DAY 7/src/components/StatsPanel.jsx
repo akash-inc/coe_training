@@ -1,10 +1,11 @@
+import { useMemo } from 'react'
 import { expensiveStats } from './performanceData.js'
 import { markRender } from './RenderCounter.js'
 import ExerciseStatusToggle from './ExerciseStatusToggle.jsx'
 
 function StatsPanel({ items, isImplementedProperly, onToggleStatus }) {
   markRender('StatsPanel')
-  const summary = expensiveStats(items)
+  const summary = useMemo(() => expensiveStats(items), [items])
 
   return (
     <section className="panel">
