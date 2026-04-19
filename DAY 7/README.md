@@ -49,6 +49,24 @@ This is only a progress marker for practice.
 10. **Use a Web Worker.** Move really heavy math to a background thread so
     typing and clicking stay smooth.
 
+## How we completed Exercise 9 (Debounce)
+
+We fixed Exercise 9 by adding a debounce in `usePlaygroundState`.
+
+- `query` updates immediately while the user types.
+- A `useEffect` watches `query` and starts a `setTimeout` for 300ms.
+- If the user types again before 300ms, cleanup runs and cancels the old timer.
+- When typing stops for 300ms, timer finishes and we call `setDebouncedQuery(query)`.
+- That state update triggers a new render.
+- Filtering uses `debouncedQuery`, so `expensiveFilter(...)` runs less often.
+
+### Important behavior
+
+- `useEffect` does not block rendering.
+- Render completes first, then the timer callback runs later.
+- The effect runs again only when `query` changes (dependency array is `[query]`).
+- Updating `debouncedQuery` causes re-render, but does not re-run this effect unless `query` changed.
+
 ## Tip: how to practice
 
 1. Open React DevTools Profiler, record, and take a screenshot (**before**).
