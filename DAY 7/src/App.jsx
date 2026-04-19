@@ -1,7 +1,11 @@
+import { Suspense, lazy } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
-import ExercisePlaygroundRoute from './routes/ExercisePlaygroundRoute.jsx'
 import HomePage from './routes/HomePage.jsx'
 import './App.css'
+
+const ExercisePlaygroundRoute = lazy(
+  () => import('./routes/ExercisePlaygroundRoute.jsx'),
+)
 
 function App() {
   return (
@@ -14,10 +18,12 @@ function App() {
           <Link to="/playground">Playground</Link>
         </nav>
       </header>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/playground" element={<ExercisePlaygroundRoute />} />
-      </Routes>
+      <Suspense fallback={<section className="panel">Loading playground...</section>}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/playground" element={<ExercisePlaygroundRoute />} />
+        </Routes>
+      </Suspense>
     </div>
   )
 }
