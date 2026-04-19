@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { markRender } from './RenderCounter.js'
 import ExerciseStatusToggle from './ExerciseStatusToggle.jsx'
 
@@ -59,4 +60,4 @@ function ActionPanel({
   )
 }
 
-export default ActionPanel
+export default memo(ActionPanel);
