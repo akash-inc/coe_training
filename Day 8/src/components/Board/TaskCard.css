@@ -4,6 +4,29 @@
   background: var(--bg);
   padding: 10px 12px;
   box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: grab;
+}
+
+.task-card-dragging {
+  opacity: 0.55;
+}
+
+.task-drag-handle {
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  background: var(--social-bg);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: var(--text-h);
+  cursor: grab;
+}
+
+.task-drag-handle:active {
+  cursor: grabbing;
 }
 
 .task-title {

@@ -7,6 +7,10 @@
   box-sizing: border-box;
 }
 
+.board-column-drop-target {
+  border-color: var(--accent);
+}
+
 .column-title {
   margin: 0 0 12px;
   font-size: 18px;
