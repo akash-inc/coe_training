@@ -39,4 +39,11 @@ describe("kanban store", () => {
     expect(task?.title).toBe("Fix login bug (updated)")
     expect(task?.content).toBe("Users get signed out after refresh.")
   })
+
+  it("moveTask changes the task column", () => {
+    useKanbanStore.getState().moveTask("task-1", "In Progress")
+
+    const task = useKanbanStore.getState().tasks.find((t) => t.id === "task-1")
+    expect(task?.column).toBe("In Progress")
+  })
 })
