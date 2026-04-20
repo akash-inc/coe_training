@@ -2,13 +2,13 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import App from './App'
 import { getInitialKanbanData, KANBAN_STORAGE_KEY, useKanbanStore } from './store'
 
-describe('Kanban board end-state contract', () => {
+describe('Kanban board', () => {
   beforeEach(() => {
     localStorage.clear()
     useKanbanStore.setState(getInitialKanbanData())
   })
 
-  it('renders a drag-and-drop board with four workflow columns', () => {
+  it('displays board title, four columns, and sample task', () => {
     render(<App />)
 
     expect(
@@ -23,7 +23,7 @@ describe('Kanban board end-state contract', () => {
     expect(screen.getByRole('button', { name: /drag task fix login bug/i })).toBeInTheDocument()
   })
 
-  it('moves a task from To Do to In Progress when dropped', () => {
+  it('moves task to In Progress on drop', () => {
     render(<App />)
 
     const toDoColumn = screen.getByRole('region', { name: /to do column/i })
@@ -41,12 +41,54 @@ describe('Kanban board end-state contract', () => {
     expect(within(inProgressColumn).getByText(/fix login bug/i)).toBeInTheDocument()
   })
 
-  /**
-   * Simulates a full page reload: new JS bundle (vi.resetModules + dynamic import)
-   * and a fresh store instance that rehydrates from localStorage.
-   * Keep this test last — resetModules invalidates top-level `./App` / `./store` caches.
-   */
-  it('restores task column after simulated full reload', async () => {
+  it('lists new task in To Do', () => {
+    render(<App />)
+
+    act(() => {
+      useKanbanStore.getState().addTask({
+        id: 'task-practical-add',
+        title: 'Write persistence test',
+        content: 'Cover localStorage and reload.',
+        column: 'To Do',
+      })
+    })
+
+    const toDoColumn = screen.getByRole('region', { name: /to do column/i })
+    expect(within(toDoColumn).getByText(/write persistence test/i)).toBeInTheDocument()
+    expect(
+      within(toDoColumn).getByRole('button', { name: /drag task write persistence test/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows updated title and body after edit', () => {
+    render(<App />)
+
+    act(() => {
+      useKanbanStore.getState().updateTask('task-1', {
+        title: 'Fix login bug (hotfix)',
+        content: 'Session cookie path corrected.',
+      })
+    })
+
+    expect(screen.getByText(/fix login bug \(hotfix\)/i)).toBeInTheDocument()
+    expect(screen.getByText(/session cookie path corrected/i)).toBeInTheDocument()
+  })
+
+  it('shows task in Done, not To Do, after move', () => {
+    render(<App />)
+
+    act(() => {
+      useKanbanStore.getState().moveTask('task-1', 'Done')
+    })
+
+    const doneColumn = screen.getByRole('region', { name: /done column/i })
+    const toDoColumn = screen.getByRole('region', { name: /to do column/i })
+
+    expect(within(doneColumn).getByText(/fix login bug/i)).toBeInTheDocument()
+    expect(within(toDoColumn).queryByText(/fix login bug/i)).not.toBeInTheDocument()
+  })
+
+  it('keeps task in In Progress after reload', async () => {
     const { unmount } = render(<App />)
 
     const inProgressColumn = screen.getByRole('region', { name: /in progress column/i })
