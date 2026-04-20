@@ -1,9 +1,13 @@
 import { create } from "zustand"
+import { persist } from "zustand/middleware"
 import { KANBAN_INITIAL_DATA } from "./initialData"
 import type { KanbanStore } from "../types"
 import { createTasksSlice } from "./slices/tasksSlice"
 
 export type { KanbanStore } from "../types"
+
+/** localStorage key for `persist`; exported for tests. */
+export const KANBAN_STORAGE_KEY = "day-8-kanban"
 
 export function getInitialKanbanData(): Pick<
   KanbanStore,
@@ -12,7 +16,19 @@ export function getInitialKanbanData(): Pick<
   return { ...KANBAN_INITIAL_DATA }
 }
 
-export const useKanbanStore = create<KanbanStore>()((...args) => ({
-  ...KANBAN_INITIAL_DATA,
-  ...createTasksSlice(...args),
-}))
+export const useKanbanStore = create<KanbanStore>()(
+  persist(
+    (...args) => ({
+      ...KANBAN_INITIAL_DATA,
+      ...createTasksSlice(...args),
+    }),
+    {
+      name: KANBAN_STORAGE_KEY,
+      partialize: (state) => ({
+        boardTitle: state.boardTitle,
+        columnIds: state.columnIds,
+        tasks: state.tasks,
+      }),
+    },
+  ),
+)
