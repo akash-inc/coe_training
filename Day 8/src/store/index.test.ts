@@ -16,4 +16,17 @@ describe("kanban store", () => {
       "Done",
     ])
   })
+
+  it("addTask appends a task", () => {
+    useKanbanStore.getState().addTask({
+      id: "task-new",
+      title: "New task",
+      content: "Body",
+      column: "To Do",
+    })
+
+    const tasks = useKanbanStore.getState().tasks
+    expect(tasks.some((t) => t.id === "task-new")).toBe(true)
+    expect(tasks[tasks.length - 1].title).toBe("New task")
+  })
 })
