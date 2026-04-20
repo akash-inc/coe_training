@@ -1,13 +1,5 @@
+import type { ColumnProps } from "../../types"
 import "./Column.css"
-
-type ColumnProps = {
-  name: string
-  children: React.ReactNode
-  isDropTarget: boolean
-  onDragOver: () => void
-  onDragLeave: () => void
-  onDrop: () => void
-}
 
 export default function Column({
   name,

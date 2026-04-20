@@ -1,12 +1,5 @@
+import type { TaskCardProps } from "../../types"
 import "./TaskCard.css"
-
-type TaskCardProps = {
-  title: string
-  content: string
-  onDragStart: () => void
-  onDragEnd: () => void
-  isDragging: boolean
-}
 
 export default function TaskCard({
   title,

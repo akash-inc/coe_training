@@ -1,16 +1,8 @@
 import { useState } from "react"
+import type { ColumnId, Task } from "../../types"
 import Column from "./Column"
 import TaskCard from "./TaskCard"
 import "./Board.css"
-
-type ColumnId = "To Do" | "In Progress" | "Review" | "Done"
-
-type Task = {
-  id: string
-  title: string
-  content: string
-  column: ColumnId
-}
 
 const COLUMNS: ColumnId[] = ["To Do", "In Progress", "Review", "Done"]
 
