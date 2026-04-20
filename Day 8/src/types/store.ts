@@ -1,4 +1,4 @@
-import type { ColumnId, Task } from "../types"
+import type { ColumnId, Task } from "./board"
 
 export type BoardSlice = {
   boardTitle: string

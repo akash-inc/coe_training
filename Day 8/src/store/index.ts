@@ -1,9 +1,9 @@
 import { create } from "zustand"
 import { KANBAN_INITIAL_DATA } from "./initialData"
-import type { KanbanStore } from "./types"
+import type { KanbanStore } from "../types"
 import { createTasksSlice } from "./slices/tasksSlice"
 
-export type { KanbanStore } from "./types"
+export type { KanbanStore } from "../types"
 
 export function getInitialKanbanData(): Pick<
   KanbanStore,

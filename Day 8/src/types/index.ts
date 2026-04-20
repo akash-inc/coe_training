@@ -1,5 +1,4 @@
-import type { ColumnProps } from "./column"
-import type { TaskCardProps } from "./taskCard"
-import type { ColumnId, Task } from "./board"
-
-export type { ColumnProps, TaskCardProps, ColumnId, Task }
+export type { ColumnId, Task } from "./board"
+export type { ColumnProps } from "./column"
+export type { TaskCardProps } from "./taskCard"
+export type { BoardSlice, KanbanStore, TasksSlice } from "./store"

@@ -1,5 +1,4 @@
-import type { KanbanStore } from "./types"
-import type { ColumnId, Task } from "../types"
+import type { ColumnId, KanbanStore, Task } from "../types"
 
 export const KANBAN_INITIAL_DATA: Pick<
   KanbanStore,

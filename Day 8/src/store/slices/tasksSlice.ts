@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand"
-import type { KanbanStore, TasksSlice } from "../types"
+import type { KanbanStore, TasksSlice } from "../../types"
 
 export const createTasksSlice: StateCreator<
   KanbanStore,
