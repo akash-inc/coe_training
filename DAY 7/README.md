@@ -15,6 +15,59 @@ npm run dev
 
 Then open the URL printed in the terminal and click **Open Playground**.
 
+## Performance Playground (`/dashboard-lab`)
+
+`/dashboard-lab` now hosts a side-by-side **unoptimized vs optimized** React
+performance playground with 7 demos:
+
+1. `React.memo`
+2. `useMemo`
+3. `useCallback`
+4. Virtualization (`react-window`)
+5. Debounce behavior
+6. Code splitting (`React.lazy` + `Suspense`)
+7. Web Worker responsiveness
+
+### Metrics used and how to assess them
+
+#### Shared top metrics panel
+
+- **Renders**: total reported renders from all demo panes for each side.
+  - Lower is generally better (fewer unnecessary updates).
+- **Avg Time (ms)**: average of demo-reported operation times.
+  - Lower means less work per interaction.
+- **CPU Estimate (%)**: derived estimate from average time (not a real profiler CPU metric).
+  - Use for relative comparison only.
+- **FPS**: sampled frame rate via `requestAnimationFrame`.
+  - Closer to 60 usually feels smooth.
+- **Status (Janky / Mixed / Smooth)**: heuristic label from FPS + Avg Time thresholds.
+  - Treat as quick signal, not scientific truth.
+
+#### Per-demo metrics
+
+- **React.memo demo**
+  - Parent tick count, child render count, pane render/time summary.
+  - Assess by checking optimized child render count stays much lower.
+- **useMemo demo**
+  - Compute time per pane (`Compute time: Xms`).
+  - Assess by repeatedly changing unrelated state; optimized compute time should remain stable/lower frequency.
+- **useCallback demo**
+  - Per-row render badges (`R:n`) and pane render/time summary.
+  - Assess by typing; unoptimized rows rerender more broadly than optimized rows.
+- **Virtualization demo**
+  - Items rendered count and pane render/time summary.
+  - Assess by verifying optimized pane renders only visible window rows, not all list items.
+- **Debounce demo**
+  - API calls counter, loading indicator, last debounce+request delay.
+  - Assess by typing quickly; optimized side should produce fewer calls and delayed dispatch behavior.
+- **Code splitting demo**
+  - Simulated initial/chunk size labels + lazy load time.
+  - Assess by first-load behavior: optimized loads heavy module on demand.
+- **Web Worker demo**
+  - Completion time and **UI block lag** per pane.
+  - Assess primarily with UI block lag/responsiveness, not just completion time.
+  - Worker may have similar or slower completion due to messaging overhead, but should keep UI more responsive.
+
 ## The red / green toggle
 
 On the Playground page, every exercise (1 to 10) has its own status button:
@@ -49,14 +102,14 @@ This is only a progress marker for practice.
 10. **Use a Web Worker.** Move really heavy math to a background thread so
     typing and clicking stay smooth.
 
-## How we completed Exercise 9 (Debounce)
+## How we completed Exercise 9 (Throttle + Debounce)
 
-We fixed Exercise 9 by adding a debounce in `usePlaygroundState`.
+We fixed Exercise 9 by adding both throttle and debounce in `usePlaygroundState`.
 
 - `query` updates immediately while the user types.
-- A `useEffect` watches `query` and starts a `setTimeout` for 300ms.
-- If the user types again before 300ms, cleanup runs and cancels the old timer.
-- When typing stops for 300ms, timer finishes and we call `setDebouncedQuery(query)`.
+- A throttle effect limits how often `throttledQuery` can update.
+- A debounce effect then waits 300ms before updating `debouncedQuery`.
+- If the user types again before 300ms, cleanup cancels the previous debounce timer.
 - That state update triggers a new render.
 - Filtering uses `debouncedQuery`, so `expensiveFilter(...)` runs less often.
 
@@ -64,15 +117,15 @@ We fixed Exercise 9 by adding a debounce in `usePlaygroundState`.
 
 - `useEffect` does not block rendering.
 - Render completes first, then the timer callback runs later.
-- The effect runs again only when `query` changes (dependency array is `[query]`).
-- Updating `debouncedQuery` causes re-render, but does not re-run this effect unless `query` changed.
+- Throttle runs when `query` changes; debounce runs when `throttledQuery` changes.
+- Updating `debouncedQuery` causes re-render, but does not re-run throttle unless `query` changes.
 
 ## Exercise completion summary
 
-Current status based on code in this project:
+Current status based on code in this project (not all are fully completed):
 
-- [x] **Exercise 1 (Profiler setup)** - Manual task. Instructions are present, but this still requires you to capture and save profiler recordings.
-- [x] **Exercise 2 (Bottlenecks)** - Panel is implemented, but identifying top 3 bottlenecks is still a manual profiling step.
+- [ ] **Exercise 1 (Profiler setup)** - Manual task. Instructions are present, but recording and saving profiler evidence is still pending.
+- [ ] **Exercise 2 (Bottlenecks)** - Render-count panel exists, but identifying and documenting top 3 bottlenecks is still pending.
 - [x] **Exercise 3 (`React.memo`)** - `ActionPanel` is wrapped in `React.memo`.
 - [x] **Exercise 4 (`useMemo`)** - `StatsPanel` memoizes derived hot/cold counts from `items`.
 - [x] **Exercise 5 (`useCallback`)** - High-churn handlers are stabilized with `useCallback` in hooks/components.

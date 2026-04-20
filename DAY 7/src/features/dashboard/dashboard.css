@@ -1,0 +1,74 @@
+.dashboard-lab {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-panel h2,
+.dashboard-panel h3,
+.dashboard-panel h4 {
+  margin: 0 0 8px;
+}
+
+.toolbar-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.toolbar-grid label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.toolbar-grid select {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 10px;
+}
+
+.toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.toggle-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dashboard-list-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.dashboard-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.dashboard-row-content {
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard-row-content span {
+  font-size: 13px;
+}
+
+.product-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}

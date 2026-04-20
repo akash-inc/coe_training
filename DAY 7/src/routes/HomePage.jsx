@@ -21,9 +21,14 @@ function HomePage() {
           Fix one exercise, then switch its status toggle from <strong>red</strong> to <strong>green</strong>.
         </li>
       </ol>
-      <Link className="primary-link" to="/playground">
-        Open Playground
-      </Link>
+      <div className="button-row">
+        <Link className="primary-link" to="/playground">
+          Open Playground
+        </Link>
+        <Link className="primary-link" to="/dashboard-lab">
+          Open Dashboard Lab
+        </Link>
+      </div>
     </section>
   )
 }
