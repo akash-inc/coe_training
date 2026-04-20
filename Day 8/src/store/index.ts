@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { devtools, persist } from "zustand/middleware"
 import { KANBAN_INITIAL_DATA } from "./initialData"
 import type { KanbanStore } from "../types"
 import { createTasksSlice } from "./slices/tasksSlice"
@@ -17,18 +17,24 @@ export function getInitialKanbanData(): Pick<
 }
 
 export const useKanbanStore = create<KanbanStore>()(
-  persist(
-    (...args) => ({
-      ...KANBAN_INITIAL_DATA,
-      ...createTasksSlice(...args),
-    }),
-    {
-      name: KANBAN_STORAGE_KEY,
-      partialize: (state) => ({
-        boardTitle: state.boardTitle,
-        columnIds: state.columnIds,
-        tasks: state.tasks,
+  devtools(
+    persist(
+      (...args) => ({
+        ...KANBAN_INITIAL_DATA,
+        ...createTasksSlice(...args),
       }),
+      {
+        name: KANBAN_STORAGE_KEY,
+        partialize: (state) => ({
+          boardTitle: state.boardTitle,
+          columnIds: state.columnIds,
+          tasks: state.tasks,
+        }),
+      },
+    ),
+    {
+      name: "KanbanStore",
+      enabled: import.meta.env.DEV,
     },
   ),
 )
