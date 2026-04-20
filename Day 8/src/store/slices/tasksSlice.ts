@@ -16,4 +16,9 @@ export const createTasksSlice: StateCreator<
     set((state) => ({
       tasks: state.tasks.map((task) => task.id === id ? { ...task, ...updates } : task),
     })),
+
+  moveTask: (id, column) =>
+    set((state) => ({
+      tasks: state.tasks.map((task) => task.id === id ? { ...task, column } : task),
+    })),
 })
