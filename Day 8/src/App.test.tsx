@@ -13,5 +13,7 @@ describe('Kanban board end-state contract', () => {
     expect(screen.getByRole('region', { name: /in progress column/i })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: /review column/i })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: /done column/i })).toBeInTheDocument()
+
+    expect(screen.getByRole('button', { name: /drag task fix login bug/i })).toBeInTheDocument()
   })
 })
