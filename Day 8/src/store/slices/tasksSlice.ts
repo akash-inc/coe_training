@@ -5,7 +5,7 @@ export const createTasksSlice: StateCreator<
   KanbanStore,
   [],
   [],
-  Pick<TasksSlice, "addTask">
+  Pick<TasksSlice, "addTask" | "updateTask" | "moveTask">
 > = (set) => ({
   addTask: (task) =>
     set((state) => ({

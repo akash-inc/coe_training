@@ -1,40 +1,16 @@
 import { useState } from "react"
-import type { ColumnId, Task } from "../../types"
+import type { ColumnId } from "../../types"
+import { useKanbanStore } from "../../store"
 import Column from "./Column"
 import TaskCard from "./TaskCard"
 import "./Board.css"
 
-const COLUMNS: ColumnId[] = ["To Do", "In Progress", "Review", "Done"]
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: "task-1",
-    title: "Fix login bug",
-    content: "Users get signed out after refresh.",
-    column: "To Do",
-  },
-  {
-    id: "task-2",
-    title: "Implement Zustand slices",
-    content: "Split board, tasks, users, filters.",
-    column: "In Progress",
-  },
-  {
-    id: "task-3",
-    title: "Add optimistic updates",
-    content: "Rollback state when API call fails.",
-    column: "Review",
-  },
-  {
-    id: "task-4",
-    title: "Create project scaffold",
-    content: "Base app and test setup completed.",
-    column: "Done",
-  },
-]
-
 export default function Board() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS)
+  const boardTitle = useKanbanStore((state) => state.boardTitle)
+  const columnIds = useKanbanStore((state) => state.columnIds)
+  const tasks = useKanbanStore((state) => state.tasks)
+  const moveTask = useKanbanStore((state) => state.moveTask)
+
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
   const [dropColumn, setDropColumn] = useState<ColumnId | null>(null)
 
@@ -52,20 +28,16 @@ export default function Board() {
       return
     }
 
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === draggedTaskId ? { ...task, column: targetColumn } : task,
-      ),
-    )
+    moveTask(draggedTaskId, targetColumn)
     setDraggedTaskId(null)
     setDropColumn(null)
   }
 
   return (
     <main className="board">
-      <h1 className="board-title">zustand kanban board</h1>
+      <h1 className="board-title">{boardTitle}</h1>
       <div className="board-columns">
-        {COLUMNS.map((column) => (
+        {columnIds.map((column) => (
           <Column
             key={column}
             name={column}
