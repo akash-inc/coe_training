@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import App from './App'
 import { getInitialKanbanData, KANBAN_STORAGE_KEY, useKanbanStore } from './store'
 
@@ -14,6 +15,8 @@ describe('Kanban board', () => {
     expect(
       screen.getByRole('heading', { name: /zustand kanban board/i }),
     ).toBeInTheDocument()
+
+    expect(screen.getByRole('form', { name: /add task/i })).toBeInTheDocument()
 
     expect(screen.getByRole('region', { name: /to do column/i })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: /in progress column/i })).toBeInTheDocument()
@@ -41,37 +44,45 @@ describe('Kanban board', () => {
     expect(within(inProgressColumn).getByText(/fix login bug/i)).toBeInTheDocument()
   })
 
-  it('lists new task in To Do', () => {
-    render(<App />)
+  describe('board UI', () => {
+    it('adds a task from the form', async () => {
+      const user = userEvent.setup()
+      render(<App />)
 
-    act(() => {
-      useKanbanStore.getState().addTask({
-        id: 'task-practical-add',
-        title: 'Write persistence test',
-        content: 'Cover localStorage and reload.',
-        column: 'To Do',
-      })
+      await user.type(screen.getByLabelText(/^title$/i), 'Ship dark mode')
+      await user.type(screen.getByLabelText(/^description$/i), 'Toggle in settings.')
+      await user.click(screen.getByRole('button', { name: /^add task$/i }))
+
+      const toDo = screen.getByRole('region', { name: /to do column/i })
+      expect(within(toDo).getByRole('heading', { name: /ship dark mode/i })).toBeInTheDocument()
+      expect(within(toDo).getByText(/toggle in settings/i)).toBeInTheDocument()
     })
 
-    const toDoColumn = screen.getByRole('region', { name: /to do column/i })
-    expect(within(toDoColumn).getByText(/write persistence test/i)).toBeInTheDocument()
-    expect(
-      within(toDoColumn).getByRole('button', { name: /drag task write persistence test/i }),
-    ).toBeInTheDocument()
-  })
+    it('saves edits from the card', async () => {
+      const user = userEvent.setup()
+      render(<App />)
 
-  it('shows updated title and body after edit', () => {
-    render(<App />)
+      await user.click(screen.getByRole('button', { name: /edit fix login bug/i }))
+      await user.clear(screen.getByLabelText(/edit task title/i))
+      await user.type(screen.getByLabelText(/edit task title/i), 'Login flow stable')
+      await user.clear(screen.getByLabelText(/edit task description/i))
+      await user.type(screen.getByLabelText(/edit task description/i), 'Cookie path updated.')
+      await user.click(screen.getByRole('button', { name: /^save$/i }))
 
-    act(() => {
-      useKanbanStore.getState().updateTask('task-1', {
-        title: 'Fix login bug (hotfix)',
-        content: 'Session cookie path corrected.',
-      })
+      expect(screen.getByRole('heading', { name: /login flow stable/i })).toBeInTheDocument()
+      expect(screen.getByText(/cookie path updated/i)).toBeInTheDocument()
     })
 
-    expect(screen.getByText(/fix login bug \(hotfix\)/i)).toBeInTheDocument()
-    expect(screen.getByText(/session cookie path corrected/i)).toBeInTheDocument()
+    it('removes a task from the card', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+
+      await user.click(
+        screen.getByRole('button', { name: /delete task create project scaffold/i }),
+      )
+
+      expect(screen.queryByText(/create project scaffold/i)).not.toBeInTheDocument()
+    })
   })
 
   it('shows task in Done, not To Do, after move', () => {
@@ -88,6 +99,7 @@ describe('Kanban board', () => {
     expect(within(toDoColumn).queryByText(/fix login bug/i)).not.toBeInTheDocument()
   })
 
+  // Keep last.
   it('keeps task in In Progress after reload', async () => {
     const { unmount } = render(<App />)
 
