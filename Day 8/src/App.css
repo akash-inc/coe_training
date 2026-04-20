@@ -1,6 +1,7 @@
 .app-shell {
   padding: 24px;
   box-sizing: border-box;
+  text-align: left;
 }
 
 @media (max-width: 1024px) {

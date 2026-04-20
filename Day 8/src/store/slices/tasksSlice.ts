@@ -5,7 +5,7 @@ export const createTasksSlice: StateCreator<
   KanbanStore,
   [],
   [],
-  Pick<TasksSlice, "addTask" | "updateTask" | "moveTask">
+  Pick<TasksSlice, "addTask" | "updateTask" | "moveTask" | "removeTask">
 > = (set) => ({
   addTask: (task) =>
     set((state) => ({
@@ -20,5 +20,10 @@ export const createTasksSlice: StateCreator<
   moveTask: (id, column) =>
     set((state) => ({
       tasks: state.tasks.map((task) => task.id === id ? { ...task, column } : task),
+    })),
+
+  removeTask: (id) =>
+    set((state) => ({
+      tasks: state.tasks.filter((task) => task.id !== id),
     })),
 })

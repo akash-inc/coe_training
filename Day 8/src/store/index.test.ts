@@ -2,6 +2,7 @@ import { getInitialKanbanData, useKanbanStore } from "./index"
 
 describe("kanban store", () => {
   beforeEach(() => {
+    localStorage.clear()
     useKanbanStore.setState(getInitialKanbanData())
   })
 
@@ -45,5 +46,11 @@ describe("kanban store", () => {
 
     const task = useKanbanStore.getState().tasks.find((t) => t.id === "task-1")
     expect(task?.column).toBe("In Progress")
+  })
+
+  it("removeTask drops a task by id", () => {
+    useKanbanStore.getState().removeTask("task-4")
+
+    expect(useKanbanStore.getState().tasks.some((t) => t.id === "task-4")).toBe(false)
   })
 })

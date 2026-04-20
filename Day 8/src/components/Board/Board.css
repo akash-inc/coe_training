@@ -1,13 +1,94 @@
+/* Kanban: compact type + small controls (inherits root --sans / --heading). */
 .board {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  --board-label: 0.6875rem; /* 11px */
+  --board-body: 0.75rem; /* 12px */
+  --board-section: 0.875rem; /* 14px */
+  --board-btn: 0.6875rem; /* 11px */
+  --board-btn-pad: 2px 8px;
+  --board-btn-radius: 4px;
+  --board-field-pad: 4px 6px;
+
+  font-family: var(--sans);
+  color: var(--text);
+  text-align: left;
 }
 
-.board-title {
-  margin: 0;
-  font-size: 32px;
+.board .add-task-submit,
+.board .task-action,
+.board .task-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: var(--board-btn);
+  line-height: 1.25;
+  padding: var(--board-btn-pad);
+  border-radius: var(--board-btn-radius);
+  box-sizing: border-box;
+  cursor: pointer;
+  color: var(--text-h);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.board .add-task-submit {
+  font-weight: 600;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.board .add-task-submit:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-bg) 70%, var(--accent) 30%);
+}
+
+.board .task-action,
+.board .task-drag-handle {
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--social-bg);
+}
+
+.board .task-action:hover,
+.board .task-drag-handle:hover {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--social-bg) 85%, var(--accent-bg) 15%);
+}
+
+.board .task-action-danger {
+  border-color: var(--border);
+}
+
+.board .task-action-danger:hover {
+  border-color: #b91c1c;
+  background: color-mix(in srgb, var(--social-bg) 88%, #b91c1c 12%);
+  color: var(--text-h);
+}
+
+.board .task-drag-handle {
+  cursor: grab;
+  border-radius: 999px;
+}
+
+.board .task-drag-handle:active {
+  cursor: grabbing;
+}
+
+.board h1.board-title {
+  font-family: var(--heading);
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  color: var(--text-h);
   text-transform: capitalize;
+}
+
+@media (max-width: 1024px) {
+  .board h1.board-title {
+    font-size: 1.35rem;
+    margin-bottom: 10px;
+  }
 }
 
 .board-columns {

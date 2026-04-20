@@ -1,4 +1,5 @@
-.board-column {
+/* Column headings: align with `.board h2.add-task-heading` (18px section titles). */
+.board .board-column {
   min-height: 220px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -7,17 +8,21 @@
   box-sizing: border-box;
 }
 
-.board-column-drop-target {
+.board .board-column-drop-target {
   border-color: var(--accent);
 }
 
-.column-title {
-  margin: 0 0 12px;
-  font-size: 18px;
+.board h2.column-title {
+  font-family: var(--heading);
+  font-weight: 600;
+  font-size: var(--board-section);
+  line-height: 1.2;
+  margin: 0 0 8px;
+  color: var(--text-h);
 }
 
-.column-content {
+.board .column-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }

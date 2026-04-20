@@ -1,0 +1,66 @@
+.board .add-task-form {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  text-align: left;
+  background: var(--social-bg);
+  box-sizing: border-box;
+}
+
+.board h2.add-task-heading {
+  font-family: var(--heading);
+  font-weight: 600;
+  font-size: var(--board-section);
+  line-height: 1.2;
+  margin: 0 0 8px;
+  color: var(--text-h);
+}
+
+.board .add-task-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.board .add-task-field label {
+  display: block;
+  font-family: var(--sans);
+  font-size: var(--board-label);
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.board .add-task-field input,
+.board .add-task-field textarea,
+.board .add-task-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--board-btn-radius);
+  padding: var(--board-field-pad);
+  font-family: var(--sans);
+  font-size: var(--board-body);
+  line-height: 1.35;
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.board .add-task-field input:focus,
+.board .add-task-field textarea:focus,
+.board .add-task-field select:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 1px var(--accent-bg);
+}
+
+.board .add-task-submit {
+  margin-top: 6px;
+  align-self: flex-start;
+}
+
+.board .add-task-submit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

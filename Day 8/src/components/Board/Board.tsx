@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { ColumnId } from "../../types"
 import { useKanbanStore } from "../../store"
+import AddTaskForm from "./AddTaskForm"
 import Column from "./Column"
 import TaskCard from "./TaskCard"
 import "./Board.css"
@@ -10,6 +11,9 @@ export default function Board() {
   const columnIds = useKanbanStore((state) => state.columnIds)
   const tasks = useKanbanStore((state) => state.tasks)
   const moveTask = useKanbanStore((state) => state.moveTask)
+  const addTask = useKanbanStore((state) => state.addTask)
+  const updateTask = useKanbanStore((state) => state.updateTask)
+  const removeTask = useKanbanStore((state) => state.removeTask)
 
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
   const [dropColumn, setDropColumn] = useState<ColumnId | null>(null)
@@ -36,6 +40,7 @@ export default function Board() {
   return (
     <main className="board">
       <h1 className="board-title">{boardTitle}</h1>
+      <AddTaskForm columnIds={columnIds} onAdd={addTask} />
       <div className="board-columns">
         {columnIds.map((column) => (
           <Column
@@ -51,11 +56,14 @@ export default function Board() {
               .map((task) => (
                 <TaskCard
                   key={task.id}
+                  taskId={task.id}
                   title={task.title}
                   content={task.content}
                   onDragStart={() => handleDragStart(task.id)}
                   onDragEnd={handleDragEnd}
                   isDragging={draggedTaskId === task.id}
+                  onUpdate={(updates) => updateTask(task.id, updates)}
+                  onRemove={() => removeTask(task.id)}
                 />
               ))}
           </Column>

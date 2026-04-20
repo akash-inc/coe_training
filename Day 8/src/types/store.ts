@@ -10,6 +10,7 @@ export type TasksSlice = {
   addTask: (task: Task) => void
   updateTask: (id: string, updates: Partial<Omit<Task, "id">>) => void
   moveTask: (id: string, column: ColumnId) => void
+  removeTask: (id: string) => void
 }
 
 export type KanbanStore = BoardSlice & TasksSlice
