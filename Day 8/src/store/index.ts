@@ -1,19 +1,18 @@
 import { create } from "zustand"
+import { KANBAN_INITIAL_DATA } from "./initialData"
 import type { KanbanStore } from "./types"
-import { createBoardSlice } from "./slices/boardSlice"
+import { createTasksSlice } from "./slices/tasksSlice"
 
 export type { KanbanStore } from "./types"
 
 export function getInitialKanbanData(): Pick<
   KanbanStore,
-  "boardTitle" | "columnIds"
+  "boardTitle" | "columnIds" | "tasks"
 > {
-  return {
-    boardTitle: "zustand kanban board",
-    columnIds: ["To Do", "In Progress", "Review", "Done"],
-  }
+  return { ...KANBAN_INITIAL_DATA }
 }
 
 export const useKanbanStore = create<KanbanStore>()((...args) => ({
-  ...createBoardSlice(...args),
+  ...KANBAN_INITIAL_DATA,
+  ...createTasksSlice(...args),
 }))
