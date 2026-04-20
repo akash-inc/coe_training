@@ -1,0 +1,19 @@
+.board-column {
+  min-height: 220px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--social-bg);
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.column-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.column-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
