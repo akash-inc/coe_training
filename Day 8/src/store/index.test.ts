@@ -29,4 +29,14 @@ describe("kanban store", () => {
     expect(tasks.some((t) => t.id === "task-new")).toBe(true)
     expect(tasks[tasks.length - 1].title).toBe("New task")
   })
+
+  it("updateTask merges fields for an existing task", () => {
+    useKanbanStore.getState().updateTask("task-1", {
+      title: "Fix login bug (updated)",
+    })
+
+    const task = useKanbanStore.getState().tasks.find((t) => t.id === "task-1")
+    expect(task?.title).toBe("Fix login bug (updated)")
+    expect(task?.content).toBe("Users get signed out after refresh.")
+  })
 })
