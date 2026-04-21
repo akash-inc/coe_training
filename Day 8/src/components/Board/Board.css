@@ -32,6 +32,8 @@
 
 .board .add-task-submit {
   font-weight: 600;
+  min-height: 32px;
+  padding: 6px 14px;
   border: 1px solid var(--accent-border);
   background: var(--accent-bg);
 }

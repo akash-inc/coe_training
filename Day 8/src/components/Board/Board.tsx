@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow"
 import type { ColumnId } from "../../types"
 import { useKanbanStore } from "../../store"
 import Dashboard from "../Dashboard/Dashboard"
+import RecentActivity from "./RecentActivity"
 import AddTaskForm from "./AddTaskForm"
 import Column from "./Column"
 import TaskCard from "./TaskCard"
@@ -55,6 +56,7 @@ export default function Board() {
     <main className="board">
       <h1 className="board-title">{boardTitle}</h1>
       <Dashboard tasks={tasks} />
+      <RecentActivity />
       <AddTaskForm columnIds={columnIds} onAdd={addTask} />
       <div className="board-columns">
         {columnIds.map((column) => (

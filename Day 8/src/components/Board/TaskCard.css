@@ -24,7 +24,7 @@
 .board .task-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
   justify-content: flex-end;
   align-items: center;
 }
