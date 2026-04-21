@@ -13,7 +13,17 @@ const SEED_LEAD_TIME_MS = 3 * MS_PER_DAY + 8 * MS_PER_HOUR
  */
 export function createKanbanInitialData(
   referenceTimeMs: number,
-): Pick<KanbanStore, "boardTitle" | "columnIds" | "tasks" | "pastSnapshots" | "futureSnapshots" | "activityLog"> {
+): Pick<
+  KanbanStore,
+  | "boardTitle"
+  | "columnIds"
+  | "tasks"
+  | "pastSnapshots"
+  | "futureSnapshots"
+  | "activityLog"
+  | "syncError"
+  | "remoteHydrated"
+> {
   const inactiveCreatedAt = referenceTimeMs - 45 * MS_PER_DAY
   const previousPeriodCompletedAt = referenceTimeMs - 10 * MS_PER_DAY
   const previousPeriodCreatedAt = previousPeriodCompletedAt - SEED_LEAD_TIME_MS
@@ -29,6 +39,8 @@ export function createKanbanInitialData(
     pastSnapshots: [],
     futureSnapshots: [],
     activityLog: [],
+    syncError: null,
+    remoteHydrated: false,
     tasks: [
       {
         id: "task-1",

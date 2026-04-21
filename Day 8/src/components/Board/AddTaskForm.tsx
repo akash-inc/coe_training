@@ -22,7 +22,7 @@ export default function AddTaskForm({ columnIds, onAdd }: AddTaskFormProps) {
       return
     }
     onAdd({
-      id: `task-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       title: trimmed,
       content: content.trim(),
       column,

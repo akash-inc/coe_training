@@ -18,6 +18,8 @@ export default function Board() {
     addTask,
     updateTask,
     removeTask,
+    syncError,
+    clearSyncError,
   } = useKanbanStore(
     useShallow((state) => ({
       boardTitle: state.boardTitle,
@@ -27,6 +29,8 @@ export default function Board() {
       addTask: state.addTask,
       updateTask: state.updateTask,
       removeTask: state.removeTask,
+      syncError: state.syncError,
+      clearSyncError: state.clearSyncError,
     })),
   )
 
@@ -55,6 +59,18 @@ export default function Board() {
   return (
     <main className="board">
       <h1 className="board-title">{boardTitle}</h1>
+      {syncError ? (
+        <div className="board-sync-error" role="alert">
+          <span>Could not sync with the server: {syncError}</span>
+          <button
+            type="button"
+            className="board-sync-error-dismiss"
+            onClick={() => clearSyncError()}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
       <Dashboard tasks={tasks} />
       <RecentActivity />
       <AddTaskForm columnIds={columnIds} onAdd={addTask} />

@@ -7,10 +7,19 @@ export type BoardSlice = {
 
 export type TasksSlice = {
   tasks: Task[]
-  addTask: (task: TaskDraft) => void
-  updateTask: (id: string, updates: Partial<Omit<Task, "id">>) => void
-  moveTask: (id: string, column: ColumnId) => void
-  removeTask: (id: string) => void
+  addTask: (task: TaskDraft) => void | Promise<void>
+  updateTask: (
+    id: string,
+    updates: Partial<Omit<Task, "id">>,
+  ) => void | Promise<void>
+  moveTask: (id: string, column: ColumnId) => void | Promise<void>
+  removeTask: (id: string) => void | Promise<void>
+}
+
+export type UndoableSnapshot = {
+  boardTitle: string
+  columnIds: ColumnId[]
+  tasks: Task[]
 }
 
 export type HistorySlice = {
@@ -22,16 +31,15 @@ export type HistorySlice = {
 }
 
 export type KanbanStore = BoardSlice &
-  TasksSlice & HistorySlice & {
+  TasksSlice &
+  HistorySlice & {
     /** Replaces board snapshot with fresh sample data (actions unchanged). */
     resetBoard: () => void
+    syncError: string | null
+    remoteHydrated: boolean
+    hydrateFromRemote: () => Promise<void>
+    clearSyncError: () => void
   }
-
-export type UndoableSnapshot = {
-  boardTitle: string
-  columnIds: ColumnId[]
-  tasks: Task[]
-}
 
 export type activityEntry = {
   id: string,

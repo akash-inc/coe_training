@@ -13,6 +13,37 @@
   text-align: left;
 }
 
+.board-sync-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: var(--board-btn-radius);
+  border: 1px solid #b91c1c;
+  background: color-mix(in srgb, #b91c1c 12%, var(--social-bg));
+  color: var(--text-h);
+  font-size: var(--board-body);
+  text-align: left;
+}
+
+.board-sync-error-dismiss {
+  font-family: var(--sans);
+  font-size: var(--board-btn);
+  padding: var(--board-btn-pad);
+  border-radius: var(--board-btn-radius);
+  border: 1px solid var(--border);
+  background: var(--social-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.board-sync-error-dismiss:hover {
+  border-color: var(--accent-border);
+}
+
 .board .add-task-submit,
 .board .task-action,
 .board .task-drag-handle {
