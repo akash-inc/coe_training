@@ -26,6 +26,10 @@ describe("kanban store", () => {
       column: "To Do",
     })
 
+    expect(useKanbanStore.getState().tasks.find((t) => t.id === "task-new")?.createdAt).toEqual(
+      expect.any(Number),
+    )
+
     const tasks = useKanbanStore.getState().tasks
     expect(tasks.some((t) => t.id === "task-new")).toBe(true)
     expect(tasks[tasks.length - 1].title).toBe("New task")

@@ -26,6 +26,32 @@ describe('Kanban board', () => {
     expect(screen.getByRole('button', { name: /drag task fix login bug/i })).toBeInTheDocument()
   })
 
+  describe('dashboard', () => {
+    it('shows analytics derived from task state (counts, completion %, overdue, avg time, trend)', () => {
+      render(<App />)
+
+      const dashboard = screen.getByRole('region', { name: /analytics dashboard/i })
+      expect(dashboard).toBeInTheDocument()
+
+      expect(dashboard).toHaveTextContent('25%')
+      expect(dashboard).toHaveTextContent('Overdue')
+      expect(dashboard).toHaveTextContent('3d 8h')
+      expect(dashboard).toHaveTextContent('Insufficient data')
+    })
+
+    it('updates completion metrics when a task moves to Done', () => {
+      render(<App />)
+
+      act(() => {
+        useKanbanStore.getState().moveTask('task-2', 'Done')
+      })
+
+      const dashboard = screen.getByRole('region', { name: /analytics dashboard/i })
+      expect(dashboard).toHaveTextContent('50%')
+      expect(dashboard).toHaveTextContent('Completed')
+    })
+  })
+
   it('moves task to In Progress on drop', () => {
     render(<App />)
 
