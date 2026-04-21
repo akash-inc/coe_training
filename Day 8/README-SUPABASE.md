@@ -38,6 +38,7 @@ Do not wrap values in quotes unless the value itself contains spaces. Restart `n
 - On load, the app calls `hydrateFromRemote()` and replaces local tasks with server rows (undo history is cleared).
 - **Persist**: when Supabase is configured, only `columnIds` are written to `localStorage` (not `tasks` / `boardTitle`) so the server stays the source of truth.
 - **resetBoard**: refetches the board from Supabase and clears undo history (no server-side delete-all).
+- **Undo / redo** (with Supabase): the UI updates immediately, then `reconcileRemoteTasks` applies the same task diff to Postgres (deletes, inserts, updates in order). If reconciliation fails, the history step is rolled back locally and `syncError` is set (same pattern as failed task mutations).
 - New task IDs must be valid UUIDs (the add-task form uses `crypto.randomUUID()`).
 
 ## 5. Tests

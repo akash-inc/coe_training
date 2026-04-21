@@ -1,12 +1,15 @@
 import { create } from "zustand"
 import { devtools, persist } from "zustand/middleware"
-import { fetchBoardAndTasks } from "../lib/supabase/boardRemote"
+import {
+  fetchBoardAndTasks,
+  reconcileRemoteTasks,
+} from "../lib/supabase/boardRemote"
 import {
   getDefaultBoardId,
   getSupabaseClient,
   isSupabaseConfigured,
 } from "../lib/supabase/client"
-import type { KanbanStore } from "../types"
+import type { KanbanStore, UndoableSnapshot } from "../types"
 import { appendActivityLog } from "./history/activityLog"
 import { cloneUndoable } from "./history/cloneUndoable"
 import { buildRollbackLastCommit } from "./history/rollbackLastCommit"
@@ -146,6 +149,22 @@ export const useKanbanStore = create<KanbanStore>()(
           hydrateFromRemote,
           clearSyncError: () => set({ syncError: null }),
           undo: () => {
+            const syncRemote =
+              remoteBoardPersistenceEnabled() &&
+              getSupabaseClient() != null &&
+              getDefaultBoardId() != null
+            const client = getSupabaseClient()
+            const bid = getDefaultBoardId()
+
+            let remoteUndo:
+              | {
+                  previous: UndoableSnapshot
+                  restPast: UndoableSnapshot[]
+                  currentClone: UndoableSnapshot
+                  oldFuture: UndoableSnapshot[]
+                }
+              | undefined
+
             set((state) => {
               if (state.pastSnapshots.length === 0) {
                 return {}
@@ -153,27 +172,95 @@ export const useKanbanStore = create<KanbanStore>()(
               const previous =
                 state.pastSnapshots[state.pastSnapshots.length - 1]!
               const restPast = state.pastSnapshots.slice(0, -1)
-              const current = cloneUndoable(state)
+              const currentClone = cloneUndoable(state)
+              const oldFuture = state.futureSnapshots
+              if (syncRemote && client && bid) {
+                remoteUndo = { previous, restPast, currentClone, oldFuture }
+              }
               return {
                 ...applySnapshot(previous),
                 pastSnapshots: restPast,
-                futureSnapshots: [current, ...state.futureSnapshots],
+                futureSnapshots: [currentClone, ...oldFuture],
               }
             })
+
+            if (remoteUndo && client && bid) {
+              const { previous, restPast, currentClone, oldFuture } = remoteUndo
+              void reconcileRemoteTasks(
+                client,
+                bid,
+                currentClone.tasks,
+                previous.tasks,
+              ).then(({ error }) => {
+                if (error) {
+                  console.error("[supabase] undo reconcile", error)
+                  set({
+                    ...applySnapshot(currentClone),
+                    pastSnapshots: [...restPast, previous],
+                    futureSnapshots: oldFuture,
+                    syncError: error.message,
+                  })
+                } else {
+                  set({ syncError: null })
+                }
+              })
+            }
           },
           redo: () => {
+            const syncRemote =
+              remoteBoardPersistenceEnabled() &&
+              getSupabaseClient() != null &&
+              getDefaultBoardId() != null
+            const client = getSupabaseClient()
+            const bid = getDefaultBoardId()
+
+            let remoteRedo:
+              | {
+                  next: UndoableSnapshot
+                  restFuture: UndoableSnapshot[]
+                  currentClone: UndoableSnapshot
+                  oldPast: UndoableSnapshot[]
+                }
+              | undefined
+
             set((state) => {
               if (state.futureSnapshots.length === 0) {
                 return {}
               }
               const [next, ...restFuture] = state.futureSnapshots
-              const current = cloneUndoable(state)
+              const currentClone = cloneUndoable(state)
+              const oldPast = state.pastSnapshots
+              if (syncRemote && client && bid) {
+                remoteRedo = { next, restFuture, currentClone, oldPast }
+              }
               return {
                 ...applySnapshot(next),
-                pastSnapshots: [...state.pastSnapshots, current],
+                pastSnapshots: [...state.pastSnapshots, currentClone],
                 futureSnapshots: restFuture,
               }
             })
+
+            if (remoteRedo && client && bid) {
+              const { next, restFuture, currentClone, oldPast } = remoteRedo
+              void reconcileRemoteTasks(
+                client,
+                bid,
+                currentClone.tasks,
+                next.tasks,
+              ).then(({ error }) => {
+                if (error) {
+                  console.error("[supabase] redo reconcile", error)
+                  set({
+                    ...applySnapshot(currentClone),
+                    pastSnapshots: oldPast,
+                    futureSnapshots: [next, ...restFuture],
+                    syncError: error.message,
+                  })
+                } else {
+                  set({ syncError: null })
+                }
+              })
+            }
           },
         }
       },
