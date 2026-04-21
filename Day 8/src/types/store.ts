@@ -13,4 +13,8 @@ export type TasksSlice = {
   removeTask: (id: string) => void
 }
 
-export type KanbanStore = BoardSlice & TasksSlice
+export type KanbanStore = BoardSlice &
+  TasksSlice & {
+    /** Replaces board snapshot with fresh sample data (actions unchanged). */
+    resetBoard: () => void
+  }

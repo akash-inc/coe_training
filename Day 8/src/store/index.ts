@@ -19,10 +19,16 @@ export function getInitialKanbanData(): Pick<
 export const useKanbanStore = create<KanbanStore>()(
   devtools(
     persist(
-      (...args) => ({
-        ...createKanbanInitialData(Date.now()),
-        ...createTasksSlice(...args),
-      }),
+      (...args) => {
+        const [set] = args
+        return {
+          ...createKanbanInitialData(Date.now()),
+          ...createTasksSlice(...args),
+          resetBoard: () => {
+            set(createKanbanInitialData(Date.now()))
+          },
+        }
+      },
       {
         name: KANBAN_STORAGE_KEY,
         partialize: (state) => ({

@@ -57,4 +57,15 @@ describe("kanban store", () => {
 
     expect(useKanbanStore.getState().tasks.some((t) => t.id === "task-4")).toBe(false)
   })
+
+  it("resetBoard restores sample board data without dropping actions", () => {
+    useKanbanStore.getState().removeTask("task-1")
+    expect(useKanbanStore.getState().tasks.some((t) => t.id === "task-1")).toBe(false)
+
+    useKanbanStore.getState().resetBoard()
+
+    const state = useKanbanStore.getState()
+    expect(state.tasks.some((t) => t.id === "task-1")).toBe(true)
+    expect(typeof state.addTask).toBe("function")
+  })
 })

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useShallow } from "zustand/react/shallow"
 import type { ColumnId } from "../../types"
 import { useKanbanStore } from "../../store"
 import Dashboard from "../Dashboard/Dashboard"
@@ -8,13 +9,25 @@ import TaskCard from "./TaskCard"
 import "./Board.css"
 
 export default function Board() {
-  const boardTitle = useKanbanStore((state) => state.boardTitle)
-  const columnIds = useKanbanStore((state) => state.columnIds)
-  const tasks = useKanbanStore((state) => state.tasks)
-  const moveTask = useKanbanStore((state) => state.moveTask)
-  const addTask = useKanbanStore((state) => state.addTask)
-  const updateTask = useKanbanStore((state) => state.updateTask)
-  const removeTask = useKanbanStore((state) => state.removeTask)
+  const {
+    boardTitle,
+    columnIds,
+    tasks,
+    moveTask,
+    addTask,
+    updateTask,
+    removeTask,
+  } = useKanbanStore(
+    useShallow((state) => ({
+      boardTitle: state.boardTitle,
+      columnIds: state.columnIds,
+      tasks: state.tasks,
+      moveTask: state.moveTask,
+      addTask: state.addTask,
+      updateTask: state.updateTask,
+      removeTask: state.removeTask,
+    })),
+  )
 
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
   const [dropColumn, setDropColumn] = useState<ColumnId | null>(null)
