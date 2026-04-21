@@ -1,10 +1,10 @@
 import { type FormEvent, useId, useState } from "react"
-import type { ColumnId } from "../../types"
+import type { ColumnId, TaskDraft } from "../../types"
 import "./AddTaskForm.css"
 
 type AddTaskFormProps = {
   columnIds: ColumnId[]
-  onAdd: (task: { id: string; title: string; content: string; column: ColumnId }) => void
+  onAdd: (task: TaskDraft) => void
 }
 
 export default function AddTaskForm({ columnIds, onAdd }: AddTaskFormProps) {

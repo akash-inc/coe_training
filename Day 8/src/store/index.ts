@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { devtools, persist } from "zustand/middleware"
-import { KANBAN_INITIAL_DATA } from "./initialData"
+import { createKanbanInitialData } from "./initialData"
 import type { KanbanStore } from "../types"
 import { createTasksSlice } from "./slices/tasksSlice"
 
@@ -13,14 +13,14 @@ export function getInitialKanbanData(): Pick<
   KanbanStore,
   "boardTitle" | "columnIds" | "tasks"
 > {
-  return { ...KANBAN_INITIAL_DATA }
+  return createKanbanInitialData(Date.now())
 }
 
 export const useKanbanStore = create<KanbanStore>()(
   devtools(
     persist(
       (...args) => ({
-        ...KANBAN_INITIAL_DATA,
+        ...createKanbanInitialData(Date.now()),
         ...createTasksSlice(...args),
       }),
       {

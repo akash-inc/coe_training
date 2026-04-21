@@ -1,0 +1,50 @@
+.kanban-dashboard {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--social-bg) 92%, transparent);
+}
+
+.kanban-dashboard-heading {
+  font-family: var(--heading);
+  font-size: var(--board-section, 0.875rem);
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--text-h);
+}
+
+.kanban-dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.kanban-dashboard-metric {
+  margin: 0;
+}
+
+.kanban-dashboard-metric dt {
+  font-size: var(--board-label, 0.6875rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, var(--text));
+  opacity: 0.85;
+  margin: 0 0 2px;
+}
+
+.kanban-dashboard-metric dd {
+  font-size: var(--board-body, 0.75rem);
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-h);
+}
+
+.kanban-dashboard-metric-wide {
+  grid-column: 1 / -1;
+}
+
+.kanban-dashboard-metric-wide dd {
+  font-weight: 500;
+}

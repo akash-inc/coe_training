@@ -5,4 +5,14 @@ export type Task = {
   title: string
   content: string
   column: ColumnId
+  createdAt: number
+  dueDate?: number | null
+  completedAt?: number | null
+}
+
+/** `addTask` accepts this shape; the store fills omitted timestamps. */
+export type TaskDraft = Omit<Task, "createdAt" | "dueDate" | "completedAt"> & {
+  createdAt?: number
+  dueDate?: number | null
+  completedAt?: number | null
 }

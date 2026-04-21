@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { ColumnId } from "../../types"
 import { useKanbanStore } from "../../store"
+import Dashboard from "../Dashboard/Dashboard"
 import AddTaskForm from "./AddTaskForm"
 import Column from "./Column"
 import TaskCard from "./TaskCard"
@@ -40,6 +41,7 @@ export default function Board() {
   return (
     <main className="board">
       <h1 className="board-title">{boardTitle}</h1>
+      <Dashboard tasks={tasks} />
       <AddTaskForm columnIds={columnIds} onAdd={addTask} />
       <div className="board-columns">
         {columnIds.map((column) => (

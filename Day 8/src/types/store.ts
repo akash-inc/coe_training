@@ -1,4 +1,4 @@
-import type { ColumnId, Task } from "./board"
+import type { ColumnId, Task, TaskDraft } from "./board"
 
 export type BoardSlice = {
   boardTitle: string
@@ -7,7 +7,7 @@ export type BoardSlice = {
 
 export type TasksSlice = {
   tasks: Task[]
-  addTask: (task: Task) => void
+  addTask: (task: TaskDraft) => void
   updateTask: (id: string, updates: Partial<Omit<Task, "id">>) => void
   moveTask: (id: string, column: ColumnId) => void
   removeTask: (id: string) => void

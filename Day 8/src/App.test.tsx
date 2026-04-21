@@ -36,7 +36,7 @@ describe('Kanban board', () => {
       expect(dashboard).toHaveTextContent('25%')
       expect(dashboard).toHaveTextContent('Overdue')
       expect(dashboard).toHaveTextContent('3d 8h')
-      expect(dashboard).toHaveTextContent('Insufficient data')
+      expect(dashboard).toHaveTextContent('Stable')
     })
 
     it('updates completion metrics when a task moves to Done', () => {
@@ -47,7 +47,7 @@ describe('Kanban board', () => {
       })
 
       const dashboard = screen.getByRole('region', { name: /analytics dashboard/i })
-      expect(dashboard).toHaveTextContent('50%')
+      expect(dashboard).toHaveTextContent('30%')
       expect(dashboard).toHaveTextContent('Completed')
     })
   })
