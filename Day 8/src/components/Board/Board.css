@@ -106,6 +106,56 @@
   cursor: grabbing;
 }
 
+.board-user-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+  font-size: var(--board-body);
+  color: var(--text);
+}
+
+.board-user-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-role-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--board-label);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+.board-user-signout {
+  font-family: var(--sans);
+  font-size: var(--board-btn);
+  font-weight: 500;
+  padding: var(--board-btn-pad);
+  border-radius: var(--board-btn-radius);
+  border: 1px solid var(--border);
+  background: var(--social-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.board-user-signout:hover {
+  border-color: var(--accent-border);
+}
+
 .board h1.board-title {
   font-family: var(--heading);
   font-weight: 500;

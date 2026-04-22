@@ -4,6 +4,11 @@
   text-align: left;
 }
 
+.app-auth-loading {
+  font-family: var(--sans);
+  color: var(--text);
+}
+
 @media (max-width: 1024px) {
   .app-shell {
     padding: 16px;

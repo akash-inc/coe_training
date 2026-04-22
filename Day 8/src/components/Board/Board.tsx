@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useShallow } from "zustand/react/shallow"
+import { useAuth } from "../../context/useAuth"
 import type { ColumnId } from "../../types"
 import { useKanbanStore } from "../../store"
 import Dashboard from "../Dashboard/Dashboard"
@@ -34,6 +35,7 @@ export default function Board() {
     })),
   )
 
+  const { authRequired, user, displayName, isAdmin, signOut } = useAuth()
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
   const [dropColumn, setDropColumn] = useState<ColumnId | null>(null)
 
@@ -58,6 +60,30 @@ export default function Board() {
 
   return (
     <main className="board">
+      {authRequired && user != null ? (
+        <div className="board-user-bar" aria-label="Account">
+          <span
+            className="board-user-name"
+            title={user.email ?? undefined}
+          >
+            {displayName}
+          </span>
+          {isAdmin ? (
+            <span className="board-role-pill" title="Admin">
+              Admin
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="board-user-signout"
+            onClick={() => {
+              void signOut()
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      ) : null}
       <h1 className="board-title">{boardTitle}</h1>
       {syncError ? (
         <div className="board-sync-error" role="alert">

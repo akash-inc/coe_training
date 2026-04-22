@@ -1,397 +1,219 @@
-# 🎯 Zustand Kanban Board - Master Plan
+# Day 8 — Zustand Kanban Board
 
-## 📊 Architecture Overview
+A training project: **React 19** + **TypeScript** + **Vite** Kanban board backed by **Zustand** (`persist`, `devtools`), with optional **Supabase** (Postgres) sync, **undo/redo**, an **activity log**, and a small **analytics dashboard**.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         ZUSTAND STORE                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ Board Slice  │  │ Tasks Slice  │  │ Users Slice  │          │
-│  ├──────────────┤  ├──────────────┤  ├──────────────┤          │
-│  │ - boardData  │  │ - tasks: {}  │  │ - users: {}  │          │
-│  │ - metadata   │  │ - optimistic │  │ - currentUser│          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────────────────────────────┐    │
-│  │Filters Slice │  │     COMPUTED/SELECTORS               │    │
-│  ├──────────────┤  ├──────────────────────────────────────┤    │
-│  │ - search     │  │ - getFilteredTasks()                 │    │
-│  │ - assignees  │  │ - getTasksByColumn()                 │    │
-│  │ - priorities │  │ - getColumnStats()                   │    │
-│  │ - sortBy     │  │ - canTransitionTask()                │    │
-│  └──────────────┘  └──────────────────────────────────────┘    │
-│                                                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                         MIDDLEWARE LAYER                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐        │
-│  │   Immer     │  │   Persist    │  │  Cross-Tab Sync │        │
-│  │ (mutations) │  │ (localStorage)│  │ (BroadcastAPI)  │        │
-│  └─────────────┘  └──────────────┘  └─────────────────┘        │
-│                                                                   │
-│  ┌─────────────┐                                                 │
-│  │  DevTools   │  ← Debug state changes                         │
-│  └─────────────┘                                                 │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↕
-┌─────────────────────────────────────────────────────────────────┐
-│                      REACT COMPONENTS                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  Board → Column → TaskCard → User Avatar                        │
-│         ↑                                                         │
-│    FilterBar (controls filters slice)                           │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
+## Requirements
+
+- Node.js 20+ recommended
+- npm (or compatible client)
+
+## Quick start
+
+```bash
+cd "Day 8"
+npm install
+npm run dev
 ```
 
----
+Open the URL Vite prints (typically `http://localhost:5173`).
 
-## 🔄 State Flow Diagram
+**Without Supabase:** Leave `VITE_SUPABASE_*` unset (or use empty values). The app uses generated seed data from [`src/store/initialData.ts`](src/store/initialData.ts) and persists board state to **localStorage** under the key `day-8-kanban`.
 
-```
-USER ACTION (Click/Drag)
-    ↓
-┌─────────────────────────┐
-│   Component Handler     │
-│  (e.g., onDragEnd)      │
-└─────────────────────────┘
-    ↓
-┌─────────────────────────────────────────┐
-│   Custom Hook (useTaskActions)          │
-│   - Validates state machine transitions │
-│   - Prepares optimistic update          │
-└─────────────────────────────────────────┘
-    ↓
-┌──────────────────────────────────────────────┐
-│  OPTIMISTIC UPDATE                            │
-│  1. Store rollback data                       │
-│  2. Immediately update UI (set state)         │
-│  3. Trigger async API call (mock)             │
-└──────────────────────────────────────────────┘
-    ↓                                    ↓
-┌─────────────┐                  ┌─────────────┐
-│  SUCCESS    │                  │   FAILURE   │
-│  - Commit   │                  │  - Rollback │
-│  - Clear    │                  │  - Restore  │
-└─────────────┘                  └─────────────┘
-    ↓
-┌──────────────────────────────┐
-│   MIDDLEWARE CHAIN           │
-│   1. Immer (mutate safely)   │
-│   2. Persist (save to local) │
-│   3. CrossTab (broadcast)    │
-│   4. DevTools (log)          │
-└──────────────────────────────┘
-    ↓
-┌──────────────────────────────┐
-│  STATE UPDATED               │
-│  Components re-render        │
-└──────────────────────────────┘
-```
+## npm scripts
 
----
+| Command | Purpose |
+|--------|---------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | `tsc -b` then production bundle |
+| `npm run preview` | Serve the production build |
+| `npm test` | Vitest (single run) |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run lint` | ESLint |
 
-## 🗂️ File Structure
+## What’s in the app
 
-```
-src/
-├── store/
-│   ├── index.ts                    # 🎯 Root store (combines all slices)
-│   ├── types.ts                    # 📝 All TypeScript interfaces
-│   │
-│   ├── slices/
-│   │   ├── boardSlice.ts           # Board metadata
-│   │   ├── tasksSlice.ts           # Tasks CRUD + optimistic
-│   │   ├── usersSlice.ts           # User management
-│   │   └── filtersSlice.ts         # Filtering/sorting state
-│   │
-│   ├── selectors/
-│   │   ├── taskSelectors.ts        # Computed/derived values
-│   │   └── columnSelectors.ts      # Column-specific logic
-│   │
-│   └── middleware/
-│       ├── crossTabSync.ts         # BroadcastChannel sync
-│       └── persistConfig.ts        # localStorage config
-│
-├── components/
-│   ├── Board/
-│   │   ├── Board.tsx               # Main board container
-│   │   ├── Column.tsx              # Status column
-│   │   └── TaskCard.tsx            # Draggable task card
-│   │
-│   ├── Filters/
-│   │   └── FilterBar.tsx           # Search, filters, sort
-│   │
-│   └── UI/
-│       ├── Avatar.tsx
-│       ├── Badge.tsx
-│       └── Dropdown.tsx
-│
-├── hooks/
-│   ├── useTaskActions.ts           # Task CRUD actions wrapper
-│   ├── useOptimistic.ts            # Optimistic update logic
-│   └── useDragAndDrop.ts           # DnD handlers
-│
-├── utils/
-│   ├── stateMachine.ts             # Task status transitions
-│   ├── mockApi.ts                  # Simulated API calls
-│   └── sortHelpers.ts              # Sorting utilities
-│
-└── App.tsx                          # Root component
-```
+### Board
 
----
+- **Columns:** To Do, In Progress, Review, Done (`ColumnId` in [`src/types/board.ts`](src/types/board.ts)).
+- **Tasks:** Add ([`AddTaskForm.tsx`](src/components/Board/AddTaskForm.tsx)), edit inline, delete, **HTML5 drag-and-drop** between columns ([`Board.tsx`](src/components/Board/Board.tsx), [`Column.tsx`](src/components/Board/Column.tsx), [`TaskCard.tsx`](src/components/Board/TaskCard.tsx)).
+- **Done column:** Moving a task to Done sets `completedAt`; moving it out clears `completedAt` ([`tasksSlice.ts`](src/store/slices/tasksSlice.ts)).
 
-## 📚 Learning Phases (10-Day Plan)
+### Dashboard
 
-### **Phase 1: Foundation (Days 1-2)**
-**Goal:** Setup slices with TypeScript
+[`Dashboard.tsx`](src/components/Dashboard/Dashboard.tsx) shows metrics from [`src/lib/analytics/dashboardMetrics.ts`](src/lib/analytics/dashboardMetrics.ts):
 
-```
-✅ Define all types (Task, User, Board, Filters)
-✅ Create basic slices (no middleware yet)
-✅ Combine slices in store/index.ts
-✅ Build simple UI to display tasks by column
-```
+- Total / active / completed / overdue counts, completion rate
+- Average lead time (created → completed) for Done tasks with timestamps
+- **Trend:** compares median lead time across **adjacent time periods** (default 7 days), with fallbacks so the UI always shows improving / declining / stable / em dash (no “insufficient data” copy)
 
-**Key Learnings:**
-- Slice pattern with `StateCreator`
-- Type-safe store with generics
-- Basic actions (add, update, delete)
+### Recent activity and history
 
----
+[`RecentActivity.tsx`](src/components/Board/RecentActivity.tsx):
 
-### **Phase 2: Middleware Magic (Days 3-4)**
-**Goal:** Add Immer, Persist, DevTools
+- **Activity log** — newest-first list of committed actions (add, update, move, remove)
+- **Undo / Redo** — snapshot-based; new commits clear the redo stack
+
+### Sync error banner
+
+When Supabase mutations or **undo/redo reconciliation** fails, [`Board.tsx`](src/components/Board/Board.tsx) shows an alert with `syncError` and a dismiss control (`clearSyncError`).
+
+## State management (Zustand)
+
+[`src/store/index.ts`](src/store/index.ts) defines `useKanbanStore`:
+
+| Area | Details |
+|------|---------|
+| **Slices** | Board fields (`boardTitle`, `columnIds`), task CRUD actions, history (`pastSnapshots`, `futureSnapshots`, `activityLog`, `undo`, `redo`) |
+| **Commits** | Undoable task changes go through `commit()`, which saves a snapshot, clears redo, and appends to `activityLog` |
+| **Middleware** | `persist` (localStorage), `devtools` (dev only) |
+| **Remote** | If Supabase env is set, [`createTasksActionsWithRemote`](src/store/slices/tasksSlice.ts) runs the API after each optimistic commit; failures call `rollbackLastCommit` ([`rollbackLastCommit.ts`](src/store/history/rollbackLastCommit.ts)) |
+| **Selectors** | `Board` uses [`useShallow`](https://github.com/pmndrs/zustand) from `zustand/react/shallow` for one object-shaped subscription |
+| **resetBoard** | Offline: reapplies fresh seed data. With Supabase: clears history and calls `hydrateFromRemote()` (no server-side mass delete) |
+
+### Persistence rules
+
+- **Supabase off:** `partialize` persists `boardTitle`, `columnIds`, `tasks`.
+- **Supabase on:** only **`columnIds`** are persisted locally; `boardTitle` and `tasks` are loaded from the server after `hydrateFromRemote()`.
+
+### Undo/redo and Supabase
+
+After a local undo or redo, [`reconcileRemoteTasks`](src/lib/supabase/boardRemote.ts) applies a planned sequence of **delete / insert / update** so Postgres matches the new task list. On failure, the history step is **reverted locally** and `syncError` is set (same pattern as failed task mutations).
+
+## Supabase backend (optional)
+
+### 1. Create a project
+
+[supabase.com](https://supabase.com) — note the project **reference** in the API URL.
+
+### 2. Run the SQL migration
+
+In the Supabase **SQL** editor, run the full file [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql).
+
+It creates `public.boards` and `public.tasks`, seed data for board id `10000000-0000-4000-8000-000000000001`, enables **RLS**, and adds **demo-only** policies for `anon` / `authenticated` scoped to that board. Replace those policies before any real production use.
+
+### 3. Environment variables
+
+In the **Day 8** folder (next to `package.json`), copy [`.env.example`](.env.example) to **`.env`** or **`.env.local`**. Only names prefixed with `VITE_` are exposed to the browser.
+
+| Variable | Meaning |
+|----------|---------|
+| `VITE_SUPABASE_URL` | Project URL from **Settings → API** (no trailing slash) |
+| `VITE_SUPABASE_ANON_KEY` | **anon** `public` key (never put the service-role key here) |
+| `VITE_DEFAULT_BOARD_ID` | Must match the seeded board UUID in the migration |
+
+Restart `npm run dev` after edits. [`vite.config.ts`](vite.config.ts) sets `root` and `envDir` to this directory so `.env` resolves even if the shell cwd differs.
+
+### 4. Runtime behaviour with Supabase
+
+- [`App.tsx`](src/App.tsx) calls `hydrateFromRemote()` on mount when the client and default board id exist.
+- New tasks use **`crypto.randomUUID()`** so ids match UUID columns in Postgres.
+- Mapping between app `Task` and DB rows: [`taskRow.ts`](src/lib/supabase/taskRow.ts); generated types: [`database.types.ts`](src/lib/supabase/database.types.ts).
+
+### 5. Troubleshooting
+
+**JSON error `PGRST205` / HTTP 404 on `/rest/v1/boards`**
+
+The API cannot see `public.boards` — usually the migration was not run on **this** project, or `VITE_SUPABASE_URL` points at a different project than where you ran the SQL. Confirm **Table editor** shows `boards` and `tasks`.
+
+**App ignores `.env`**
+
+Run `cd "Day 8" && npm run dev` from the app root.
+
+**Tests**
+
+Vitest sets `VITE_SUPABASE_*` to empty strings so tests stay offline ([`vite.config.ts`](vite.config.ts) `test.env`).
+
+More Supabase-focused notes also live in [`README-SUPABASE.md`](README-SUPABASE.md) (pointer to this file for bookmarks).
+
+## Repository layout
 
 ```
-✅ Wrap store with immer() middleware
-✅ Add persist() for localStorage
-✅ Enable devtools() for debugging
-✅ Test state mutations with draft syntax
+Day 8/
+├── .env.example
+├── eslint.config.js
+├── index.html
+├── package.json
+├── public/                 # favicon.svg, icons.svg
+├── README.md
+├── README-SUPABASE.md
+├── supabase/
+│   └── migrations/
+│       └── 001_initial.sql
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── vite.config.ts
+└── src/
+    ├── App.tsx
+    ├── App.css
+    ├── App.test.tsx
+    ├── main.tsx
+    ├── index.css
+    ├── vite-env.d.ts
+    ├── test/
+    │   └── setup.ts
+    ├── types/
+    │   ├── board.ts        # Task, TaskDraft, ColumnId
+    │   ├── store.ts        # KanbanStore, UndoableSnapshot, activityEntry
+    │   ├── column.ts
+    │   ├── taskCard.ts
+    │   └── index.ts
+    ├── lib/
+    │   ├── analytics/
+    │   │   ├── dashboardMetrics.ts
+    │   │   └── dashboardMetrics.test.ts
+    │   └── supabase/
+    │       ├── client.ts
+    │       ├── boardRemote.ts
+    │       ├── taskRow.ts
+    │       ├── database.types.ts
+    │       └── planTaskReconciliation.test.ts
+    ├── store/
+    │   ├── index.ts
+    │   ├── index.test.ts
+    │   ├── initialData.ts
+    │   ├── actionHistory.test.ts
+    │   ├── slices/
+    │   │   └── tasksSlice.ts
+    │   └── history/
+    │       ├── cloneUndoable.ts
+    │       ├── activityLog.ts
+    │       ├── rollbackLastCommit.ts
+    │       └── rollbackLastCommit.test.ts
+    └── components/
+        ├── Board/
+        │   ├── Board.tsx
+        │   ├── Board.css
+        │   ├── Column.tsx
+        │   ├── Column.css
+        │   ├── TaskCard.tsx
+        │   ├── TaskCard.css
+        │   ├── AddTaskForm.tsx
+        │   ├── AddTaskForm.css
+        │   ├── RecentActivity.tsx
+        │   └── RecentActivity.css
+        └── Dashboard/
+            ├── Dashboard.tsx
+            └── Dashboard.css
 ```
 
-**Key Learnings:**
-- Immer draft mutations vs immutable updates
-- Persist configuration (whitelist/blacklist)
-- DevTools time-travel debugging
+## Testing
 
----
+Tests use **Vitest**, **Testing Library**, and **jsdom**.
 
-### **Phase 3: Computed State (Day 5)**
-**Goal:** Selectors for filtering and stats
+| File | Focus |
+|------|--------|
+| [`App.test.tsx`](src/App.test.tsx) | Board UI, dashboard text, drag, persist/rehydrate flow |
+| [`store/index.test.ts`](src/store/index.test.ts) | Store actions, `resetBoard` |
+| [`store/actionHistory.test.ts`](src/store/actionHistory.test.ts) | Activity log, undo/redo |
+| [`store/history/rollbackLastCommit.test.ts`](src/store/history/rollbackLastCommit.test.ts) | Failed remote commit rollback |
+| [`lib/analytics/dashboardMetrics.test.ts`](src/lib/analytics/dashboardMetrics.test.ts) | Metrics and trend |
+| [`lib/supabase/planTaskReconciliation.test.ts`](src/lib/supabase/planTaskReconciliation.test.ts) | Undo/redo remote diff planning |
 
-```
-✅ Create getFilteredTasks() selector
-✅ Build getTasksByColumn() for board columns
-✅ Add getColumnStats() for task counts
-✅ Implement multi-criteria sorting
-```
+## Git and secrets
 
-**Key Learnings:**
-- Selector patterns (avoid re-renders)
-- Derived state from multiple slices
-- Memoization with selectors
+[`.gitignore`](.gitignore) ignores `.env` and `.env.*` except `.env.example`. Do not commit real API keys; rotate keys if they were ever committed.
 
----
+## License / use
 
-### **Phase 4: State Machine (Days 6-7)**
-**Goal:** Task status workflow validation
-
-```
-✅ Define TASK_TRANSITIONS map
-✅ Implement canTransitionTask() validator
-✅ Add moveTask() with state machine logic
-✅ UI shows only valid next states
-```
-
-**State Machine Diagram:**
-```
-┌──────┐     ┌─────────────┐     ┌────────┐     ┌──────┐
-│ TODO │────→│ IN-PROGRESS │────→│ REVIEW │────→│ DONE │
-└──────┘     └─────────────┘     └────────┘     └──────┘
-   ↑              ↓                    ↓             ↓
-   └──────────────┴────────────────────┴─────────────┘
-         (Allow going back to TODO from any state)
-```
-
-**Key Learnings:**
-- Finite state machines
-- Validation before state updates
-- UI constraints based on current state
-
----
-
-### **Phase 5: Optimistic Updates (Days 8-9)**
-**Goal:** Instant UI, rollback on failure
-
-```
-✅ Add optimisticUpdates tracking in slice
-✅ Create rollback mechanism
-✅ Mock async API calls (setTimeout)
-✅ Handle success/failure scenarios
-```
-
-**Flow:**
-```
-User drags task → Column A to Column B
-    ↓
-1. Store current state (rollback point)
-2. Update UI immediately (optimistic)
-3. Call mockApi.updateTask() [2 sec delay]
-    ↓
-SUCCESS: Clear rollback data
-FAILURE: Restore from rollback → Show error toast
-```
-
-**Key Learnings:**
-- Optimistic vs pessimistic updates
-- Rollback patterns
-- Error handling with state restoration
-
----
-
-### **Phase 6: Cross-Tab Sync (Day 10)**
-**Goal:** Multiple tabs stay in sync
-
-```
-✅ Create BroadcastChannel subscriber
-✅ Listen for external state changes
-✅ Merge incoming updates
-✅ Test with 2 browser tabs side-by-side
-```
-
-**Architecture:**
-```
-Tab 1: User updates task
-   ↓
-Store updated
-   ↓
-BroadcastChannel.postMessage(newState)
-   ↓
-Tab 2: Receives message
-   ↓
-Merge state → Re-render
-```
-
-**Key Learnings:**
-- BroadcastChannel API
-- State synchronization strategies
-- Conflict resolution
-
----
-
-## 🎨 UI/UX Features
-
-### **Drag-and-Drop**
-- Use `@dnd-kit/core` or native HTML5 DnD
-- Visual feedback during drag
-- Column highlighting on hover
-
-### **Filters Panel**
-```
-┌────────────────────────────────────────┐
-│  🔍 Search: [___________]              │
-│                                        │
-│  👤 Assignee: [All] [Alice] [Bob]     │
-│  🎯 Priority: [All] [High] [Medium]   │
-│  🏷️  Tags: [Frontend] [Bug] [Feature] │
-│  📊 Sort: [Created ▼] [Priority ▲]    │
-└────────────────────────────────────────┘
-```
-
-### **Task Card Design**
-```
-┌─────────────────────────────────┐
-│  [!] Fix login bug         [👤] │ ← Priority + Avatar
-│  ──────────────────────────     │
-│  Description preview...         │
-│  🏷️ bug  frontend              │ ← Tags
-│  📅 2h ago                       │ ← Timestamp
-└─────────────────────────────────┘
-```
-
----
-
-## 🧪 Testing Checklist
-
-### **State Machine Tests**
-- ✅ Can move TODO → IN-PROGRESS
-- ✅ Cannot move TODO → DONE directly
-- ✅ Can move DONE → TODO (restart)
-
-### **Optimistic Update Tests**
-- ✅ UI updates before API response
-- ✅ Rollback on API failure
-- ✅ Multiple optimistic updates in queue
-
-### **Cross-Tab Tests**
-- ✅ Create task in Tab 1 → appears in Tab 2
-- ✅ Delete task in Tab 2 → removed from Tab 1
-- ✅ Both tabs show same filtered results
-
-### **Persistence Tests**
-- ✅ Reload page → state restored
-- ✅ localStorage has correct data
-- ✅ Partial persist (don't save filters)
-
----
-
-## 🚀 Advanced Challenges (After Completion)
-
-1. **Undo/Redo System**
-   - Store action history
-   - Time-travel through states
-
-2. **Real-time Collaboration**
-   - Replace mock API with WebSocket
-   - Show who's editing what
-
-3. **Batch Operations**
-   - Multi-select tasks
-   - Bulk status change
-
-4. **Performance Optimization**
-   - Virtualized lists (1000+ tasks)
-   - Shallow equality selectors
-
----
-
-## 📖 Key Concepts Summary
-
-| Concept | What You'll Learn | Where Used |
-|---------|------------------|------------|
-| **Slices** | Modular state separation | All 4 slices |
-| **Immer** | Mutable-style updates safely | Tasks slice |
-| **Persist** | State survival across reloads | All slices |
-| **DevTools** | Time-travel debugging | Everywhere |
-| **TypeScript** | Full type safety | All files |
-| **Selectors** | Computed/derived state | taskSelectors.ts |
-| **State Machine** | Controlled state transitions | moveTask() |
-| **Optimistic** | Instant UI, async confirmation | Task updates |
-| **Cross-Tab** | Multi-window synchronization | BroadcastChannel |
-| **Flux** | Unidirectional data flow | Action → Reducer pattern |
-
----
-
-## 🎯 Success Metrics
-
-By the end, you should be able to:
-
-✅ Explain when to use slices vs monolithic store  
-✅ Debug state with DevTools time-travel  
-✅ Implement rollback for failed operations  
-✅ Build type-safe stores with zero `any`  
-✅ Synchronize state across browser tabs  
-✅ Validate state transitions with state machines  
-✅ Optimize re-renders with selectors  
-✅ Persist only necessary data to localStorage  
-
----
-
-**Start with Phase 1, build incrementally, and you'll master Zustand! 🚀**
+Training / private use — adjust for your organization.

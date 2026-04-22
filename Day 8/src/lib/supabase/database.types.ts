@@ -1,6 +1,23 @@
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          id: string
+          role: "user" | "admin"
+          created_at: string
+        }
+        Insert: {
+          id: string
+          role?: "user" | "admin"
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          role?: "user" | "admin"
+          created_at?: string
+        }
+      }
       boards: {
         Row: {
           id: string
