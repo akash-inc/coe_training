@@ -71,7 +71,7 @@ function pullRemoteStateAfterOtherTabWrote() {
       return
     }
     let finished = false
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const timeoutRef: { id?: ReturnType<typeof setTimeout> } = {}
     const finish = () => {
       if (finished) {
         return
@@ -81,14 +81,14 @@ function pullRemoteStateAfterOtherTabWrote() {
     }
     const { data: sub } = client.auth.onAuthStateChange((_event, next) => {
       if (next != null) {
-        if (timeoutId !== undefined) {
-          clearTimeout(timeoutId)
+        if (timeoutRef.id !== undefined) {
+          clearTimeout(timeoutRef.id)
         }
         sub.subscription.unsubscribe()
         finish()
       }
     })
-    timeoutId = window.setTimeout(() => {
+    timeoutRef.id = window.setTimeout(() => {
       sub.subscription.unsubscribe()
       finish()
     }, 3_000)
@@ -112,7 +112,9 @@ export function notifyKanbanChangedFromThisTab() {
       KANBAN_REMOTE_SYNC_BUMP_KEY,
       `${Date.now()}-${suffix}`,
     )
-  } catch {}
+  } catch {
+    // localStorage can throw in private mode or when storage is full.
+  }
 }
 
 export function __resetCrossTabSyncForTests() {

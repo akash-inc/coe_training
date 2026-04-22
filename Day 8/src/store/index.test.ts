@@ -101,7 +101,7 @@ describe("cross-tab sync", () => {
     const newValue = JSON.stringify({ some: "data" })
 
     const storageListeners = addEventListenerSpy.mock.calls.filter(
-      ([event]) => event === "storage"
+      ([event]: [string, ...unknown[]]) => event === "storage",
     )
     expect(storageListeners.length).toBeGreaterThan(0)
     const handler = storageListeners[0][1] as (ev: StorageEvent) => void
@@ -122,7 +122,7 @@ describe("cross-tab sync", () => {
     connectKanbanCrossTabSync(useKanbanStore)
     connectKanbanCrossTabSync(useKanbanStore)
     const storageListeners = addEventListenerSpy.mock.calls.filter(
-      ([event]) => event === "storage"
+      ([event]: [string, ...unknown[]]) => event === "storage",
     )
     expect(storageListeners.length).toBe(1)
   })

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import App from './App'
 import { AuthProvider } from './context/AuthProvider'
 import { getInitialKanbanData, KANBAN_STORAGE_KEY, useKanbanStore } from './store'
+import { useOnboardingStore } from './store/onboardingStore'
 
 function authWrapper({ children }: { children: ReactNode }) {
   return <AuthProvider>{children}</AuthProvider>
@@ -13,6 +14,8 @@ describe('Kanban board', () => {
   beforeEach(() => {
     localStorage.clear()
     useKanbanStore.setState(getInitialKanbanData())
+    useOnboardingStore.getState().clearOnSignOut()
+    useOnboardingStore.setState({ completedUserIds: [], persistHydrated: true })
   })
 
   it('displays board title, four columns, and sample task', () => {
