@@ -7,7 +7,7 @@ import {
 import {
   getDefaultBoardId,
   getSupabaseClient,
-  isSupabaseConfigured,
+  isRemoteBoardPersistenceEnabled,
 } from "../lib/supabase/client"
 import type { KanbanStore, UndoableSnapshot } from "../types"
 import { appendActivityLog } from "./history/activityLog"
@@ -18,15 +18,12 @@ import {
   createTasksActions,
   createTasksActionsWithRemote,
 } from "./slices/tasksSlice"
+import { KANBAN_PERSIST_KEY } from "../lib/kanbanStorageKeys"
+import { notifyKanbanChangedFromThisTab } from "../lib/crossTabSync"
 
 export type { KanbanStore } from "../types"
 
-/** localStorage key for `persist`; exported for tests. */
-export const KANBAN_STORAGE_KEY = "day-8-kanban"
-
-function remoteBoardPersistenceEnabled(): boolean {
-  return isSupabaseConfigured() && getDefaultBoardId() != null
-}
+export const KANBAN_STORAGE_KEY = KANBAN_PERSIST_KEY
 
 export function getInitialKanbanData(): Pick<
   KanbanStore,
@@ -97,6 +94,7 @@ export const useKanbanStore = create<KanbanStore>()(
               boardId: boardId!,
               client: supabase!,
               setSyncError,
+              onRemoteSuccess: notifyKanbanChangedFromThisTab,
             })
           : createTasksActions(commit)
 
@@ -130,14 +128,16 @@ export const useKanbanStore = create<KanbanStore>()(
           ...createKanbanInitialData(Date.now()),
           ...taskActions,
           resetBoard: () => {
-            if (remoteBoardPersistenceEnabled()) {
+            if (isRemoteBoardPersistenceEnabled()) {
               set({
                 pastSnapshots: [],
                 futureSnapshots: [],
                 activityLog: [],
                 syncError: null,
               })
-              void hydrateFromRemote()
+              void hydrateFromRemote().then(() => {
+                notifyKanbanChangedFromThisTab()
+              })
             } else {
               set({
                 ...createKanbanInitialData(Date.now()),
@@ -150,7 +150,7 @@ export const useKanbanStore = create<KanbanStore>()(
           clearSyncError: () => set({ syncError: null }),
           undo: () => {
             const syncRemote =
-              remoteBoardPersistenceEnabled() &&
+              isRemoteBoardPersistenceEnabled() &&
               getSupabaseClient() != null &&
               getDefaultBoardId() != null
             const client = getSupabaseClient()
@@ -202,13 +202,14 @@ export const useKanbanStore = create<KanbanStore>()(
                   })
                 } else {
                   set({ syncError: null })
+                  notifyKanbanChangedFromThisTab()
                 }
               })
             }
           },
           redo: () => {
             const syncRemote =
-              remoteBoardPersistenceEnabled() &&
+              isRemoteBoardPersistenceEnabled() &&
               getSupabaseClient() != null &&
               getDefaultBoardId() != null
             const client = getSupabaseClient()
@@ -258,6 +259,7 @@ export const useKanbanStore = create<KanbanStore>()(
                   })
                 } else {
                   set({ syncError: null })
+                  notifyKanbanChangedFromThisTab()
                 }
               })
             }
@@ -265,9 +267,9 @@ export const useKanbanStore = create<KanbanStore>()(
         }
       },
       {
-        name: KANBAN_STORAGE_KEY,
+        name: KANBAN_PERSIST_KEY,
         partialize: (state) =>
-          remoteBoardPersistenceEnabled()
+          isRemoteBoardPersistenceEnabled()
             ? { columnIds: state.columnIds }
             : {
                 boardTitle: state.boardTitle,

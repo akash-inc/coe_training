@@ -1,4 +1,9 @@
 import { getInitialKanbanData, useKanbanStore } from "./index"
+import { vi, describe, beforeEach, afterEach, it, expect } from "vitest"
+import {
+  __resetCrossTabSyncForTests,
+  connectKanbanCrossTabSync,
+} from "../lib/crossTabSync"
 
 describe("kanban store", () => {
   beforeEach(() => {
@@ -68,4 +73,58 @@ describe("kanban store", () => {
     expect(state.tasks.some((t) => t.id === "task-1")).toBe(true)
     expect(typeof state.addTask).toBe("function")
   })
+})
+
+describe("cross-tab sync", () => {
+  let addEventListenerSpy: ReturnType<typeof vi.spyOn>
+  let rehydrateSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    __resetCrossTabSyncForTests()
+    localStorage.clear()
+    useKanbanStore.setState(getInitialKanbanData())
+
+    if (!useKanbanStore.persist) throw new Error("Store missing persist middleware")
+    rehydrateSpy = vi.spyOn(useKanbanStore.persist, "rehydrate").mockResolvedValue(undefined)
+
+    addEventListenerSpy = vi.spyOn(window, "addEventListener")
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("calls persist.rehydrate when storage event for KANBAN_STORAGE_KEY is dispatched", async () => {
+    connectKanbanCrossTabSync(useKanbanStore)
+    const persistedKey = useKanbanStore.persist.getOptions().name
+    const oldValue = null
+    const newValue = JSON.stringify({ some: "data" })
+
+    const storageListeners = addEventListenerSpy.mock.calls.filter(
+      ([event]) => event === "storage"
+    )
+    expect(storageListeners.length).toBeGreaterThan(0)
+    const handler = storageListeners[0][1] as (ev: StorageEvent) => void
+
+    const evt = new StorageEvent("storage", {
+      key: persistedKey,
+      newValue,
+      oldValue,
+      storageArea: localStorage,
+    })
+
+    handler(evt)
+
+    expect(rehydrateSpy).toHaveBeenCalledOnce()
+  })
+
+  it("connectKanbanCrossTabSync is idempotent (registers only one storage listener)", () => {
+    connectKanbanCrossTabSync(useKanbanStore)
+    connectKanbanCrossTabSync(useKanbanStore)
+    const storageListeners = addEventListenerSpy.mock.calls.filter(
+      ([event]) => event === "storage"
+    )
+    expect(storageListeners.length).toBe(1)
+  })
+
 })

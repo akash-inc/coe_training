@@ -45,3 +45,7 @@ export function getDefaultBoardId(): string | null {
   const id = envTrim(import.meta.env.VITE_DEFAULT_BOARD_ID)
   return id.length > 0 ? id : null
 }
+
+export function isRemoteBoardPersistenceEnabled(): boolean {
+  return isSupabaseConfigured() && getDefaultBoardId() != null
+}

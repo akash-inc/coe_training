@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Board from "./components/Board/Board"
 import LoginPage from "./components/Auth/LoginPage"
 import SignUpPage from "./components/Auth/SignUpPage"
 import { useAuth } from "./context/useAuth"
+import { connectKanbanCrossTabSync } from "./lib/crossTabSync"
 import {
   getDefaultBoardId,
   isSupabaseConfigured,
@@ -12,6 +13,10 @@ import "./App.css"
 
 export default function App() {
   const { authRequired, isReady, session } = useAuth()
+
+  useLayoutEffect(() => {
+    connectKanbanCrossTabSync(useKanbanStore)
+  }, [])
   const [authScreen, setAuthScreen] = useState<"login" | "signup">("login")
   const hadSessionRef = useRef(false)
 

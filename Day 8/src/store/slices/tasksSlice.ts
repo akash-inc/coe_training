@@ -12,7 +12,6 @@ import type {
   TaskDraft,
   TasksSlice,
 } from "../../types"
-
 function taskFromDraft(draft: TaskDraft, now: number): Task {
   return {
     id: draft.id,
@@ -108,6 +107,8 @@ export type RemoteTasksDeps = {
   boardId: string
   client: SupabaseClient
   setSyncError: (message: string | null) => void
+  /** e.g. notify other browser tabs to refetch after a successful write */
+  onRemoteSuccess?: () => void
 }
 
 export function createTasksActionsWithRemote(
@@ -123,6 +124,7 @@ export function createTasksActionsWithRemote(
       d.setSyncError(error.message)
     } else {
       d.setSyncError(null)
+      d.onRemoteSuccess?.()
     }
   }
 
