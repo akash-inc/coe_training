@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react'
 import { withCardSurface } from '../patterns/withCardSurface'
 import { TriState, type TriStateValue } from '../patterns/TriState'
 import { headlessTabClass, headlessTabListClass } from '../../lib/headlessTabClass'
+import { TokenThemedCallout } from '../molecules/TokenThemedCallout'
 import { cn } from '../../lib/cn'
 
 type MockPhase = 0 | 1 | 2
@@ -47,9 +48,31 @@ export function ComponentsShowcase() {
           <code className="font-mono text-xs">data-color-mode</code> × <code className="font-mono text-xs">data-visual-style</code>, and per-type{' '}
           <code className="font-mono text-xs">data-accent-type</code> in CSS. Local patterns:{' '}
           <code className="rounded-sm bg-code px-1 font-mono text-xs">TriState</code> and{' '}
-          <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code>.
+          <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code>. <code className="rounded-sm bg-code px-1 font-mono text-xs">@emotion/styled</code> can read
+          the same variables via a shared <code className="rounded-sm bg-code px-1 font-mono text-xs">theme</code> (see below).
         </p>
       </header>
+
+      <section
+        className="flex max-w-2xl flex-col gap-3"
+        aria-labelledby="showcase-emotion-heading"
+      >
+        <h2 id="showcase-emotion-heading" className="text-lg font-semibold text-foreground">
+          CSS-in-JS: <code className="font-mono text-base">@emotion/styled</code> + design tokens
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          The Emotion <code className="font-mono text-xs">theme</code> in <code className="font-mono text-xs">src/theme/emotionTokenTheme.ts</code> holds{' '}
+          <code className="font-mono text-xs">var(--…)</code> strings aligned with <code className="font-mono text-xs">semantic-themes.css</code>, not duplicate hex
+          values. Toggling theme controls updates CSS on <code className="font-mono text-xs">&lt;html&gt;</code>, and this callout updates with it.
+        </p>
+        <TokenThemedCallout title="Emotion + CSS variables">
+          <p>
+            <span className="font-medium text-foreground">Styled components</span> use{' '}
+            <code className="rounded-sm bg-code px-1 font-mono text-xs">theme.accentBorder</code>, <code className="rounded-sm bg-code px-1 font-mono text-xs">theme.accentBg</code>, and
+            other keys that resolve the same <code className="font-mono text-xs">--</code> tokens as Tailwind-style utilities.
+          </p>
+        </TokenThemedCallout>
+      </section>
 
       <section
         className="flex max-w-2xl flex-col gap-3"
