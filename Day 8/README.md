@@ -189,6 +189,19 @@ If a **Supabase** write fails—or **undo/redo** cannot **reconcile** the databa
 
 When Supabase env vars are present, the app can require sign-in. [`AuthProvider.tsx`](src/context/AuthProvider.tsx) loads a session, surfaces **sign in / sign up** screens from [`App.tsx`](src/App.tsx), and exposes **role** and **display name** for the board header. Session lives in the Supabase client (browser storage that Supabase controls).
 
+**Onboarding (first-time profile after sign-in):** If the user has not completed onboarding (tracked per `userId` in [`useOnboardingStore`](src/store/onboardingStore.ts)), [`App.tsx`](src/App.tsx) shows [`OnboardingPage`](src/components/Onboarding/OnboardingPage.tsx) before the board.
+
+**How the state machine is used (XState v5 + Zustand, not the Kanban store):**
+
+| Piece | Role |
+|--------|------|
+| **XState machine** [`onboarding.machine.ts`](src/lib/onboarding/onboarding.machine.ts) | Defines **wizard flow only**: which **step** you are in (`collectDisplayName` → `collectUseCase` → `submitting` → `success`), **form context** (display name, use case, error text), and **valid transitions** (e.g. `NEXT` only if the name is non-empty). It does **not** perform HTTP; the machine stays **pure** for steps and UI state. |
+| **Zustand** [`onboardingStore.ts`](src/store/onboardingStore.ts) | Holds an XState **actor** (`createActor` + `subscribe`), exposes `snapshot` and `send` to React, and **persists** `completedUserIds` so returning users skip the wizard. The Kanban store is unchanged. |
+| **Network** | [`onboardingProfileSubmit.ts`](src/lib/onboarding/onboardingProfileSubmit.ts) only builds the `updateUser` payload. [`OnboardingPage`](src/components/Onboarding/OnboardingPage.tsx) **fires** `auth.updateUser` (no `await` on the client promise) and uses **`queueMicrotask`** to `send({ type: "API_SUCCESS" })` so the UI is not stuck if the library promise does not resolve after a successful `PUT /user`. |
+| **Events** the UI sends | `SET_*` while typing, `NEXT` / `BACK`, `FINISH` to enter `submitting`, `API_SUCCESS` / `API_FAILURE` when the client decides the flow can advance or show an error. |
+
+So: **XState = explicit wizard states and form context; Zustand = actor + persistence of “who finished”; network = started from React with explicit completion events, not a long‑running `invoke` inside the machine.**
+
 ---
 
 ### 6) State management: Zustand, middleware, and “where does truth live?”
