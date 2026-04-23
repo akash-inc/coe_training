@@ -40,6 +40,16 @@ export function PokedexApp() {
   }, [selected, filtered])
 
   useEffect(() => {
+    const el = document.documentElement
+    const primary = selectedInView?.types[0]
+    if (primary) {
+      el.setAttribute('data-accent-type', primary)
+    } else {
+      el.removeAttribute('data-accent-type')
+    }
+  }, [selectedInView])
+
+  useEffect(() => {
     let cancelled = false
     fetchPokemonSummaries(INITIAL_PAGE_SIZE, 0)
       .then((rows) => {

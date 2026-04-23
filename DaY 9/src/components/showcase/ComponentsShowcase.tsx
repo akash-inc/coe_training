@@ -43,11 +43,11 @@ export function ComponentsShowcase() {
           >
             Headless UI
           </a>{' '}
-          for tabs, disclosures, listbox, field, input, checkbox, and button in the Pokédex toolbar
-          and shell. Local patterns: <code className="rounded-sm bg-code px-1 font-mono text-xs">TriState</code> (render prop) and{' '}
-          <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code> (HOC). The real app uses{' '}
-          <code className="font-mono text-xs">TriState</code> for fetch state, HOCs for panels / errors / empty detail, and{' '}
-          <code className="font-mono text-xs">PokemonGrid</code> skeletons while loading.
+          for tabs, disclosures, listbox, field, input, checkbox, and switch. Global appearance uses{' '}
+          <code className="font-mono text-xs">data-color-mode</code> × <code className="font-mono text-xs">data-visual-style</code>, and per-type{' '}
+          <code className="font-mono text-xs">data-accent-type</code> in CSS. Local patterns:{' '}
+          <code className="rounded-sm bg-code px-1 font-mono text-xs">TriState</code> and{' '}
+          <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code>.
         </p>
       </header>
 

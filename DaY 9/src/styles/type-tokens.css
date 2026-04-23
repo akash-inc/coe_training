@@ -1,0 +1,162 @@
+/* Canonical per-type accent hue (tuned per color mode for contrast) */
+html[data-color-mode='light'] {
+  --type-normal: #6d6d5c;
+  --type-fire: #e45a1c;
+  --type-water: #3b6fc8;
+  --type-electric: #c4a200;
+  --type-grass: #4a9c3a;
+  --type-ice: #4a8fa0;
+  --type-fighting: #a82820;
+  --type-poison: #8a2f8a;
+  --type-ground: #b89a2e;
+  --type-flying: #7a68c0;
+  --type-psychic: #d6456a;
+  --type-bug: #7a8c18;
+  --type-rock: #9a8230;
+  --type-ghost: #5a4a7a;
+  --type-dragon: #4f38c8;
+  --type-dark: #4a3c34;
+  --type-steel: #6a6a8a;
+  --type-fairy: #c97a8a;
+}
+
+html[data-color-mode='dark'] {
+  --type-normal: #c4c4a4;
+  --type-fire: #fb923c;
+  --type-water: #6fa3ff;
+  --type-electric: #facc15;
+  --type-grass: #86efac;
+  --type-ice: #7dd3fc;
+  --type-fighting: #f87171;
+  --type-poison: #d946ef;
+  --type-ground: #d4b24c;
+  --type-flying: #a78bfa;
+  --type-psychic: #fb7185;
+  --type-bug: #b5e16a;
+  --type-rock: #d4b87a;
+  --type-ghost: #a5b4fc;
+  --type-dragon: #a78bfa;
+  --type-dark: #a3a0a0;
+  --type-steel: #b4bcd8;
+  --type-fairy: #f0abfc;
+}
+
+/* Selection-driven accent: shell picks up primary type */
+html[data-accent-type='normal'] {
+  --accent: var(--type-normal);
+  --accent-bg: color-mix(in srgb, var(--type-normal) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-normal) 50%, var(--border));
+}
+html[data-accent-type='fire'] {
+  --accent: var(--type-fire);
+  --accent-bg: color-mix(in srgb, var(--type-fire) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-fire) 50%, var(--border));
+}
+html[data-accent-type='water'] {
+  --accent: var(--type-water);
+  --accent-bg: color-mix(in srgb, var(--type-water) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-water) 50%, var(--border));
+}
+html[data-accent-type='electric'] {
+  --accent: var(--type-electric);
+  --accent-bg: color-mix(in srgb, var(--type-electric) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-electric) 50%, var(--border));
+}
+html[data-accent-type='grass'] {
+  --accent: var(--type-grass);
+  --accent-bg: color-mix(in srgb, var(--type-grass) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-grass) 50%, var(--border));
+}
+html[data-accent-type='ice'] {
+  --accent: var(--type-ice);
+  --accent-bg: color-mix(in srgb, var(--type-ice) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-ice) 50%, var(--border));
+}
+html[data-accent-type='fighting'] {
+  --accent: var(--type-fighting);
+  --accent-bg: color-mix(in srgb, var(--type-fighting) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-fighting) 50%, var(--border));
+}
+html[data-accent-type='poison'] {
+  --accent: var(--type-poison);
+  --accent-bg: color-mix(in srgb, var(--type-poison) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-poison) 50%, var(--border));
+}
+html[data-accent-type='ground'] {
+  --accent: var(--type-ground);
+  --accent-bg: color-mix(in srgb, var(--type-ground) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-ground) 50%, var(--border));
+}
+html[data-accent-type='flying'] {
+  --accent: var(--type-flying);
+  --accent-bg: color-mix(in srgb, var(--type-flying) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-flying) 50%, var(--border));
+}
+html[data-accent-type='psychic'] {
+  --accent: var(--type-psychic);
+  --accent-bg: color-mix(in srgb, var(--type-psychic) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-psychic) 50%, var(--border));
+}
+html[data-accent-type='bug'] {
+  --accent: var(--type-bug);
+  --accent-bg: color-mix(in srgb, var(--type-bug) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-bug) 50%, var(--border));
+}
+html[data-accent-type='rock'] {
+  --accent: var(--type-rock);
+  --accent-bg: color-mix(in srgb, var(--type-rock) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-rock) 50%, var(--border));
+}
+html[data-accent-type='ghost'] {
+  --accent: var(--type-ghost);
+  --accent-bg: color-mix(in srgb, var(--type-ghost) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-ghost) 50%, var(--border));
+}
+html[data-accent-type='dragon'] {
+  --accent: var(--type-dragon);
+  --accent-bg: color-mix(in srgb, var(--type-dragon) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-dragon) 50%, var(--border));
+}
+html[data-accent-type='dark'] {
+  --accent: var(--type-dark);
+  --accent-bg: color-mix(in srgb, var(--type-dark) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-dark) 50%, var(--border));
+}
+html[data-accent-type='steel'] {
+  --accent: var(--type-steel);
+  --accent-bg: color-mix(in srgb, var(--type-steel) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-steel) 50%, var(--border));
+}
+html[data-accent-type='fairy'] {
+  --accent: var(--type-fairy);
+  --accent-bg: color-mix(in srgb, var(--type-fairy) 20%, transparent);
+  --accent-border: color-mix(in srgb, var(--type-fairy) 50%, var(--border));
+}
+
+.type-badge {
+  --tb: var(--type-unknown, var(--type-normal));
+  background: color-mix(in srgb, var(--tb) 28%, var(--card-bg));
+  color: var(--fg);
+  border-color: color-mix(in srgb, var(--tb) 45%, var(--border));
+  border-width: 1px;
+  border-style: solid;
+}
+
+.type-badge[data-type='normal'] { --tb: var(--type-normal); }
+.type-badge[data-type='fire'] { --tb: var(--type-fire); }
+.type-badge[data-type='water'] { --tb: var(--type-water); }
+.type-badge[data-type='electric'] { --tb: var(--type-electric); }
+.type-badge[data-type='grass'] { --tb: var(--type-grass); }
+.type-badge[data-type='ice'] { --tb: var(--type-ice); }
+.type-badge[data-type='fighting'] { --tb: var(--type-fighting); }
+.type-badge[data-type='poison'] { --tb: var(--type-poison); }
+.type-badge[data-type='ground'] { --tb: var(--type-ground); }
+.type-badge[data-type='flying'] { --tb: var(--type-flying); }
+.type-badge[data-type='psychic'] { --tb: var(--type-psychic); }
+.type-badge[data-type='bug'] { --tb: var(--type-bug); }
+.type-badge[data-type='rock'] { --tb: var(--type-rock); }
+.type-badge[data-type='ghost'] { --tb: var(--type-ghost); }
+.type-badge[data-type='dragon'] { --tb: var(--type-dragon); }
+.type-badge[data-type='dark'] { --tb: var(--type-dark); }
+.type-badge[data-type='steel'] { --tb: var(--type-steel); }
+.type-badge[data-type='fairy'] { --tb: var(--type-fairy); }

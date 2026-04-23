@@ -22,8 +22,8 @@ export function PokedexLayout({
           {headerAside ? <div className="min-w-0">{headerAside}</div> : null}
         </div>
         <p className="max-w-2xl text-[0.95rem] text-muted-foreground">
-          Browse species from the open PokéAPI — theme controls land in a later
-          phase.
+          Browse species from the open PokéAPI. Use the header to switch color mode and vivid
+          style; selection tints the shell with the primary type.
         </p>
       </header>
       <main className="grid flex-1 grid-cols-1 items-start gap-5 min-[841px]:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">

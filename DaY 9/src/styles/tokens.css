@@ -1,4 +1,8 @@
-:root {
+/**
+ * Global scale tokens only. Surface / accent / type colors come from
+ * `semantic-themes.css` and `type-tokens.css` (driven by html data-*).
+ */
+html {
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -8,52 +12,7 @@
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-
-  --fg: #08060d;
-  --muted-fg: #6b6375;
-  --bg: #fff;
-  --card-bg: #f8f8fa;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.08) 0 4px 12px -2px, rgba(0, 0, 0, 0.04) 0 2px 4px -1px;
-
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
-
-  --type-badge-bg: color-mix(in srgb, var(--border) 55%, var(--card-bg));
-  --type-badge-fg: var(--muted-fg);
-
-  font: 16px/145% var(--sans);
-  letter-spacing: 0.02em;
-  color-scheme: light dark;
-  color: var(--muted-fg);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fg: #f3f4f6;
-    --muted-fg: #9ca3af;
-    --bg: #16171d;
-    --card-bg: #1f2028;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.45) 0 8px 20px -4px, rgba(0, 0, 0, 0.3) 0 2px 6px -2px;
-
-    --type-badge-bg: color-mix(in srgb, var(--border) 70%, var(--card-bg));
-    --type-badge-fg: var(--muted-fg);
-  }
 }

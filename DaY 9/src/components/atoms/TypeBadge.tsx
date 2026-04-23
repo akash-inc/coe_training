@@ -8,10 +8,7 @@ type TypeBadgeProps = {
 export function TypeBadge({ type, className }: TypeBadgeProps) {
   return (
     <span
-      className={cn(
-        'inline-block rounded-sm border border-border bg-type-badge-bg px-2 py-1 text-type-badge-fg text-xs leading-tight capitalize',
-        className,
-      )}
+      className={cn('type-badge inline-block rounded-sm px-2 py-1 text-xs leading-tight capitalize', className)}
       data-type={type}
     >
       {type}
