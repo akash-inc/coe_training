@@ -1,5 +1,6 @@
 import type { PokemonSummary } from '../../lib/pokeapi'
 import { formatPokemonDisplayName } from '../../lib/pokeapi/formatPokemonDisplayName'
+import { DetailSelectPrompt } from '../pokedex/pokedexShells'
 import { Accordion } from '../ui/accordion/Accordion'
 import { Tabs } from '../ui/tabs/Tabs'
 import { IdChip } from '../atoms/IdChip'
@@ -32,11 +33,11 @@ function TypeLineText({ types }: { types: string[] }) {
 export function PokemonDetailStub({ pokemon }: PokemonDetailStubProps) {
   if (!pokemon) {
     return (
-      <div className="flex min-h-40 flex-col items-center justify-center gap-4">
-        <p className="text-[0.95rem] text-muted-foreground">
+      <DetailSelectPrompt>
+        <p className="m-0 max-w-sm text-center text-[0.95rem] text-muted-foreground">
           Select a Pokémon from the list to see its sprite and types.
         </p>
-      </div>
+      </DetailSelectPrompt>
     )
   }
 

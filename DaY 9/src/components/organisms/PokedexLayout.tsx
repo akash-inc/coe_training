@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PokedexPanel } from './PokedexPanel'
 
 type PokedexLayoutProps = {
   headerAside?: ReactNode
@@ -26,18 +27,8 @@ export function PokedexLayout({
         </p>
       </header>
       <main className="grid flex-1 grid-cols-1 items-start gap-5 min-[841px]:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
-        <section
-          className="min-h-[200px] rounded-lg border border-border bg-card p-4"
-          aria-label="Pokémon list"
-        >
-          {list}
-        </section>
-        <section
-          className="min-h-[200px] rounded-lg border border-border bg-card p-4"
-          aria-label="Selected Pokémon"
-        >
-          {detail}
-        </section>
+        <PokedexPanel aria-label="Pokémon list">{list}</PokedexPanel>
+        <PokedexPanel aria-label="Selected Pokémon">{detail}</PokedexPanel>
       </main>
     </div>
   )

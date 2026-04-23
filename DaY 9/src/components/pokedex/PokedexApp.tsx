@@ -1,5 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { fetchPokemonSummaries, type PokemonSummary } from '../../lib/pokeapi'
+import { TriState, type TriStateValue } from '../patterns/TriState'
+import { ListFetchError, ListFetchLoading } from './pokedexShells'
 import { PokedexLayout } from '../organisms/PokedexLayout'
 import { PokemonDetailStub } from '../organisms/PokemonDetailStub'
 import { PokemonIndexGrid } from '../organisms/PokemonIndexGrid'
@@ -33,31 +35,46 @@ export function PokedexApp() {
     }
   }, [])
 
-  let listContent: ReactNode
-  if (loadState === 'loading') {
-    listContent = (
-      <p className="text-muted-foreground" role="status">
-        Loading Pokémon…
-      </p>
-    )
-  } else if (loadState === 'error') {
-    listContent = (
-      <div className="text-foreground" role="alert">
-        <p>Could not load the Pokédex.</p>
-        <p className="mt-2 break-words text-sm text-muted-foreground">
-          {errorMessage}
-        </p>
-      </div>
-    )
-  } else {
-    listContent = (
-      <PokemonIndexGrid
-        items={summaries}
-        selectedId={selected?.id ?? null}
-        onSelect={setSelected}
-      />
-    )
-  }
+  const listTriState: TriStateValue<PokemonSummary[]> = useMemo(() => {
+    if (loadState === 'loading') {
+      return { status: 'loading' }
+    }
+    if (loadState === 'error') {
+      return { status: 'error', error: errorMessage }
+    }
+    return { status: 'ready', data: summaries }
+  }, [loadState, errorMessage, summaries])
+
+  const listContent: ReactNode = (
+    <TriState value={listTriState}>
+      {(s) => {
+        if (s.status === 'loading') {
+          return (
+            <ListFetchLoading role="status">
+              <p className="m-0 text-sm text-muted-foreground">Loading Pokémon…</p>
+            </ListFetchLoading>
+          )
+        }
+        if (s.status === 'error') {
+          return (
+            <ListFetchError role="alert" className="text-foreground">
+              <p className="m-0">Could not load the Pokédex.</p>
+              <p className="m-0 mt-2 break-words text-sm text-muted-foreground">
+                {s.error}
+              </p>
+            </ListFetchError>
+          )
+        }
+        return (
+          <PokemonIndexGrid
+            items={s.data}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelected}
+          />
+        )
+      }}
+    </TriState>
+  )
 
   return (
     <PokedexLayout
