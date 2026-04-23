@@ -1,8 +1,9 @@
+import { Disclosure, DisclosureButton, DisclosurePanel, Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { useCallback, useState } from 'react'
 import { withCardSurface } from '../patterns/withCardSurface'
 import { TriState, type TriStateValue } from '../patterns/TriState'
-import { Accordion } from '../ui/accordion/Accordion'
-import { Tabs } from '../ui/tabs/Tabs'
+import { headlessTabClass, headlessTabListClass } from '../../lib/headlessTabClass'
+import { cn } from '../../lib/cn'
 
 type MockPhase = 0 | 1 | 2
 
@@ -34,14 +35,19 @@ export function ComponentsShowcase() {
       <header className="flex max-w-2xl flex-col gap-2">
         <h1 className="text-2xl font-semibold text-foreground">Component lab</h1>
         <p className="text-sm text-muted-foreground">
-          Compound <code className="rounded-sm bg-code px-1 font-mono text-xs">Tabs</code> and{' '}
-          <code className="rounded-sm bg-code px-1 font-mono text-xs">Accordion</code>, a{' '}
-          <code className="rounded-sm bg-code px-1 font-mono text-xs">TriState</code> render prop for
-          loading / error / data, and a <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code>{' '}
-          HOC. The real app uses <code className="font-mono text-xs">TriState</code> for the species
-          list fetch, and the HOC for main column panels (<code className="font-mono text-xs">PokedexPanel</code>),
-          the list error shell, and the empty-detail prompt (loading uses{' '}
-          <code className="font-mono text-xs">PokemonGrid</code> skeletons).
+          <a
+            className="font-medium text-accent underline-offset-2 hover:underline"
+            href="https://headlessui.com"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Headless UI
+          </a>{' '}
+          for tabs, disclosures, listbox, field, input, checkbox, and button in the Pokédex toolbar
+          and shell. Local patterns: <code className="rounded-sm bg-code px-1 font-mono text-xs">TriState</code> (render prop) and{' '}
+          <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code> (HOC). The real app uses{' '}
+          <code className="font-mono text-xs">TriState</code> for fetch state, HOCs for panels / errors / empty detail, and{' '}
+          <code className="font-mono text-xs">PokemonGrid</code> skeletons while loading.
         </p>
       </header>
 
@@ -103,9 +109,7 @@ export function ComponentsShowcase() {
         </h2>
         <p className="text-sm text-muted-foreground">
           Wraps any component that takes optional <code className="font-mono text-xs">className</code> and
-          prepends card-like styles. The wrapped component is named in devtools as{' '}
-          <code className="font-mono text-xs">withCardSurface(…)</code>. In the Pokédex, the same helper
-          backs <code className="font-mono text-xs">PokedexPanel</code>, list errors, and the empty-detail
+          prepends card-like styles. In the Pokédex, the same helper backs <code className="font-mono text-xs">PokedexPanel</code>, list errors, and the empty-detail
           shell in <code className="font-mono text-xs">pokedexShells.tsx</code>.
         </p>
         <FramedLabText line="same props as LabFrame, extra chrome from the HOC" />
@@ -113,83 +117,74 @@ export function ComponentsShowcase() {
 
       <section className="flex max-w-2xl flex-col gap-3" aria-labelledby="showcase-tabs-heading">
         <h2 id="showcase-tabs-heading" className="text-lg font-semibold text-foreground">
-          Tabs
+          Tabs (<code className="font-mono text-sm">TabGroup</code>)
         </h2>
         <p className="text-sm text-muted-foreground">
-          Uncontrolled example: choose a section. Focus the tab list and use arrow keys, Home, and
-          End.
+          From <code className="font-mono text-xs">@headlessui/react</code>: keyboard navigation, focus management, and ARIA
+          roles. The app shell and Pokémon detail use the same pattern.
         </p>
-        <Tabs defaultValue="primitives" className="rounded-lg border border-border bg-card p-4">
-          <Tabs.List aria-label="Tabs showcase">
-            <Tabs.Tab value="primitives">Primitives</Tabs.Tab>
-            <Tabs.Tab value="usage">Usage</Tabs.Tab>
-          </Tabs.List>
-          <Tabs.Panel value="primitives" className="pt-3 text-sm text-muted-foreground">
-            <p>
-              Built from <span className="text-foreground">Tabs</span>,{' '}
-              <span className="text-foreground">Tabs.List</span>,{' '}
-              <span className="text-foreground">Tabs.Tab</span>, and{' '}
-              <span className="text-foreground">Tabs.Panel</span>. The list dispatches arrow-key
-              navigation across tab buttons.
-            </p>
-          </Tabs.Panel>
-          <Tabs.Panel value="usage" className="pt-3 text-sm text-muted-foreground">
-            <p>
-              The Pokédex view uses the same API for the main app shell. The detail panel uses tabs
-              for summary vs. structured record data.
-            </p>
-          </Tabs.Panel>
-        </Tabs>
+        <TabGroup defaultIndex={0} className="rounded-lg border border-border bg-card p-4">
+          <TabList aria-label="Tabs showcase" className={headlessTabListClass}>
+            <Tab className={headlessTabClass}>Primitives</Tab>
+            <Tab className={headlessTabClass}>Usage</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel className="pt-3 text-sm text-muted-foreground focus:outline-none">
+              <p>
+                Built from <code className="font-mono text-xs">TabGroup</code>, <code className="font-mono text-xs">TabList</code>,{' '}
+                <code className="font-mono text-xs">Tab</code>, <code className="font-mono text-xs">TabPanels</code>, and{' '}
+                <code className="font-mono text-xs">TabPanel</code>.
+              </p>
+            </TabPanel>
+            <TabPanel className="pt-3 text-sm text-muted-foreground focus:outline-none">
+              <p>
+                The Pokédex view uses the same Headless tabs for the main shell. The detail panel uses tabs for summary vs. record.
+              </p>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </section>
 
       <section
         className="flex max-w-2xl flex-col gap-4"
-        aria-labelledby="showcase-accordion-heading"
+        aria-labelledby="showcase-disclosure-heading"
       >
-        <h2 id="showcase-accordion-heading" className="text-lg font-semibold text-foreground">
-          Accordion
+        <h2 id="showcase-disclosure-heading" className="text-lg font-semibold text-foreground">
+          Disclosure
         </h2>
         <p className="text-sm text-muted-foreground">
-          Single type (one section at a time, collapsible) and multiple type (independent panels).
+          <code className="font-mono text-xs">Disclosure</code> + <code className="font-mono text-xs">DisclosureButton</code> +{' '}
+          <code className="font-mono text-xs">DisclosurePanel</code> replace the old custom accordion. Each block is independent; the
+          Record tab in the detail view uses two disclosures (first open by default).
         </p>
 
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-foreground">Single, collapsible</h3>
-          <Accordion type="single" defaultValue="a" collapsible className="bg-card">
-            <Accordion.Item value="a">
-              <Accordion.Trigger>What is a compound component?</Accordion.Trigger>
-              <Accordion.Content>
-                A parent exports subcomponents (for example <code className="font-mono text-xs">Accordion.Item</code>) that share
-                implicit state through React context instead of prop drilling.
-              </Accordion.Content>
-            </Accordion.Item>
-            <Accordion.Item value="b">
-              <Accordion.Trigger>Why not a single big prop object?</Accordion.Trigger>
-              <Accordion.Content>
-                Composition keeps call sites readable and lets you wrap triggers with layout or swap
-                markup without changing the root API.
-              </Accordion.Content>
-            </Accordion.Item>
-          </Accordion>
-        </div>
-
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-foreground">Multiple</h3>
-          <Accordion type="multiple" defaultValue={['x']} className="bg-card">
-            <Accordion.Item value="x">
-              <Accordion.Trigger>Accessibility</Accordion.Trigger>
-              <Accordion.Content>
-                Triggers use <span className="font-mono text-xs">aria-expanded</span> and pair with
-                regions via <span className="font-mono text-xs">aria-controls</span>.
-              </Accordion.Content>
-            </Accordion.Item>
-            <Accordion.Item value="y">
-              <Accordion.Trigger>Styling</Accordion.Trigger>
-              <Accordion.Content>
-                Visuals use Tailwind with the same design tokens as the rest of Day 9.
-              </Accordion.Content>
-            </Accordion.Item>
-          </Accordion>
+        <div className="rounded-lg border border-border bg-card">
+          <Disclosure defaultOpen>
+            {({ open }) => (
+              <>
+                <DisclosureButton className="flex w-full items-center justify-between border-b border-border px-3 py-2 text-left text-sm font-medium text-foreground">
+                  <span>What is headless UI?</span>
+                  <span className={cn('text-xs', open && 'rotate-180')} aria-hidden>▼</span>
+                </DisclosureButton>
+                <DisclosurePanel className="border-b border-border px-3 pb-3 text-sm text-muted-foreground">
+                  Markup-agnostic primitives: behavior and accessibility without shipping default styles—pair with Tailwind (or any CSS).
+                </DisclosurePanel>
+              </>
+            )}
+          </Disclosure>
+          <Disclosure>
+            {({ open }) => (
+              <>
+                <DisclosureButton className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-foreground">
+                  <span>Why not style props only?</span>
+                  <span className={cn('text-xs', open && 'rotate-180')} aria-hidden>▼</span>
+                </DisclosureButton>
+                <DisclosurePanel className="px-3 pb-3 text-sm text-muted-foreground">
+                  You keep full control of the DOM and design tokens while inheriting focus and screen-reader wiring.
+                </DisclosurePanel>
+              </>
+            )}
+          </Disclosure>
         </div>
       </section>
     </div>

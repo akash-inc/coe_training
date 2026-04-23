@@ -1,27 +1,30 @@
 import { useState } from 'react'
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { PokedexApp } from './components/pokedex/PokedexApp'
 import { ComponentsShowcase } from './components/showcase/ComponentsShowcase'
-import { Tabs } from './components/ui/tabs/Tabs'
+import { headlessTabClass, headlessTabListClass } from './lib/headlessTabClass'
 
 function App() {
-  const [view, setView] = useState('pokedex')
+  const [view, setView] = useState(0)
 
   return (
     <div className="min-h-svh">
-      <Tabs value={view} onValueChange={setView} className="w-full">
+      <TabGroup selectedIndex={view} onChange={setView} className="w-full">
         <div className="px-4 pt-4">
-          <Tabs.List aria-label="App">
-            <Tabs.Tab value="pokedex">Pokédex</Tabs.Tab>
-            <Tabs.Tab value="showcase">Component lab</Tabs.Tab>
-          </Tabs.List>
+          <TabList aria-label="App" className={headlessTabListClass}>
+            <Tab className={headlessTabClass}>Pokédex</Tab>
+            <Tab className={headlessTabClass}>Component lab</Tab>
+          </TabList>
         </div>
-        <Tabs.Panel value="pokedex" className="pt-0">
-          <PokedexApp />
-        </Tabs.Panel>
-        <Tabs.Panel value="showcase" className="pt-0">
-          <ComponentsShowcase />
-        </Tabs.Panel>
-      </Tabs>
+        <TabPanels>
+          <TabPanel className="pt-0 focus:outline-none">
+            <PokedexApp />
+          </TabPanel>
+          <TabPanel className="pt-0 focus:outline-none">
+            <ComponentsShowcase />
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
     </div>
   )
 }
