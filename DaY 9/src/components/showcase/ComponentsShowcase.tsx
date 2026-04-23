@@ -40,7 +40,8 @@ export function ComponentsShowcase() {
           loading / error / data, and a <code className="rounded-sm bg-code px-1 font-mono text-xs">withCardSurface</code>{' '}
           HOC. The real app uses <code className="font-mono text-xs">TriState</code> for the species
           list fetch, and the HOC for main column panels (<code className="font-mono text-xs">PokedexPanel</code>),
-          list loading/error shells, and the empty-detail prompt.
+          the list error shell, and the empty-detail prompt (loading uses{' '}
+          <code className="font-mono text-xs">PokemonGrid</code> skeletons).
         </p>
       </header>
 
@@ -104,8 +105,8 @@ export function ComponentsShowcase() {
           Wraps any component that takes optional <code className="font-mono text-xs">className</code> and
           prepends card-like styles. The wrapped component is named in devtools as{' '}
           <code className="font-mono text-xs">withCardSurface(…)</code>. In the Pokédex, the same helper
-          backs <code className="font-mono text-xs">PokedexPanel</code> and the status blocks in{' '}
-          <code className="font-mono text-xs">pokedexShells.tsx</code>.
+          backs <code className="font-mono text-xs">PokedexPanel</code>, list errors, and the empty-detail
+          shell in <code className="font-mono text-xs">pokedexShells.tsx</code>.
         </p>
         <FramedLabText line="same props as LabFrame, extra chrome from the HOC" />
       </section>

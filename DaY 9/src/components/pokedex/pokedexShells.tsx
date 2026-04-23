@@ -2,8 +2,6 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { withCardSurface } from '../patterns/withCardSurface'
 
-const loadingShell =
-  'rounded-md border border-dashed border-border/60 bg-background/50 p-3'
 const errorShell =
   'rounded-md border border-accent-border/50 bg-[var(--accent-bg)] p-3'
 const detailEmptyShell =
@@ -21,6 +19,5 @@ function StatusBlock({ className, children, ...rest }: StatusDivProps) {
 
 StatusBlock.displayName = 'PokedexShellBlock'
 
-export const ListFetchLoading = withCardSurface(loadingShell)(StatusBlock)
 export const ListFetchError = withCardSurface(errorShell)(StatusBlock)
 export const DetailSelectPrompt = withCardSurface(detailEmptyShell)(StatusBlock)

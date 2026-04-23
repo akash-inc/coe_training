@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { fetchPokemonSummaries, type PokemonSummary } from '../../lib/pokeapi'
 import { TriState, type TriStateValue } from '../patterns/TriState'
-import { ListFetchError, ListFetchLoading } from './pokedexShells'
+import { ListFetchError } from './pokedexShells'
 import { PokedexLayout } from '../organisms/PokedexLayout'
 import { PokemonDetailStub } from '../organisms/PokemonDetailStub'
-import { PokemonIndexGrid } from '../organisms/PokemonIndexGrid'
+import { PokemonGrid } from '../organisms/PokemonGrid'
 
 const INITIAL_PAGE_SIZE = 24
 
@@ -48,13 +48,6 @@ export function PokedexApp() {
   const listContent: ReactNode = (
     <TriState value={listTriState}>
       {(s) => {
-        if (s.status === 'loading') {
-          return (
-            <ListFetchLoading role="status">
-              <p className="m-0 text-sm text-muted-foreground">Loading Pokémon…</p>
-            </ListFetchLoading>
-          )
-        }
         if (s.status === 'error') {
           return (
             <ListFetchError role="alert" className="text-foreground">
@@ -65,11 +58,15 @@ export function PokedexApp() {
             </ListFetchError>
           )
         }
+        const isLoading = s.status === 'loading'
+        const items = s.status === 'ready' ? s.data : []
         return (
-          <PokemonIndexGrid
-            items={s.data}
+          <PokemonGrid
+            isLoading={isLoading}
+            items={items}
             selectedId={selected?.id ?? null}
             onSelect={setSelected}
+            skeletonCount={INITIAL_PAGE_SIZE}
           />
         )
       }}
