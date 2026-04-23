@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { fetchPokemonSummaries, type PokemonSummary } from '../../lib/pokeapi'
+import { usePokedexFilter } from '../../hooks/usePokedexFilter'
 import { TriState, type TriStateValue } from '../patterns/TriState'
 import { ListFetchError } from './pokedexShells'
 import { PokedexLayout } from '../organisms/PokedexLayout'
+import { PokedexToolbar } from '../organisms/PokedexToolbar'
 import { PokemonDetailStub } from '../organisms/PokemonDetailStub'
 import { PokemonGrid } from '../organisms/PokemonGrid'
 
@@ -15,6 +17,27 @@ export function PokedexApp() {
     'loading',
   )
   const [errorMessage, setErrorMessage] = useState('')
+
+  const {
+    query,
+    setQuery,
+    sort,
+    setSort,
+    selectedTypes,
+    toggleType,
+    clearFilters,
+    availableTypes,
+    filtered,
+    stats,
+    hasActiveFilters,
+  } = usePokedexFilter(summaries)
+
+  const selectedInView = useMemo(() => {
+    if (!selected) {
+      return null
+    }
+    return filtered.some((p) => p.id === selected.id) ? selected : null
+  }, [selected, filtered])
 
   useEffect(() => {
     let cancelled = false
@@ -59,15 +82,32 @@ export function PokedexApp() {
           )
         }
         const isLoading = s.status === 'loading'
-        const items = s.status === 'ready' ? s.data : []
+        const items = isLoading ? [] : filtered
         return (
-          <PokemonGrid
-            isLoading={isLoading}
-            items={items}
-            selectedId={selected?.id ?? null}
-            onSelect={setSelected}
-            skeletonCount={INITIAL_PAGE_SIZE}
-          />
+          <div className="flex flex-col gap-4">
+            {s.status === 'ready' ? (
+              <PokedexToolbar
+                query={query}
+                onQueryChange={setQuery}
+                sort={sort}
+                onSortChange={setSort}
+                availableTypes={availableTypes}
+                selectedTypes={selectedTypes}
+                onToggleType={toggleType}
+                onClearFilters={clearFilters}
+                visibleCount={stats.visible}
+                totalCount={stats.total}
+                hasActiveFilters={hasActiveFilters}
+              />
+            ) : null}
+            <PokemonGrid
+              isLoading={isLoading}
+              items={items}
+              selectedId={selectedInView?.id ?? null}
+              onSelect={setSelected}
+              skeletonCount={INITIAL_PAGE_SIZE}
+            />
+          </div>
         )
       }}
     </TriState>
@@ -76,7 +116,7 @@ export function PokedexApp() {
   return (
     <PokedexLayout
       list={listContent}
-      detail={<PokemonDetailStub pokemon={selected} />}
+      detail={<PokemonDetailStub pokemon={selectedInView} />}
     />
   )
 }
