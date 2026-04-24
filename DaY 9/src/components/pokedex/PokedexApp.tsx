@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { fetchPokemonSummaries, type PokemonSummary } from '../../lib/pokeapi'
+import { fetchAllPokemonSummaries, type PokemonSummary } from '../../lib/pokeapi'
 import { usePokedexFilter } from '../../hooks/usePokedexFilter'
 import { TriState, type TriStateValue } from '../patterns/TriState'
 import { ListFetchError } from './pokedexShells'
@@ -8,7 +8,7 @@ import { PokedexToolbar } from '../organisms/PokedexToolbar'
 import { PokemonDetailStub } from '../organisms/PokemonDetailStub'
 import { PokemonGrid } from '../organisms/PokemonGrid'
 
-const INITIAL_PAGE_SIZE = 24
+const SKELETON_PLACEHOLDERS = 36
 
 export function PokedexApp() {
   const [summaries, setSummaries] = useState<PokemonSummary[]>([])
@@ -17,6 +17,10 @@ export function PokedexApp() {
     'loading',
   )
   const [errorMessage, setErrorMessage] = useState('')
+  const [loadProgress, setLoadProgress] = useState<{
+    loaded: number
+    total: number
+  } | null>(null)
 
   const {
     query,
@@ -50,22 +54,28 @@ export function PokedexApp() {
   }, [selectedInView])
 
   useEffect(() => {
-    let cancelled = false
-    fetchPokemonSummaries(INITIAL_PAGE_SIZE, 0)
+    const c = new AbortController()
+    fetchAllPokemonSummaries(
+      (loaded, total) => {
+        setLoadProgress({ loaded, total })
+      },
+      { signal: c.signal },
+    )
       .then((rows) => {
-        if (cancelled) return
         setSummaries(rows)
         setLoadState('ready')
         setErrorMessage('')
+        setLoadProgress(null)
       })
       .catch((err: unknown) => {
-        if (cancelled) return
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
         setLoadState('error')
         setErrorMessage(err instanceof Error ? err.message : 'Request failed')
+        setLoadProgress(null)
       })
-    return () => {
-      cancelled = true
-    }
+    return () => c.abort()
   }, [])
 
   const listTriState: TriStateValue<PokemonSummary[]> = useMemo(() => {
@@ -95,6 +105,36 @@ export function PokedexApp() {
         const items = isLoading ? [] : filtered
         return (
           <div className="flex flex-col gap-4">
+            {loadProgress && isLoading ? (
+              <div className="rounded-xl border border-border/70 bg-card/50 px-3 py-3">
+                <p className="m-0 text-xs font-medium text-foreground" id="dex-load-label">
+                  Loading national Pokédex
+                </p>
+                <p className="m-0 mt-1 text-[11px] text-muted-foreground">
+                  {loadProgress.loaded === 0
+                    ? `Preparing ${loadProgress.total.toLocaleString()} species…`
+                    : `${loadProgress.loaded.toLocaleString()} / ${loadProgress.total.toLocaleString()} species`}
+                </p>
+                <div
+                  className="mt-2 h-2 overflow-hidden rounded-full bg-border/50"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={loadProgress.total}
+                  aria-valuenow={loadProgress.loaded}
+                  aria-labelledby="dex-load-label"
+                >
+                  <div
+                    className="h-full bg-gradient-to-r from-accent to-accent/70 transition-[width] duration-200 ease-out"
+                    style={{
+                      width:
+                        loadProgress.total > 0
+                          ? `${(loadProgress.loaded / loadProgress.total) * 100}%`
+                          : '0%',
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
             {s.status === 'ready' ? (
               <PokedexToolbar
                 query={query}
@@ -115,7 +155,7 @@ export function PokedexApp() {
               items={items}
               selectedId={selectedInView?.id ?? null}
               onSelect={setSelected}
-              skeletonCount={INITIAL_PAGE_SIZE}
+              skeletonCount={SKELETON_PLACEHOLDERS}
             />
           </div>
         )

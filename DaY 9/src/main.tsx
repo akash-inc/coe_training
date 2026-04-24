@@ -1,8 +1,8 @@
 import { ThemeProvider } from '@emotion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { initTheme } from './lib/initTheme'
-import { emotionTokenTheme } from './theme/emotionTokenTheme'
+import { initTheme } from './lib/initTheme.ts'
+import { emotionTokenTheme } from './theme/emotionTokenTheme.ts'
 import './index.css'
 import App from './App.tsx'
 

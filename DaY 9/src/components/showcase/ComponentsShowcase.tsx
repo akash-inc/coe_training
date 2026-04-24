@@ -32,7 +32,7 @@ export function ComponentsShowcase() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-10 px-4 pb-10 pt-2">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-10 px-4 pb-10 pt-2">
       <header className="flex max-w-2xl flex-col gap-2">
         <h1 className="text-2xl font-semibold text-foreground">Component lab</h1>
         <p className="text-sm text-muted-foreground">

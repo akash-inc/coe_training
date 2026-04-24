@@ -3,6 +3,7 @@ import type { PokemonSummary } from '../../lib/pokeapi'
 import { formatPokemonDisplayName } from '../../lib/pokeapi/formatPokemonDisplayName'
 import { headlessTabClass, headlessTabListClass } from '../../lib/headlessTabClass'
 import { cn } from '../../lib/cn'
+import { usePokemonDetails, type PokemonDetailsState } from '../../hooks/usePokemonDetails'
 import { DetailSelectPrompt } from '../pokedex/pokedexShells'
 import { IdChip } from '../atoms/IdChip'
 import { PokemonName } from '../atoms/PokemonName'
@@ -99,23 +100,100 @@ function RecordDisclosures({ pokemon, display }: { pokemon: PokemonSummary; disp
   )
 }
 
-export function PokemonDetailStub({ pokemon }: PokemonDetailStubProps) {
-  if (!pokemon) {
-    return (
-      <DetailSelectPrompt>
-        <p className="m-0 max-w-sm text-center text-[0.95rem] text-muted-foreground">
-          Select a Pokémon from the list to see its sprite and types.
-        </p>
-      </DetailSelectPrompt>
-    )
+function StatTable({ state }: { state: PokemonDetailsState }) {
+  if (state.status === 'loading') {
+    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading base stats…</p>
   }
+  if (state.status === 'error') {
+    return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+  }
+  const { stats } = state.data
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[240px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-border text-left text-xs text-muted-foreground">
+            <th className="py-1.5 pr-2 font-medium">Stat</th>
+            <th className="py-1.5 font-mono">Base</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stats.map((row) => (
+            <tr key={row.key} className="border-b border-border/50">
+              <td className="py-1.5 pr-2 capitalize text-foreground/95">
+                {formatPokemonDisplayName(row.key)}
+              </td>
+              <td className="py-1.5 font-mono text-foreground">{row.base}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
+function MovesBlock({ state }: { state: PokemonDetailsState }) {
+  if (state.status === 'loading') {
+    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading moves…</p>
+  }
+  if (state.status === 'error') {
+    return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+  }
+  const { moves } = state.data
+  if (moves.length === 0) {
+    return <p className="m-0 text-sm text-muted-foreground">No moves in this list.</p>
+  }
+  return (
+    <ul className="m-0 max-h-[min(50vh,22rem)] list-none space-y-1.5 overflow-y-auto p-0 text-sm" aria-label="Move names">
+      {moves.map((m) => (
+        <li key={m} className="border-b border-border/40 pb-1.5 last:border-0 last:pb-0">
+          {formatPokemonDisplayName(m)}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function EvolutionBlock({ state }: { state: PokemonDetailsState }) {
+  if (state.status === 'loading') {
+    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading evolution…</p>
+  }
+  if (state.status === 'error') {
+    return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+  }
+  const { evolution, evolutionError } = state.data
+  if (evolutionError) {
+    return <p className="m-0 text-sm text-muted-foreground">Evolution data could not be loaded.</p>
+  }
+  if (evolution.length === 0) {
+    return <p className="m-0 text-sm text-muted-foreground">No evolution line returned.</p>
+  }
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-foreground/95"
+      aria-label="Evolution line"
+    >
+      {evolution.map((slug, i) => (
+        <span key={slug} className="inline-flex items-center gap-1.5">
+          {i > 0 ? <span className="text-muted-foreground" aria-hidden>→</span> : null}
+          <span className="capitalize">{formatPokemonDisplayName(slug)}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function PokemonDetailWithData({ pokemon }: { pokemon: PokemonSummary }) {
   const display = formatPokemonDisplayName(pokemon.name)
+  const details = usePokemonDetails(pokemon)
 
   return (
     <TabGroup className="w-full" defaultIndex={0}>
       <TabList className={headlessTabListClass} aria-label="Pokémon details">
         <Tab className={headlessTabClass}>Summary</Tab>
+        <Tab className={headlessTabClass}>Stats</Tab>
+        <Tab className={headlessTabClass}>Moves</Tab>
+        <Tab className={headlessTabClass}>Evolution</Tab>
         <Tab className={headlessTabClass}>Record</Tab>
       </TabList>
       <TabPanels>
@@ -152,10 +230,33 @@ export function PokemonDetailStub({ pokemon }: PokemonDetailStubProps) {
             </div>
           </div>
         </TabPanel>
+        <TabPanel className="pt-2 focus:outline-none" aria-label="Base stats">
+          <StatTable state={details} />
+        </TabPanel>
+        <TabPanel className="pt-2 focus:outline-none" aria-label="Move list">
+          <MovesBlock state={details} />
+        </TabPanel>
+        <TabPanel className="pt-2 focus:outline-none" aria-label="Evolution">
+          <EvolutionBlock state={details} />
+        </TabPanel>
         <TabPanel className="pt-2 focus:outline-none">
           <RecordDisclosures pokemon={pokemon} display={display} />
         </TabPanel>
       </TabPanels>
     </TabGroup>
   )
+}
+
+export function PokemonDetailStub({ pokemon }: PokemonDetailStubProps) {
+  if (!pokemon) {
+    return (
+      <DetailSelectPrompt>
+        <p className="m-0 max-w-sm text-center text-[0.95rem] text-muted-foreground">
+          Select a Pokémon from the list to see its sprite, types, stats, moves, and evolution.
+        </p>
+      </DetailSelectPrompt>
+    )
+  }
+
+  return <PokemonDetailWithData key={pokemon.id} pokemon={pokemon} />
 }

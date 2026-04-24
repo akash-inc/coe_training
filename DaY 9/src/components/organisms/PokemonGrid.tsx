@@ -57,8 +57,7 @@ export function PokemonGrid({
   if (items.length === 0) {
     return (
       <p className="m-0 text-sm text-muted-foreground" role="status">
-        No Pokémon in the list. If you expected results, the feed may be empty
-        or filters may apply in a later phase.
+        No Pokémon in the list. Try clearing search and type filters, or broaden your query.
       </p>
     )
   }

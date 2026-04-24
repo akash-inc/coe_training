@@ -1,13 +1,16 @@
 import type { ReactNode } from 'react'
+import type { Theme } from '@emotion/react'
 import styled from '@emotion/styled'
+
+type Themed = { theme: Theme }
 
 const Root = styled.div`
   max-width: 36rem;
   border-radius: 0.5rem;
-  border: 1px solid ${({ theme }) => theme.accentBorder};
-  background: ${({ theme }) => theme.accentBg};
-  color: ${({ theme }) => theme.fg};
-  box-shadow: ${({ theme }) => theme.shadow};
+  border: 1px solid ${(p: Themed) => p.theme.accentBorder};
+  background: ${(p: Themed) => p.theme.accentBg};
+  color: ${(p: Themed) => p.theme.fg};
+  box-shadow: ${(p: Themed) => p.theme.shadow};
   padding: 0.75rem 1rem;
 `
 
@@ -17,13 +20,13 @@ const Kicker = styled.p`
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: ${({ theme }) => theme.mutedFg};
+  color: ${(p: Themed) => p.theme.mutedFg};
 `
 
 const Body = styled.div`
   font-size: 0.875rem;
   line-height: 1.5;
-  color: ${({ theme }) => theme.mutedFg};
+  color: ${(p: Themed) => p.theme.mutedFg};
 
   & p {
     margin: 0 0 0.5rem 0;

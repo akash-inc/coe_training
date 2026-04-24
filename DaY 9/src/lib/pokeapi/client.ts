@@ -1,10 +1,12 @@
 const BASE = 'https://pokeapi.co/api/v2'
 
-export async function pokeapiGet<T>(path: string): Promise<T> {
+type PokeapiGetInit = { signal?: AbortSignal }
+
+export async function pokeapiGet<T>(path: string, init?: PokeapiGetInit): Promise<T> {
   const normalized = path.startsWith('http')
     ? path
     : `${BASE}/${path.replace(/^\//, '')}`
-  const res = await fetch(normalized)
+  const res = await fetch(normalized, { signal: init?.signal })
   if (!res.ok) {
     throw new Error(`PokéAPI ${res.status} for ${normalized}`)
   }

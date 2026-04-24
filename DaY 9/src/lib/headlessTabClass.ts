@@ -1,6 +1,8 @@
 import { cn } from './cn'
 
-export const headlessTabListClass = 'flex flex-wrap gap-1 border-b border-border'
+export const headlessTabListClassFlush = 'flex flex-wrap gap-1'
+
+export const headlessTabListClass = `${headlessTabListClassFlush} border-b border-border`
 
 /** <Tab> className (underline) for @headlessui/react, aligned with the old custom Tabs. */
 export function headlessTabClass({
