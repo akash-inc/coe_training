@@ -17,6 +17,11 @@ const ComponentsShowcase = lazy(() =>
     default: m.ComponentsShowcase,
   })),
 )
+const ThemeTokensShowcase = lazy(() =>
+  import('./components/showcase/ThemeTokensShowcase').then((m) => ({
+    default: m.ThemeTokensShowcase,
+  })),
+)
 
 function TabPanelFallback() {
   return (
@@ -65,6 +70,7 @@ function App() {
               <TabList aria-label="App" className={headlessTabListClassFlush}>
                 <Tab className={headlessTabClass}>Pokédex</Tab>
                 <Tab className={headlessTabClass}>Component lab</Tab>
+                <Tab className={headlessTabClass}>Theme</Tab>
               </TabList>
             </div>
             <div className="w-full min-w-0 min-[500px]:w-auto min-[500px]:shrink-0 min-[500px]:max-w-none">
@@ -87,6 +93,11 @@ function App() {
           <TabPanel className="m-0 flex min-h-0 min-w-0 flex-1 flex-col p-0 outline-none focus:outline-none">
             <Suspense fallback={<TabPanelFallback />}>
               <ComponentsShowcase />
+            </Suspense>
+          </TabPanel>
+          <TabPanel className="m-0 flex min-h-0 min-w-0 flex-1 flex-col p-0 outline-none focus:outline-none">
+            <Suspense fallback={<TabPanelFallback />}>
+              <ThemeTokensShowcase />
             </Suspense>
           </TabPanel>
         </TabPanels>
