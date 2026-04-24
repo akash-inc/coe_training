@@ -1,26 +1,39 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { fetchAllPokemonSummaries, type PokemonSummary } from '../../lib/pokeapi'
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useAllPokemonSummariesQuery } from '../../hooks/useAllPokemonSummariesQuery'
 import { usePokedexFilter } from '../../hooks/usePokedexFilter'
+import type { PokemonSummary } from '../../lib/pokeapi'
 import { TriState, type TriStateValue } from '../patterns/TriState'
 import { ListFetchError } from './pokedexShells'
 import { PokedexLayout } from '../organisms/PokedexLayout'
 import { PokedexToolbar } from '../organisms/PokedexToolbar'
-import { PokemonDetailStub } from '../organisms/PokemonDetailStub'
 import { PokemonGrid } from '../organisms/PokemonGrid'
+
+const PokemonDetailStub = lazy(() =>
+  import('../organisms/PokemonDetailStub').then((m) => ({
+    default: m.PokemonDetailStub,
+  })),
+)
 
 const SKELETON_PLACEHOLDERS = 36
 
-export function PokedexApp() {
-  const [summaries, setSummaries] = useState<PokemonSummary[]>([])
-  const [selected, setSelected] = useState<PokemonSummary | null>(null)
-  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>(
-    'loading',
+function DetailLoadingFallback() {
+  return (
+    <div
+      className="min-h-40 w-full rounded-lg bg-muted/15 motion-safe:animate-pulse"
+      aria-hidden
+    />
   )
-  const [errorMessage, setErrorMessage] = useState('')
-  const [loadProgress, setLoadProgress] = useState<{
-    loaded: number
-    total: number
-  } | null>(null)
+}
+
+export function PokedexApp() {
+  const [selected, setSelected] = useState<PokemonSummary | null>(null)
+  const {
+    data: summaries = [],
+    status: queryStatus,
+    isError,
+    error,
+    loadProgress,
+  } = useAllPokemonSummariesQuery()
 
   const {
     query,
@@ -53,40 +66,17 @@ export function PokedexApp() {
     }
   }, [selectedInView])
 
-  useEffect(() => {
-    const c = new AbortController()
-    fetchAllPokemonSummaries(
-      (loaded, total) => {
-        setLoadProgress({ loaded, total })
-      },
-      { signal: c.signal },
-    )
-      .then((rows) => {
-        setSummaries(rows)
-        setLoadState('ready')
-        setErrorMessage('')
-        setLoadProgress(null)
-      })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          return
-        }
-        setLoadState('error')
-        setErrorMessage(err instanceof Error ? err.message : 'Request failed')
-        setLoadProgress(null)
-      })
-    return () => c.abort()
-  }, [])
+  const errorMessage = error instanceof Error ? error.message : 'Request failed'
 
   const listTriState: TriStateValue<PokemonSummary[]> = useMemo(() => {
-    if (loadState === 'loading') {
-      return { status: 'loading' }
-    }
-    if (loadState === 'error') {
+    if (isError) {
       return { status: 'error', error: errorMessage }
     }
+    if (queryStatus !== 'success') {
+      return { status: 'loading' }
+    }
     return { status: 'ready', data: summaries }
-  }, [loadState, errorMessage, summaries])
+  }, [isError, errorMessage, queryStatus, summaries])
 
   const listContent: ReactNode = (
     <TriState value={listTriState}>
@@ -107,7 +97,10 @@ export function PokedexApp() {
           <div className="flex flex-col gap-4">
             {loadProgress && isLoading ? (
               <div className="rounded-xl border border-border/70 bg-card/50 px-3 py-3">
-                <p className="m-0 text-xs font-medium text-foreground" id="dex-load-label">
+                <p
+                  className="m-0 text-xs font-medium text-foreground"
+                  id="dex-load-label"
+                >
                   Loading national Pokédex
                 </p>
                 <p className="m-0 mt-1 text-[11px] text-muted-foreground">
@@ -166,7 +159,11 @@ export function PokedexApp() {
   return (
     <PokedexLayout
       list={listContent}
-      detail={<PokemonDetailStub pokemon={selectedInView} />}
+      detail={
+        <Suspense fallback={<DetailLoadingFallback />}>
+          <PokemonDetailStub pokemon={selectedInView} />
+        </Suspense>
+      }
     />
   )
 }

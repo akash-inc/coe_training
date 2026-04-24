@@ -2,7 +2,7 @@ import type { PokemonSummary } from '../../lib/pokeapi'
 import { PokemonCard } from '../molecules/PokemonCard'
 
 const gridClass =
-  'grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3'
+  'grid w-full grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3'
 
 function CardSkeleton() {
   return (
@@ -57,7 +57,8 @@ export function PokemonGrid({
   if (items.length === 0) {
     return (
       <p className="m-0 text-sm text-muted-foreground" role="status">
-        No Pokémon in the list. Try clearing search and type filters, or broaden your query.
+        No Pokémon in the list. Try clearing search and type filters, or broaden
+        your query.
       </p>
     )
   }

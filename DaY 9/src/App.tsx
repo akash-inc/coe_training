@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
-import { PokedexApp } from './components/pokedex/PokedexApp'
 import { ThemeControls } from './components/organisms/ThemeControls'
-import { ComponentsShowcase } from './components/showcase/ComponentsShowcase'
 import { useNavbarScrollVisible } from './hooks/useNavbarScrollVisible'
 import { useThemePreferences } from './hooks/useThemePreferences'
 import { cn } from './lib/cn'
@@ -10,6 +8,23 @@ import {
   headlessTabClass,
   headlessTabListClassFlush,
 } from './lib/headlessTabClass'
+
+const PokedexApp = lazy(() =>
+  import('./components/pokedex/PokedexApp').then((m) => ({ default: m.PokedexApp })),
+)
+const ComponentsShowcase = lazy(() =>
+  import('./components/showcase/ComponentsShowcase').then((m) => ({
+    default: m.ComponentsShowcase,
+  })),
+)
+
+function TabPanelFallback() {
+  return (
+    <div className="flex min-h-[50vh] w-full items-center justify-center px-4 text-sm text-muted-foreground">
+      Loading…
+    </div>
+  )
+}
 
 function App() {
   const [view, setView] = useState(0)
@@ -65,10 +80,14 @@ function App() {
         </header>
         <TabPanels className="flex min-h-0 flex-1 flex-col">
           <TabPanel className="m-0 flex min-h-0 min-w-0 flex-1 flex-col p-0 outline-none focus:outline-none">
-            <PokedexApp />
+            <Suspense fallback={<TabPanelFallback />}>
+              <PokedexApp />
+            </Suspense>
           </TabPanel>
           <TabPanel className="m-0 flex min-h-0 min-w-0 flex-1 flex-col p-0 outline-none focus:outline-none">
-            <ComponentsShowcase />
+            <Suspense fallback={<TabPanelFallback />}>
+              <ComponentsShowcase />
+            </Suspense>
           </TabPanel>
         </TabPanels>
       </TabGroup>
