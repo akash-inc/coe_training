@@ -47,14 +47,7 @@ export function LearnTopicLayout() {
     <div className="learn-page">
       <LearnNav />
       <LearnNarrative topic={topic} />
-      <p className="learn-callout" role="note">
-        <span className="learn-callout__label">This page focus</span>
-        {topic.callout}
-      </p>
-      <div
-        className="demo-workspace"
-        data-demo-focus={topic.focus}
-      >
+      <div className="demo-workspace">
         <div className="demo-region demo-region--banner" data-region="banner">
           <GlobalErrorBanner />
         </div>

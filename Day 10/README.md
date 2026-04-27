@@ -27,7 +27,7 @@ The migration uses the same **demo RLS** idea as Day 8: anon/authenticated can o
 
 ## Learn + demo (TanStack Query topics)
 
-The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; only the narrative, a **focus ring** on the relevant region, and a **Try it** ordered checklist (do / expect / why) change per topic.
+The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; on each learn page, **How it works** and **In plain English** sit **side by side** on wide viewports (stacked on small screens), then a **Try it** ordered checklist; only the copy changes per topic.
 
 | URL | Topic |
 | --- | --- |
@@ -36,17 +36,17 @@ The app is organized as a small **learning hub** with one page per RQ concept. T
 | `/learn/:slug/tasks` | Topic narrative + live demo, task list |
 | `/learn/:slug/tasks/:taskId` | Same, with a task open |
 
-| Slug | What it highlights |
+| Slug | Main idea in the demo |
 | --- | --- |
-| `parallel-queries` | Header (parallel `useQueries`) |
-| `infinite-list` | Task list (`useInfiniteQuery`) |
-| `dependent-queries` | Detail + comments (dependent fetch) |
-| `optimistic-mutations` | Cycle status row (optimistic mutation) |
-| `prefetching` | List rows (hover prefetch) |
+| `parallel-queries` | Parallel `useQueries` in the header |
+| `infinite-list` | `useInfiniteQuery` task list |
+| `dependent-queries` | Comments after task (`enabled`) |
+| `optimistic-mutations` | Optimistic cycle status |
+| `prefetching` | Hover prefetch on list rows |
 | `cache-invalidation` | Cache & debug panel |
-| `global-errors` | Top error banner |
-| `error-boundaries` | Detail panel (query error boundary) |
-| `background-refetch` | Stats chips in the header |
+| `global-errors` | Global error banner |
+| `error-boundaries` | Query error boundary on detail |
+| `background-refetch` | Header stats `refetchInterval` |
 
 Copy and topic metadata live in [`src/data/learnTopics.ts`](src/data/learnTopics.ts).
 

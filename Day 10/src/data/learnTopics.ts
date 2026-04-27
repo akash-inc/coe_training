@@ -1,24 +1,12 @@
 /**
- * One entry per /learn/:slug page. `focus` drives [data-demo-focus] for visual callouts in App.css
+ * One entry per /learn/:slug page: narrative + Try it + shared live demo
  */
-export type DemoFocus =
-  | 'header'
-  | 'list'
-  | 'detail'
-  | 'cache'
-  | 'banner'
-  | 'optimistic'
-  | 'prefetch'
-  | 'background-refetch'
-  | 'all'
-  | 'none'
-
 export type LearnTopic = {
   slug: string
   title: string
   /** Short blurb for hub cards */
   summaryPlain: string
-  /** Shown in the callout strip under the titles */
+  /** One-line blurb; topic-specific nuance (e.g. which part of the demo the lesson emphasizes) */
   callout: string
   /** Step-by-step or concepts; file names as plain text */
   bodyTechnical: string
@@ -28,7 +16,6 @@ export type LearnTopic = {
   tryItIntro: string
   /** Ordered steps: what to do, what to expect, why (see Try it on each page) */
   tryItSteps: string[]
-  focus: DemoFocus
 }
 
 export const learnTopics: LearnTopic[] = [
@@ -54,7 +41,6 @@ You still get one composed header in the UI, but under the hood the cache keeps 
       'Do: in Network, filter to fetch/XHR and look at the first wave of requests after load. Expect: you should see multiple requests (profile, workspace summary, stats) starting at nearly the same time, not one completing before the next begins. Why: the browser issues them in parallel; React Query does not block one query on another when they are independent.',
       'Do: open React Query Devtools and find keys like user, workspace summary, and workspace stats. Expect: separate entries, each with its own data and status. Why: scoping by queryKey is what lets the library invalidate or refetch one slice without clearing the rest of the header.',
     ],
-    focus: 'header',
   },
   {
     slug: 'infinite-list',
@@ -77,7 +63,6 @@ That keeps the first interaction fast and still lets you work through a long lis
       'Do: click “Load more” once. Expect: more rows appear below the first batch; the first batch does not disappear. Why: useInfiniteQuery appends the next page; previous pages stay in the cache for this query key.',
       'Do: open Devtools, select the task list (infinite) query, and inspect data after one or more “Load more” clicks. Expect: a pages array (or equivalent) with multiple entries, each with items. Why: the mental model is “list of pages,” not one giant array the server must return in one go.',
     ],
-    focus: 'list',
   },
   {
     slug: 'dependent-queries',
@@ -100,7 +85,6 @@ If you switch tasks, the same pattern repeats: new task id, new detail fetch, th
       'Do: open Dev Network (or Devtools query order). Expect: a request (or resolution) for the task before a request for comments for that id. Why: the child query should not run until the parent has a confirmed id and successful task row.',
       'Do: select a different task from the list. Expect: the detail panel fetches the new task; comments update to match the new id. Why: the dependent pattern runs again for the new key—comments are always tied to the open task, not a stale one.',
     ],
-    focus: 'detail',
   },
   {
     slug: 'optimistic-mutations',
@@ -124,7 +108,6 @@ That is the bargain of optimistic updates: better perceived speed, with explicit
       'Do: turn on “Fail writes while enabled” in Cache & debug, then click “Cycle status” again. Expect: a brief optimistic flip, then the old status returns and a red-tinted error banner appears at the top. Why: the thrown error triggers onError rollback in usePatchTask and the global mutation onError in queryClient still surfaces the message.',
       'Do: turn “Fail writes while enabled” off and click “Cycle status” again. Expect: a normal successful cycle and no error banner. Why: the same mutation path, without the simulate flag, reaches Supabase and onSettled can invalidate to match the server.',
     ],
-    focus: 'optimistic',
   },
   {
     slug: 'prefetching',
@@ -145,7 +128,6 @@ It is a small UX win that adds a little background traffic when hover is used.`,
       'Do: after hovering, click the same row. Expect: the detail view often populates very quickly if prefetch filled the cache. Why: the detail useQuery can read the prefetched data first; comments may still show “Loading comments…” after the task is ready, because they are a separate, dependent query.',
       'Do: open a task without hovering its row first (click from a cold row). Compare how snappy the detail feels versus the hover-then-open path. Why: the comparison shows when prefetch had a chance to hide network latency for the first paint of the detail field.',
     ],
-    focus: 'prefetch',
   },
   {
     slug: 'cache-invalidation',
@@ -178,7 +160,6 @@ Reset is stronger than mark-stale: for infinite data it can throw away the remem
       'Do: click “setQueryData first title.” Expect: the first task’s title in the list changes immediately, with no network (check Network) until you refetch. Why: setQueryData is a local patch of the query result, useful for quick experiments, not a substitute for the server as source of truth.',
       'Do: click “Invalidate workspace stats” in the footer. In Devtools, select the query with key workspace → stats → your workspace id; after the click, expect that row to refetch (fetchStatus goes to fetching, then idle), dataUpdatedAt to advance, and the JSON data to change if counts changed; task list queries are unchanged. In the UI, expect the header stat chips to refetch. Why: that button only invalidates workspaceKeys.stats, not the tasks tree—so you see scoped invalidation.',
     ],
-    focus: 'cache',
   },
   {
     slug: 'global-errors',
@@ -201,7 +182,6 @@ Dismissing the banner only hides the last message; the next error can post again
       'Do: read the banner text, then click “Dismiss.” Expect: the banner clears, but the underlying query cache behavior is unchanged. Why: the global UI is a log of the last error for visibility, not a second source of truth for data.',
       'Do: turn off “Fail writes while enabled” and perform a successful “Cycle status.” Expect: no new error banner for that action. Why: a successful mutation does not go through the error path; only failures feed the bus for that pattern.',
     ],
-    focus: 'banner',
   },
   {
     slug: 'error-boundaries',
@@ -226,7 +206,6 @@ That is different from a banner about a background mutation, which is about a si
       'Do: open Dev Network and see the task fetch fail with 404. Expect: the query errors; the list may still be fine on the left. Why: the boundary contains the error to the detail column so the list and tools stay usable.',
       'Do: click “Retry” after fixing nothing; you can still be in error, or if you navigate to a real task from the list, the route’s task id changes. Expect: a real id loads the task again. Why: reset or navigation replaces the bad query with a new key or a fresh attempt.',
     ],
-    focus: 'detail',
   },
   {
     slug: 'background-refetch',
@@ -249,7 +228,6 @@ The UI does not have to block you while the refetch runs; the chips can update q
       'Do: switch to another application or tab for a few seconds, then come back to this one. Expect: a focus-triggered refetch may run; Network may show a stats request. Why: refetchOnWindowFocus in the default query options is enabled in queryClient for active stale queries.',
       'Do: compare with the parallel-queries topic: first load is three parallel queries; this topic is about continued freshness of the stat chips after the first paint. Why: separating the ideas helps you tune staleTime, interval, and focus behavior without conflating them with the initial useQueries batch.',
     ],
-    focus: 'background-refetch',
   },
   ]
 
