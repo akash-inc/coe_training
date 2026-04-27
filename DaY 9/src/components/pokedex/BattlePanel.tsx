@@ -1,98 +1,17 @@
 import { useCallback, useMemo } from 'react'
+import { HpBar } from '../atoms/HpBar'
+import { BattlePlaybackControls } from '../molecules/BattlePlaybackControls'
+import { BattleTeamRow } from '../molecules/BattleTeamRow'
+import { BattleTurnLine } from '../molecules/BattleTurnLine'
 import { useTeamRoster } from '../../hooks/useTeamToggle'
-import { defaultFrontSpriteUrl, formatPokemonDisplayName } from '../../lib/pokeapi'
+import { formatPokemonDisplayName } from '../../lib/pokeapi'
 import type { PokemonSummary } from '../../lib/pokeapi'
 import { teamConstraints } from '../../lib/teamStorage'
 import { useBattleStore } from '../../stores/battleStore'
-import { cn } from '../../lib/cn'
 
 type BattlePanelProps = {
   selected: PokemonSummary | null
   nameById: Map<number, string>
-}
-
-function BattleSlotRow({
-  label,
-  tone,
-  teamIds,
-  nameById,
-  onRemove,
-}: {
-  label: string
-  tone: 'A' | 'B'
-  teamIds: number[]
-  nameById: Map<number, string>
-  onRemove: (slot: number) => void
-}) {
-  const border =
-    tone === 'A'
-      ? 'border-sky-500/50 bg-sky-500/5 dark:border-sky-400/40'
-      : 'border-rose-500/50 bg-rose-500/5 dark:border-rose-400/40'
-  return (
-    <div className={cn('rounded-lg border p-2', border)}>
-      <p className="m-0 mb-2 text-xs font-semibold text-foreground">{label}</p>
-      <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-        {Array.from({ length: teamConstraints.max }, (_, i) => {
-          const id = teamIds[i]
-          if (id == null) {
-            return (
-              <li key={`e-${i}`} className="flex w-14 flex-col items-center gap-0.5">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-border/70 text-lg text-muted-foreground/50">
-                  +
-                </div>
-                <span className="text-[10px] text-muted-foreground">—</span>
-              </li>
-            )
-          }
-          const raw = nameById.get(id)
-          const display = raw ? formatPokemonDisplayName(raw) : `#${id}`
-          return (
-            <li key={`p-${id}-${i}`} className="flex w-14 flex-col items-center gap-0.5">
-              <button
-                type="button"
-                className="group relative overflow-hidden rounded-lg border-2 border-border bg-card p-0.5"
-                onClick={() => onRemove(i)}
-                title="Remove from team"
-                aria-label={`Remove ${display} from team`}
-              >
-                <img
-                  src={defaultFrontSpriteUrl(id)}
-                  alt=""
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 object-contain [image-rendering:pixelated]"
-                />
-                <span className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-background/80 to-transparent pb-0.5 text-[9px] font-medium text-foreground opacity-0 transition group-hover:opacity-100">
-                  remove
-                </span>
-              </button>
-              <span className="line-clamp-1 w-full text-center text-[10px] font-medium text-foreground">
-                {display}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-    </div>
-  )
-}
-
-function HpBar({ current, max, tiny }: { current: number; max: number; tiny?: boolean }) {
-  const pct = max <= 0 ? 0 : Math.min(100, Math.round((100 * current) / max))
-  return (
-    <div
-      className={cn('h-1.5 w-full overflow-hidden rounded-full bg-border/50', tiny && 'h-1')}
-      title={`${current} / ${max} HP`}
-    >
-      <div
-        className={cn(
-          'h-full rounded-full transition-[width]',
-          pct > 50 ? 'bg-emerald-500/90' : pct > 20 ? 'bg-amber-500/90' : 'bg-rose-500/90',
-        )}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  )
 }
 
 export function BattlePanel({ selected, nameById }: BattlePanelProps) {
@@ -158,6 +77,13 @@ export function BattlePanel({ selected, nameById }: BattlePanelProps) {
   const showWinnerLine =
     turnLen > 0 && playhead === turnLen && (turns![turnLen - 1]!.winner !== null) ? turns![turnLen - 1]!.winner : null
 
+  const positionLabel =
+    playhead === 0
+      ? 'Start'
+      : playhead === turnLen
+        ? `End (${turnLen} moves)`
+        : `After turn ${playhead} of ${turnLen}`
+
   return (
     <div
       className="flex w-full min-w-0 flex-col gap-3 text-sm text-foreground"
@@ -170,14 +96,14 @@ export function BattlePanel({ selected, nameById }: BattlePanelProps) {
       </p>
 
       <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-        <BattleSlotRow
+        <BattleTeamRow
           label="Team A"
           tone="A"
           teamIds={partyAIds}
           nameById={nameById}
           onRemove={(slot) => removeFromParty('A', slot)}
         />
-        <BattleSlotRow
+        <BattleTeamRow
           label="Team B"
           tone="B"
           teamIds={partyBIds}
@@ -326,84 +252,31 @@ export function BattlePanel({ selected, nameById }: BattlePanelProps) {
 
       {turns && turnLen > 0 ? (
         <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <p className="m-0 text-xs font-medium text-foreground">Turn timeline</p>
-            <span className="text-[10px] text-muted-foreground">
-              {playhead === 0
-                ? 'Start'
-                : playhead === turnLen
-                  ? `End (${turnLen} moves)`
-                  : `After turn ${playhead} of ${turnLen}`}
-            </span>
-          </div>
-          <div className="mb-2 flex flex-wrap items-center gap-1">
-            <button
-              type="button"
-              className="rounded border border-border bg-card px-2 py-0.5 text-xs"
-              onClick={toStart}
-              disabled={playhead === 0}
-            >
-              |◀
-            </button>
-            <button
-              type="button"
-              className="rounded border border-border bg-card px-2 py-0.5 text-xs"
-              onClick={() => step(-1)}
-              disabled={playhead === 0}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="rounded border border-border bg-card px-2 py-0.5 text-xs"
-              onClick={() => step(1)}
-              disabled={playhead >= turnLen}
-            >
-              Next
-            </button>
-            <button
-              type="button"
-              className="rounded border border-border bg-card px-2 py-0.5 text-xs"
-              onClick={toEnd}
-              disabled={playhead === turnLen}
-            >
-              ▶|
-            </button>
-          </div>
-          <input
-            type="range"
-            className="mb-2 w-full"
-            min={0}
-            max={turnLen}
-            value={playhead}
-            onChange={(e) => setPlayhead(Number(e.target.value))}
-            aria-label="Scrub through battle turns"
+          <BattlePlaybackControls
+            playhead={playhead}
+            turnLen={turnLen}
+            onToStart={toStart}
+            onStep={step}
+            onToEnd={toEnd}
+            onPlayheadChange={setPlayhead}
+            positionLabel={positionLabel}
           />
-          <ul className="m-0 max-h-56 list-none space-y-1 overflow-y-auto rounded border border-border/50 bg-card/20 p-2 text-xs" aria-label="Battle log">
-            {turns.map((t, i) => {
-              const isPast = i < playhead
-              const isCurrent = i === playhead - 1
-              const side = t.side === 'A' ? 'A' : 'B'
-              return (
-                <li
-                  key={`${t.turnIndex}-${i}`}
-                  className={cn(
-                    'rounded border border-transparent px-1 py-0.5',
-                    isPast && 'text-foreground/90',
-                    !isPast && 'text-foreground/40',
-                    isCurrent && 'border-border/80 bg-muted/30',
-                  )}
-                >
-                  <span
-                    className={cn('mr-1 font-mono text-[10px] text-muted-foreground', t.side === 'A' && 'text-sky-600 dark:text-sky-300', t.side === 'B' && 'text-rose-600 dark:text-rose-300')}
-                  >
-                    {side}
-                  </span>
-                  {formatPokemonDisplayName(t.actorName)} used <strong className="font-medium">{t.moveNameDisplay}</strong> on{' '}
-                  {formatPokemonDisplayName(t.targetName)} for {t.damage} damage
-                </li>
-              )
-            })}
+          <ul
+            className="m-0 max-h-56 list-none space-y-1 overflow-y-auto rounded border border-border/50 bg-card/20 p-2 text-xs"
+            aria-label="Battle log"
+          >
+            {turns.map((t, i) => (
+              <BattleTurnLine
+                key={`${t.turnIndex}-${i}`}
+                side={t.side}
+                actorName={t.actorName}
+                moveNameDisplay={t.moveNameDisplay}
+                targetName={t.targetName}
+                damage={t.damage}
+                dimmed={i >= playhead}
+                current={i === playhead - 1}
+              />
+            ))}
           </ul>
         </div>
       ) : null}

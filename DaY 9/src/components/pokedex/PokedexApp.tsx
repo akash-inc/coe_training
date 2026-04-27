@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { usePokedexFilter } from '../../hooks/usePokedexFilter'
 import { usePokedexInfiniteList } from '../../hooks/usePokedexInfiniteList'
 import type { PokemonSummary } from '../../lib/pokeapi'
-import { cn } from '../../lib/cn'
+import { PanelModeToggle, type PokedexRightPanelMode } from '../molecules/PanelModeToggle'
 import { PokedexLayout } from '../organisms/PokedexLayout'
 import { BattlePanel } from './BattlePanel'
 import { PokedexListSection } from './PokedexListSection'
@@ -22,48 +22,9 @@ function DetailLoadingFallback() {
   )
 }
 
-function RightPanelModeToggle({
-  value,
-  onChange,
-}: {
-  value: 'details' | 'battle'
-  onChange: (v: 'details' | 'battle') => void
-}) {
-  return (
-    <div
-      className="inline-flex flex-wrap gap-0 rounded-lg border border-border bg-muted/20 p-0.5"
-      role="group"
-      aria-label="What the right side shows"
-    >
-      <button
-        type="button"
-        className={cn(
-          'rounded-md px-3 py-1.5 text-xs font-medium',
-          value === 'details' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground',
-        )}
-        onClick={() => onChange('details')}
-        aria-pressed={value === 'details'}
-      >
-        Details
-      </button>
-      <button
-        type="button"
-        className={cn(
-          'rounded-md px-3 py-1.5 text-xs font-medium',
-          value === 'battle' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground',
-        )}
-        onClick={() => onChange('battle')}
-        aria-pressed={value === 'battle'}
-      >
-        Battle
-      </button>
-    </div>
-  )
-}
-
 export function PokedexApp() {
   const [listLive, setListLive] = useState(false)
-  const [rightMode, setRightMode] = useState<'details' | 'battle'>('details')
+  const [rightMode, setRightMode] = useState<PokedexRightPanelMode>('details')
   const infinite = usePokedexInfiniteList({ listLive })
   const filter = usePokedexFilter(infinite.summaries)
   const [selected, setSelected] = useState<PokemonSummary | null>(null)
@@ -120,7 +81,7 @@ export function PokedexApp() {
 
   return (
     <PokedexLayout
-      headerAside={<RightPanelModeToggle value={rightMode} onChange={setRightMode} />}
+      headerAside={<PanelModeToggle value={rightMode} onChange={setRightMode} />}
       lede={lede}
       rightPanelLabel={
         rightMode === 'battle'
