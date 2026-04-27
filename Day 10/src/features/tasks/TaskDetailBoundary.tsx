@@ -39,7 +39,7 @@ function TaskDetailInner() {
           )}
         </p>
       </div>
-      <div className="task-detail__actions">
+      <div className="task-detail__actions" data-region="optimistic">
         <button
           type="button"
           className="btn btn--primary"

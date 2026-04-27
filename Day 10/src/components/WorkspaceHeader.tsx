@@ -39,7 +39,11 @@ export function WorkspaceHeader() {
         <span aria-hidden="true"> · </span>
         {me.data.email}
       </p>
-      <div className="workspace-header__stats" aria-label="Task counts by status">
+      <div
+        className="workspace-header__stats"
+        data-region="stats"
+        aria-label="Task counts by status"
+      >
         <div className="stat-chip stat-chip--open" title="Open tasks">
           <span className="stat-chip__label">Open</span>
           <span>{stats.data.open}</span>

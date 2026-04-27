@@ -2,8 +2,15 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { tasksInfinite, TASKS_PAGE_SIZE, taskDetail } from '../../lib/queryOptions'
 
+function taskPath(slug: string | undefined, id: string) {
+  if (slug) {
+    return `/learn/${slug}/tasks/${id}`
+  }
+  return `/tasks/${id}`
+}
+
 export function TaskListInfinite() {
-  const { taskId } = useParams()
+  const { taskId, slug } = useParams()
   const queryClient = useQueryClient()
   const q = useInfiniteQuery(tasksInfinite(TASKS_PAGE_SIZE))
 
@@ -50,7 +57,7 @@ export function TaskListInfinite() {
             <li key={t.id}>
               <Link
                 className={`task-list__link${taskId === t.id ? ' task-list__link--active' : ''}`}
-                to={`/tasks/${t.id}`}
+                to={taskPath(slug, t.id)}
                 onMouseEnter={() => {
                   void queryClient.prefetchQuery(taskDetail(t.id))
                 }}

@@ -1,0 +1,37 @@
+import type { LearnTopic } from '../../data/learnTopics'
+
+type LearnNarrativeProps = {
+  topic: LearnTopic
+}
+
+export function LearnNarrative({ topic }: LearnNarrativeProps) {
+  return (
+    <div className="learn-narrative">
+      <h1 className="learn-narrative__title">{topic.title}</h1>
+      <section className="learn-narrative__section" aria-labelledby="learn-technical">
+        <h2 id="learn-technical" className="learn-narrative__h2">
+          How it works
+        </h2>
+        <div className="learn-narrative__body">
+          {topic.bodyTechnical.split('\n\n').map((p, i) => (
+            <p key={`t-${i}`} className="learn-narrative__p">
+              {p}
+            </p>
+          ))}
+        </div>
+      </section>
+      <section className="learn-narrative__section" aria-labelledby="learn-plain">
+        <h2 id="learn-plain" className="learn-narrative__h2">
+          In plain English
+        </h2>
+        <div className="learn-narrative__body learn-narrative__body--plain">
+          {topic.bodyPlain.split('\n\n').map((p, i) => (
+            <p key={`p-${i}`} className="learn-narrative__p">
+              {p}
+            </p>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}

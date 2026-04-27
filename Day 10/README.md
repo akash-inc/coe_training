@@ -25,6 +25,31 @@ npm install
 
 The migration uses the same **demo RLS** idea as Day 8: anon/authenticated can only touch rows for the fixed workspace id. Tighten policies before any production use.
 
+## Learn + demo (TanStack Query topics)
+
+The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; only the narrative and a **focus ring** on the relevant region change.
+
+| URL | Topic |
+| --- | --- |
+| `/` | Redirects to `/learn` |
+| `/learn` | Card grid: links to each topic (opens at `…/tasks`) |
+| `/learn/:slug/tasks` | Topic narrative + live demo, task list |
+| `/learn/:slug/tasks/:taskId` | Same, with a task open |
+
+| Slug | What it highlights |
+| --- | --- |
+| `parallel-queries` | Header (parallel `useQueries`) |
+| `infinite-list` | Task list (`useInfiniteQuery`) |
+| `dependent-queries` | Detail + comments (dependent fetch) |
+| `optimistic-mutations` | Cycle status row (optimistic mutation) |
+| `prefetching` | List rows (hover prefetch) |
+| `cache-invalidation` | Cache & debug panel |
+| `global-errors` | Top error banner |
+| `error-boundaries` | Detail panel (query error boundary) |
+| `background-refetch` | Stats chips in the header |
+
+Copy and topic metadata live in [`src/data/learnTopics.ts`](src/data/learnTopics.ts).
+
 ## npm scripts
 
 | Command | What it does |

@@ -1,55 +1,33 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { queryClient } from './lib/queryClient'
 import { ApiErrorLogProvider } from './contexts/ApiErrorLogContext'
 import { SupabaseRequired } from './components/SupabaseRequired'
-import { GlobalErrorBanner } from './components/GlobalErrorBanner'
-import { WorkspaceHeader } from './components/WorkspaceHeader'
-import { CreateTaskForm } from './components/CreateTaskForm'
-import { CacheToolsPanel } from './components/CacheToolsPanel'
-import { TaskListInfinite } from './features/tasks/TaskListInfinite'
+import { TaskDemoGrid } from './components/TaskDemoGrid'
+import { LearnHub } from './pages/LearnHub'
+import { LearnSlugIndexRedirect, LearnTopicLayout } from './pages/LearnTopicLayout'
 import { TaskDetailBoundary } from './features/tasks/TaskDetailBoundary'
 import './App.css'
 
-function TasksLayout() {
-  return (
-    <div className="app-grid">
-      <div className="app-grid__main">
-        <div className="create-task__wrap panel">
-          <CreateTaskForm />
-        </div>
-        <div className="app-grid__split">
-          <div className="task-list panel">
-            <TaskListInfinite />
-          </div>
-          <div className="app-grid__detail panel panel--pad">
-            <Outlet />
-          </div>
-        </div>
-      </div>
-      <CacheToolsPanel />
-    </div>
-  )
-}
+const tasksIndexPlaceholder = (
+  <p className="tasks-placeholder">
+    Select a task in the list to open detail, comments, and optimistic status actions
+  </p>
+)
 
 function AppShell() {
   return (
     <div className="app">
-      <GlobalErrorBanner />
-      <WorkspaceHeader />
       <Routes>
-        <Route path="/" element={<Navigate to="/tasks" replace />} />
-        <Route path="tasks" element={<TasksLayout />}>
-          <Route
-            index
-            element={
-              <p className="tasks-placeholder">
-                Choose a task on the left to read details, comments, and run optimistic status updates
-              </p>
-            }
-          />
-          <Route path=":taskId" element={<TaskDetailBoundary />} />
+        <Route path="/" element={<Navigate to="/learn" replace />} />
+        <Route path="/learn" element={<LearnHub />} />
+        <Route path="/learn/:slug" element={<LearnTopicLayout />}>
+          <Route index element={<LearnSlugIndexRedirect />} />
+          <Route path="tasks" element={<TaskDemoGrid />}>
+            <Route index element={tasksIndexPlaceholder} />
+            <Route path=":taskId" element={<TaskDetailBoundary />} />
+          </Route>
         </Route>
         <Route path="*" element={<p className="not-found">Page not found</p>} />
       </Routes>
