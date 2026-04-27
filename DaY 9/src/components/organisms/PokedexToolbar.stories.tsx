@@ -80,6 +80,7 @@ function ToolbarState({
       }}
       visibleCount={visibleCount}
       totalCount={totalCount}
+      nationalTotalCount={1008}
       hasActiveFilters={hasActiveFilters}
     />
   )

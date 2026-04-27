@@ -24,6 +24,8 @@ type PokedexToolbarProps = {
   onClearFilters: () => void
   visibleCount: number
   totalCount: number
+  /** When set, shows total species in the national dex (from the list API). */
+  nationalTotalCount: number
   hasActiveFilters: boolean
 }
 
@@ -48,6 +50,7 @@ export function PokedexToolbar({
   onClearFilters,
   visibleCount,
   totalCount,
+  nationalTotalCount,
   hasActiveFilters,
 }: PokedexToolbarProps) {
   return (
@@ -114,7 +117,8 @@ export function PokedexToolbar({
       </div>
 
       <div className="text-xs text-muted-foreground" aria-live="polite">
-        Showing {visibleCount} of {totalCount} loaded species
+        Showing {visibleCount} of {totalCount} loaded · national {nationalTotalCount.toLocaleString()}{' '}
+        species
         {hasActiveFilters ? ' · filters on' : ''}
       </div>
 

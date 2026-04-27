@@ -27,6 +27,9 @@ type PokemonGridProps = {
   items: PokemonSummary[]
   selectedId: number | null
   onSelect: (pokemon: PokemonSummary) => void
+  onPrefetch?: (pokemon: PokemonSummary) => void
+  onTeamToggle?: (pokemon: PokemonSummary) => void
+  teamIds?: Set<number>
   isLoading: boolean
   /** Placeholder card count while `isLoading` is true */
   skeletonCount?: number
@@ -36,6 +39,9 @@ export function PokemonGrid({
   items,
   selectedId,
   onSelect,
+  onPrefetch,
+  onTeamToggle,
+  teamIds,
   isLoading,
   skeletonCount = 12,
 }: PokemonGridProps) {
@@ -71,6 +77,9 @@ export function PokemonGrid({
           pokemon={p}
           selected={selectedId === p.id}
           onSelect={onSelect}
+          onPrefetch={onPrefetch}
+          onTeamToggle={onTeamToggle}
+          onTeam={teamIds?.has(p.id) ?? false}
         />
       ))}
     </div>

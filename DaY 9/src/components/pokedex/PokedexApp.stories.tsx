@@ -10,7 +10,7 @@ const meta = {
     docs: {
       description: {
         story:
-          'Fetches a page of species from the public PokéAPI. Needs network access; first load can take a moment.',
+          'Uses an infinite query for paged species, dependent queries for details, and the public PokéAPI. Needs network access.',
       },
     },
   },

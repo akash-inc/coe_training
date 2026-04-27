@@ -3,7 +3,11 @@ import type { PokemonSummary } from '../../lib/pokeapi'
 import { formatPokemonDisplayName } from '../../lib/pokeapi/formatPokemonDisplayName'
 import { headlessTabClass, headlessTabListClass } from '../../lib/headlessTabClass'
 import { cn } from '../../lib/cn'
-import { usePokemonDetails, type PokemonDetailsState } from '../../hooks/usePokemonDetails'
+import type { UseQueryResult } from '@tanstack/react-query'
+import {
+  usePokemonDetailsQueries,
+  type PokemonDetailsState,
+} from '../../hooks/usePokemonDetailsQueries'
 import { DetailSelectPrompt } from '../pokedex/pokedexShells'
 import { IdChip } from '../atoms/IdChip'
 import { PokemonName } from '../atoms/PokemonName'
@@ -154,12 +158,23 @@ function MovesBlock({ state }: { state: PokemonDetailsState }) {
   )
 }
 
-function EvolutionBlock({ state }: { state: PokemonDetailsState }) {
+function EvolutionBlock({
+  state,
+  evolutionLineLoading,
+  slugQueries,
+}: {
+  state: PokemonDetailsState
+  evolutionLineLoading: boolean
+  slugQueries: Array<UseQueryResult<PokemonSummary, Error>>
+}) {
   if (state.status === 'loading') {
     return <p className="m-0 text-sm text-muted-foreground" role="status">Loading evolution…</p>
   }
   if (state.status === 'error') {
     return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+  }
+  if (evolutionLineLoading) {
+    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading evolution line…</p>
   }
   const { evolution, evolutionError } = state.data
   if (evolutionError) {
@@ -173,19 +188,35 @@ function EvolutionBlock({ state }: { state: PokemonDetailsState }) {
       className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-foreground/95"
       aria-label="Evolution line"
     >
-      {evolution.map((slug, i) => (
-        <span key={slug} className="inline-flex items-center gap-1.5">
-          {i > 0 ? <span className="text-muted-foreground" aria-hidden>→</span> : null}
-          <span className="capitalize">{formatPokemonDisplayName(slug)}</span>
-        </span>
-      ))}
+      {evolution.map((slug, i) => {
+        const q = slugQueries[i]
+        const sprite = q?.data?.spriteUrl
+        return (
+          <span key={slug} className="inline-flex items-center gap-1.5">
+            {i > 0 ? <span className="text-muted-foreground" aria-hidden>→</span> : null}
+            {sprite ? (
+              <img
+                src={sprite}
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 shrink-0 [image-rendering:pixelated]"
+              />
+            ) : null}
+            <span className="capitalize">{formatPokemonDisplayName(slug)}</span>
+            {q?.isPending ? <span className="text-xs text-muted-foreground" aria-hidden>…</span> : null}
+          </span>
+        )
+      })}
     </div>
   )
 }
 
 function PokemonDetailWithData({ pokemon }: { pokemon: PokemonSummary }) {
   const display = formatPokemonDisplayName(pokemon.name)
-  const details = usePokemonDetails(pokemon)
+  const { state: details, evolutionLineLoading, slugQueries } = usePokemonDetailsQueries(
+    pokemon.id,
+  )
 
   return (
     <TabGroup className="w-full" defaultIndex={0}>
@@ -237,7 +268,11 @@ function PokemonDetailWithData({ pokemon }: { pokemon: PokemonSummary }) {
           <MovesBlock state={details} />
         </TabPanel>
         <TabPanel className="pt-2 focus:outline-none" aria-label="Evolution">
-          <EvolutionBlock state={details} />
+          <EvolutionBlock
+            state={details}
+            evolutionLineLoading={evolutionLineLoading}
+            slugQueries={slugQueries}
+          />
         </TabPanel>
         <TabPanel className="pt-2 focus:outline-none">
           <RecordDisclosures pokemon={pokemon} display={display} />

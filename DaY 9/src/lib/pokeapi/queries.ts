@@ -16,7 +16,7 @@ export type PokemonSummary = {
   types: string[]
 }
 
-function dtoToSummary(dto: PokemonDto): PokemonSummary {
+export function dtoToSummary(dto: PokemonDto): PokemonSummary {
   const types = [...dto.types]
     .sort((a, b) => a.slot - b.slot)
     .map((t) => t.type.name)
@@ -31,14 +31,60 @@ function dtoToSummary(dto: PokemonDto): PokemonSummary {
 export async function fetchPokemonSummaries(
   limit: number,
   offset: number,
+  init?: { signal?: AbortSignal },
 ): Promise<PokemonSummary[]> {
   const list = await pokeapiGet<PokemonListResponse>(
     `pokemon?limit=${limit}&offset=${offset}`,
+    init,
   )
   const rows = await Promise.all(
-    list.results.map((item) => pokeapiGet<PokemonDto>(item.url)),
+    list.results.map((item) => pokeapiGet<PokemonDto>(item.url, init)),
   )
   return rows.map(dtoToSummary)
+}
+
+export type SummariesPageResult = {
+  summaries: PokemonSummary[]
+  /** `null` when this was the last page. */
+  nextOffset: number | null
+  totalCount: number
+}
+
+function parseOffsetFromPokeListUrl(url: string | null): number | null {
+  if (!url) {
+    return null
+  }
+  try {
+    const u = new URL(url)
+    const o = u.searchParams.get('offset')
+    return o != null ? Number(o) : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Fetches a single "page" of the PokéAPI `/pokemon` list plus full DTOs in parallel
+ * (parallel within the page, not across pages).
+ */
+export async function fetchPokemonSummariesPage(
+  limit: number,
+  offset: number,
+  init?: { signal?: AbortSignal },
+): Promise<SummariesPageResult> {
+  const list = await pokeapiGet<PokemonListResponse>(
+    `pokemon?limit=${limit}&offset=${offset}`,
+    init,
+  )
+  if (list.results.length === 0) {
+    return { summaries: [], nextOffset: null, totalCount: list.count }
+  }
+  const rows = await Promise.all(
+    list.results.map((item) => pokeapiGet<PokemonDto>(item.url, init)),
+  )
+  const summaries = rows.map(dtoToSummary)
+  const nextOffset = parseOffsetFromPokeListUrl(list.next)
+  return { summaries, nextOffset, totalCount: list.count }
 }
 
 const LIST_PAGE = 2000
@@ -94,6 +140,38 @@ export async function fetchAllPokemonSummaries(
   return out
 }
 
+export async function fetchPokemonResource(
+  id: number,
+  init?: { signal?: AbortSignal },
+): Promise<PokemonResourceDto> {
+  return pokeapiGet<PokemonResourceDto>(`pokemon/${id}`, init)
+}
+
+export async function fetchSpeciesByUrl(
+  url: string,
+  init?: { signal?: AbortSignal },
+): Promise<SpeciesResourceDto> {
+  return pokeapiGet<SpeciesResourceDto>(url, init)
+}
+
+export async function fetchEvolutionChainByUrl(
+  url: string,
+  init?: { signal?: AbortSignal },
+): Promise<EvolutionChainResourceDto> {
+  return pokeapiGet<EvolutionChainResourceDto>(url, init)
+}
+
+/**
+ * Fetches a Pokémon DTO by national id or species slug (PokéAPI `pokemon/{id or name}`).
+ */
+export async function fetchPokemonDtoByIdentifier(
+  idOrName: string | number,
+  init?: { signal?: AbortSignal },
+): Promise<PokemonDto> {
+  const id = idOrName
+  return pokeapiGet<PokemonDto>(`pokemon/${id}`, init)
+}
+
 const STAT_ORDER = [
   'hp',
   'attack',
@@ -103,7 +181,7 @@ const STAT_ORDER = [
   'speed',
 ] as const
 
-function statMap(stats: { base_stat: number; stat: { name: string } }[]) {
+export function statMap(stats: { base_stat: number; stat: { name: string } }[]) {
   const m = new Map(stats.map((s) => [s.stat.name, s.base_stat] as const))
   return STAT_ORDER.map((key) => ({ key, base: m.get(key) ?? 0 }))
 }
@@ -115,7 +193,22 @@ function walkEvolutionChain(n: EvolutionChainLink, out: string[]): void {
   }
 }
 
-function uniqueSortedMoves(moves: { move: { name: string } }[]) {
+export function buildEvolutionSlugs(chain: EvolutionChainResourceDto) {
+  const raw: string[] = []
+  walkEvolutionChain(chain.chain, raw)
+  const seen = new Set<string>()
+  const evolution: string[] = []
+  for (const n of raw) {
+    if (seen.has(n)) {
+      continue
+    }
+    seen.add(n)
+    evolution.push(n)
+  }
+  return evolution
+}
+
+export function uniqueSortedMoves(moves: { move: { name: string } }[]) {
   const set = new Set(moves.map((m) => m.move.name))
   return [...set].sort((a, b) => a.localeCompare(b)).slice(0, 40)
 }
@@ -128,28 +221,22 @@ export type PokemonDetailsPayload = {
   evolutionError: boolean
 }
 
+/**
+ * Composed one-shot load (e.g. tests or non-hook call sites) matching the old behavior.
+ */
 export async function fetchPokemonDetailsPayload(
   id: number,
   init?: { signal?: AbortSignal },
 ): Promise<PokemonDetailsPayload> {
-  const p = await pokeapiGet<PokemonResourceDto>(`pokemon/${id}`, init)
+  const p = await fetchPokemonResource(id, init)
   const stats = statMap(p.stats)
   const moves = uniqueSortedMoves(p.moves)
   const evolution: string[] = []
   let evolutionError = false
   try {
-    const species = await pokeapiGet<SpeciesResourceDto>(p.species.url, init)
-    const chain = await pokeapiGet<EvolutionChainResourceDto>(species.evolution_chain.url, init)
-    const raw: string[] = []
-    walkEvolutionChain(chain.chain, raw)
-    const seen = new Set<string>()
-    for (const n of raw) {
-      if (seen.has(n)) {
-        continue
-      }
-      seen.add(n)
-      evolution.push(n)
-    }
+    const species = await fetchSpeciesByUrl(p.species.url, init)
+    const chain = await fetchEvolutionChainByUrl(species.evolution_chain.url, init)
+    evolution.push(...buildEvolutionSlugs(chain))
   } catch {
     evolutionError = true
   }

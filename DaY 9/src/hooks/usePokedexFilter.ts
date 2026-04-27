@@ -105,3 +105,5 @@ export function usePokedexFilter(items: PokemonSummary[]) {
     hasActiveFilters,
   }
 }
+
+export type PokedexFilterResult = ReturnType<typeof usePokedexFilter>
