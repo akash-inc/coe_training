@@ -32,6 +32,22 @@ export function LearnNarrative({ topic }: LearnNarrativeProps) {
           ))}
         </div>
       </section>
+      <section
+        className="learn-narrative__section learn-narrative__section--tryit"
+        aria-labelledby="learn-tryit"
+      >
+        <h2 id="learn-tryit" className="learn-narrative__h2">
+          Try it
+        </h2>
+        <p className="learn-narrative__p learn-narrative__tryit-intro">{topic.tryItIntro}</p>
+        <ol className="learn-narrative__tryit-ol">
+          {topic.tryItSteps.map((step, i) => (
+            <li key={`try-${i}`} className="learn-narrative__tryit-li">
+              {step}
+            </li>
+          ))}
+        </ol>
+      </section>
     </div>
   )
 }

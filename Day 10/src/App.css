@@ -988,6 +988,37 @@
   line-height: 1.65;
 }
 
+.learn-narrative__section--tryit {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  background: var(--c-surface-elevated, var(--c-surface));
+}
+
+.learn-narrative__tryit-intro {
+  margin-bottom: var(--space-3);
+}
+
+.learn-narrative__tryit-ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--c-text);
+}
+
+.learn-narrative__tryit-li {
+  padding-left: 0.25rem;
+}
+
+.learn-narrative__tryit-li::marker {
+  font-weight: 700;
+  color: var(--c-accent, var(--c-text));
+}
+
 .learn-callout {
   display: flex;
   flex-direction: column;

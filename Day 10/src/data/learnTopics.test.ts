@@ -22,6 +22,8 @@ describe('learnTopics', () => {
       expect(slugs.has(t.slug)).toBe(false)
       slugs.add(t.slug)
       expect(FOCUS_SET.has(t.focus)).toBe(true)
+      expect(t.tryItIntro.length).toBeGreaterThan(0)
+      expect(t.tryItSteps.length).toBeGreaterThanOrEqual(2)
     }
     expect(learnTopics.length).toBe(9)
   })

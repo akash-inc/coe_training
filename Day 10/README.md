@@ -27,7 +27,7 @@ The migration uses the same **demo RLS** idea as Day 8: anon/authenticated can o
 
 ## Learn + demo (TanStack Query topics)
 
-The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; only the narrative and a **focus ring** on the relevant region change.
+The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; only the narrative, a **focus ring** on the relevant region, and a **Try it** ordered checklist (do / expect / why) change per topic.
 
 | URL | Topic |
 | --- | --- |
