@@ -33,6 +33,25 @@
   --spacing-6: var(--space-6);
 }
 
+/* Expanding border “waves” for one-tap action buttons (e.g. Extra options). */
+@keyframes pokedex-border-waves {
+  0% {
+    box-shadow:
+      0 0 0 0 rgb(16 185 129 / 0.45),
+      0 0 0 0 rgb(16 185 129 / 0.28);
+  }
+  40% {
+    box-shadow:
+      0 0 0 4px rgb(16 185 129 / 0.22),
+      0 0 0 10px rgb(16 185 129 / 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 0 12px transparent,
+      0 0 0 22px transparent;
+  }
+}
+
 @layer base {
   body {
     @apply m-0;
@@ -49,5 +68,17 @@
 
   p {
     @apply m-0;
+  }
+}
+
+@layer components {
+  .pokedex-cache-action-btn--wave {
+    animation: pokedex-border-waves 0.6s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pokedex-cache-action-btn--wave {
+      animation: none;
+    }
   }
 }

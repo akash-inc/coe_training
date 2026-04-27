@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { queryKeys } from '../../lib/queryKeys'
 import { POKEDEX_PAGE_SIZE } from '../../lib/queryOptions'
 import { getSimulateTeamMutationFailure, setSimulateTeamMutationFailure } from '../../hooks/useTeamToggle'
@@ -10,35 +10,74 @@ type PokedexCacheControlsProps = {
   onListLiveChange: (on: boolean) => void
 }
 
-const actionBtn =
-  'rounded-lg border border-border bg-card px-3 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/45'
+const oneTimeActionClass =
+  'pokedex-cache-action-btn relative rounded-lg border border-border bg-card px-3 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--border)_12%,var(--card-bg))] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40'
 
-const togglePill = (pressed: boolean, danger?: boolean) =>
+const toggleBase =
+  'inline-flex min-h-[2.5rem] max-w-full items-center gap-2 rounded-full border-2 pl-1 pr-3 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow] duration-200 ' +
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+
+/** Auto-refresh: on = green, off = red (both states are explicit). */
+const toggleRefreshPill = (on: boolean) =>
   cn(
-    'inline-flex min-h-[2.5rem] max-w-full items-center gap-2 rounded-full border-2 pl-1 pr-3 text-left text-xs font-medium transition-colors',
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-    danger
-      ? pressed
-        ? 'border-destructive/70 bg-destructive/10 text-destructive focus-visible:ring-destructive/30'
-        : 'border-border bg-background/90 text-muted-foreground hover:border-border'
-      : pressed
-        ? 'border-accent bg-accent/15 text-foreground shadow-sm focus-visible:ring-accent/40'
-        : 'border-border bg-background/90 text-muted-foreground hover:border-border/90',
+    toggleBase,
+    on
+      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-950 shadow-sm focus-visible:ring-emerald-500/45 dark:border-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-50'
+      : 'border-rose-400 bg-rose-500/10 text-rose-950 focus-visible:ring-rose-400/40 dark:border-rose-500/50 dark:bg-rose-950/20 dark:text-rose-100',
   )
 
-const toggleKnob = (on: boolean, danger?: boolean) => (
+const knobRefresh = (on: boolean) => (
   <span
     className={cn(
       'inline-block h-4 w-4 shrink-0 rounded-full border-2',
       on
-        ? danger
-          ? 'border-destructive/80 bg-destructive/40'
-          : 'border-accent/90 bg-accent/50'
-        : 'border-border bg-muted/40',
+        ? 'border-emerald-600 bg-emerald-500/50 dark:border-emerald-300 dark:bg-emerald-400/50'
+        : 'border-rose-500 bg-rose-400/40 dark:border-rose-400 dark:bg-rose-500/35',
     )}
     aria-hidden
   />
 )
+
+/** Demo-fail: on = red (bad), off = green (normal) — “safe” is green. */
+const toggleDemoPill = (on: boolean) =>
+  cn(
+    toggleBase,
+    on
+      ? 'border-rose-600 bg-rose-500/15 text-rose-950 shadow-sm focus-visible:ring-rose-500/40 dark:border-rose-500 dark:bg-rose-950/25 dark:text-rose-100'
+      : 'border-emerald-500 bg-emerald-500/10 text-emerald-950 focus-visible:ring-emerald-500/45 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-50',
+  )
+
+const knobDemo = (on: boolean) => (
+  <span
+    className={cn(
+      'inline-block h-4 w-4 shrink-0 rounded-full border-2',
+      on
+        ? 'border-rose-600 bg-rose-500/50 dark:border-rose-400 dark:bg-rose-500/40'
+        : 'border-emerald-600 bg-emerald-500/40 dark:border-emerald-300 dark:bg-emerald-400/45',
+    )}
+    aria-hidden
+  />
+)
+
+function WaveActionButton({ onAction, children }: { onAction: () => void; children: ReactNode }) {
+  const [wave, setWave] = useState(false)
+  return (
+    <button
+      type="button"
+      className={cn(oneTimeActionClass, wave && 'pokedex-cache-action-btn--wave')}
+      onClick={() => {
+        onAction()
+        setWave(false)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setWave(true))
+        })
+      }}
+      onAnimationEnd={() => setWave(false)}
+    >
+      {children}
+    </button>
+  )
+}
 
 export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCacheControlsProps) {
   const qc = useQueryClient()
@@ -65,6 +104,7 @@ export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCach
           <p className="m-0 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90">
             Toggle — stays on or off
           </p>
+          <p className="m-0 mb-2 text-[10px] text-muted-foreground/90">Green = good / on · Red = off (auto-refresh) or “demo error” (second toggle)</p>
           <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:flex-wrap">
             <button
               type="button"
@@ -75,10 +115,10 @@ export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCach
                   ? 'Auto-refresh for the left Pokémon list is on, every 30 seconds'
                   : 'Auto-refresh for the left Pokémon list is off'
               }
-              className={cn(togglePill(listLive))}
+              className={cn(toggleRefreshPill(listLive))}
               onClick={() => onListLiveChange(!listLive)}
             >
-              {toggleKnob(listLive)}
+              {knobRefresh(listLive)}
               <span className="min-w-0">
                 {listLive
                   ? 'On: refresh the left-hand Pokémon list every 30s'
@@ -94,14 +134,14 @@ export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCach
                   ? 'Party save error demo is on'
                   : 'Party save error demo is off; saves behave normally'
               }
-              className={cn(togglePill(simFail, true))}
+              className={cn(toggleDemoPill(simFail))}
               onClick={() => {
                 const n = !simFail
                 setSimFail(n)
                 setSimulateTeamMutationFailure(n)
               }}
             >
-              {toggleKnob(simFail, true)}
+              {knobDemo(simFail)}
               <span className="min-w-0">
                 {simFail
                   ? 'On: demo a failed “save my party” (for learning)'
@@ -115,11 +155,10 @@ export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCach
           <p className="m-0 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90">
             One-time actions
           </p>
+          <p className="m-0 mb-2 text-[10px] text-muted-foreground/90">Tap: emerald border rings pulse from the button edge</p>
           <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:flex-wrap">
-            <button
-              type="button"
-              className={actionBtn}
-              onClick={() => {
+            <WaveActionButton
+              onAction={() => {
                 void qc.invalidateQueries({
                   queryKey: queryKeys.listInfinite(POKEDEX_PAGE_SIZE),
                   refetchType: 'active',
@@ -127,22 +166,18 @@ export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCach
               }}
             >
               Refresh the left-hand Pokémon list now
-            </button>
-            <button
-              type="button"
-              className={actionBtn}
-              onClick={() => {
+            </WaveActionButton>
+            <WaveActionButton
+              onAction={() => {
                 void qc.resetQueries({
                   queryKey: queryKeys.listInfinite(POKEDEX_PAGE_SIZE),
                 })
               }}
             >
               Clear cache for the left list, then reload
-            </button>
-            <button
-              type="button"
-              className={actionBtn}
-              onClick={() => {
+            </WaveActionButton>
+            <WaveActionButton
+              onAction={() => {
                 void qc.invalidateQueries({
                   queryKey: ['pokemon', 'resource'],
                   refetchType: 'none',
@@ -150,7 +185,7 @@ export function PokedexCacheControls({ listLive, onListLiveChange }: PokedexCach
               }}
             >
               Mark the right-hand details as outdated
-            </button>
+            </WaveActionButton>
           </div>
         </div>
       </div>
