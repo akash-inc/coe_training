@@ -9,15 +9,15 @@ export function WorkspaceHeader() {
   if (me.isLoading || project.isLoading || stats.isLoading) {
     return (
       <header className="workspace-header workspace-header--loading" aria-live="polite">
-        Loading workspace…
+        <span className="task-list__loading--pulse">Loading workspace…</span>
       </header>
     )
   }
   if (me.isError || project.isError || stats.isError) {
     return (
       <header className="workspace-header workspace-header--error" role="alert">
-        {me.error && <span>{(me.error as Error).message}</span>}
-        {project.error && <span>{(project.error as Error).message}</span>}
+        {me.error && <span>{(me.error as Error).message} </span>}
+        {project.error && <span>{(project.error as Error).message} </span>}
         {stats.error && <span>{(stats.error as Error).message}</span>}
       </header>
     )
@@ -31,19 +31,30 @@ export function WorkspaceHeader() {
       <div className="workspace-header__row">
         <h1 className="workspace-header__title">{project.data.name}</h1>
         <span className="workspace-header__mode" title="Data source">
-          Postgres (Supabase)
+          Postgres
         </span>
       </div>
       <p className="workspace-header__user">
-        Signed in as <strong>{me.data.displayName}</strong> &middot; {me.data.email}
+        <strong>{me.data.displayName}</strong>
+        <span aria-hidden="true"> · </span>
+        {me.data.email}
       </p>
-      <p className="workspace-header__stats" aria-label="Task counts by status">
-        <span>open {stats.data.open}</span>
-        <span>in progress {stats.data.inProgress}</span>
-        <span>done {stats.data.done}</span>
-        <span className="workspace-header__stats-note" title="refetchInterval on this query">
-          (stats refetch in background on an interval for demos)
-        </span>
+      <div className="workspace-header__stats" aria-label="Task counts by status">
+        <div className="stat-chip stat-chip--open" title="Open tasks">
+          <span className="stat-chip__label">Open</span>
+          <span>{stats.data.open}</span>
+        </div>
+        <div className="stat-chip stat-chip--progress" title="In progress">
+          <span className="stat-chip__label">Progress</span>
+          <span>{stats.data.inProgress}</span>
+        </div>
+        <div className="stat-chip stat-chip--done" title="Done">
+          <span className="stat-chip__label">Done</span>
+          <span>{stats.data.done}</span>
+        </div>
+      </div>
+      <p className="workspace-header__stats-footnote" title="refetchInterval on stats query">
+        Live counts refresh in the background on a timer
       </p>
     </header>
   )

@@ -13,12 +13,14 @@ export function CacheToolsPanel() {
 
   return (
     <aside className="cache-tools" aria-labelledby="cache-tools-h">
-      <h2 id="cache-tools-h" className="cache-tools__title">
-        Cache &amp; debug
-      </h2>
-      <p className="cache-tools__hint">
-        These buttons call the query client directly (invalidate / reset) so you can compare strategies.
-      </p>
+      <div className="cache-tools__head">
+        <h2 id="cache-tools-h" className="cache-tools__title">
+          Cache &amp; debug
+        </h2>
+        <p className="cache-tools__hint">
+          React Query levers: invalidate, reset, and manual <code>setQueryData</code> for side‑by‑side comparison.
+        </p>
+      </div>
       <ul className="cache-tools__actions">
         <li>
           <button
@@ -42,7 +44,7 @@ export function CacheToolsPanel() {
               })
             }}
           >
-            Predicate: all queries for this workspace id
+            Predicate: this workspace
           </button>
         </li>
         <li>
@@ -52,7 +54,7 @@ export function CacheToolsPanel() {
               void qc.resetQueries({ queryKey: taskKeys.infinite(TASKS_PAGE_SIZE) })
             }}
           >
-            Reset infinite list query
+            Reset infinite list
           </button>
         </li>
         <li>
@@ -81,7 +83,7 @@ export function CacheToolsPanel() {
               qc.setQueryData(key, patched)
             }}
           >
-            <code>setQueryData</code> on first task title
+            <code>setQueryData</code> first title
           </button>
         </li>
         <li>
@@ -94,20 +96,21 @@ export function CacheToolsPanel() {
                 setSimFail(e.target.checked)
               }}
             />
-            Simulate next write failure
+            Next write fails
           </label>
         </li>
-        <li>
-          <button
-            type="button"
-            onClick={() => {
-              void qc.invalidateQueries({ queryKey: workspaceKeys.stats(ws) })
-            }}
-          >
-            Invalidate workspace stats
-          </button>
-        </li>
       </ul>
+      <div className="cache-tools__footer">
+        <button
+          type="button"
+          className="cache-tools__link-btn"
+          onClick={() => {
+            void qc.invalidateQueries({ queryKey: workspaceKeys.stats(ws) })
+          }}
+        >
+          Invalidate workspace stats
+        </button>
+      </div>
     </aside>
   )
 }

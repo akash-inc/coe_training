@@ -18,7 +18,7 @@ function TaskDetailInner() {
   const patch = usePatchTask()
 
   if (tq.isPending) {
-    return <p>Loading task…</p>
+    return <p className="task-detail__loading task-detail__loading--pulse">Loading task…</p>
   }
   if (!tq.data) {
     return null
@@ -28,31 +28,38 @@ function TaskDetailInner() {
   return (
     <div className="task-detail">
       <h2 className="task-detail__title">{task.title}</h2>
-      <p className="task-detail__meta">
-        Status: <strong>{task.status.replace('_', ' ')}</strong>
-        {task.assignee != null && task.assignee !== '' && (
-          <>
-            {' '}
-            &middot; Assignee: <strong>{task.assignee}</strong>
-          </>
-        )}
-      </p>
-      <button
-        type="button"
-        className="task-detail__cycle"
-        disabled={patch.isPending}
-        onClick={() => void patch.mutateAsync(task)}
-      >
-        Cycle status (optimistic)
-      </button>
+      <div className="task-detail__chips">
+        <p className="task-detail__meta">
+          {task.status.replace('_', ' ')}
+          {task.assignee != null && task.assignee !== '' && (
+            <>
+              <span aria-hidden="true"> · </span>
+              {task.assignee}
+            </>
+          )}
+        </p>
+      </div>
+      <div className="task-detail__actions">
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={patch.isPending}
+          onClick={() => void patch.mutateAsync(task)}
+        >
+          Cycle status
+        </button>
+        <span className="task-detail__hint">Optimistic + invalidate on settle</span>
+      </div>
       <section className="task-detail__comments" aria-labelledby="comments-h">
-        <h3 id="comments-h">Comments {cq.isFetching ? '(updating…)' : ''}</h3>
-        {cq.isPending && <p>Loading comments…</p>}
+        <h3 id="comments-h">Comments {cq.isFetching ? '· updating' : ''}</h3>
+        {cq.isPending && (
+          <p className="task-detail__loading task-detail__loading--pulse">Loading comments…</p>
+        )}
         {cq.isError && <p role="alert">{(cq.error as Error).message}</p>}
         {cq.data && (
-          <ul>
+          <ul className="task-detail__comment-list">
             {cq.data.length === 0 ? (
-              <li>No comments yet.</li>
+              <li className="task-detail__empty">No comments on this task yet.</li>
             ) : (
               cq.data.map((c) => (
                 <li key={c.id} className="task-detail__comment">
@@ -74,7 +81,9 @@ export function TaskDetailBoundary() {
   const { taskId = '' } = useParams()
   const queryClient = useQueryClient()
   if (!taskId) {
-    return <p className="task-detail__empty">Select a task from the list.</p>
+    return (
+      <p className="task-detail__empty">Select a task from the list to open the detail view.</p>
+    )
   }
   return (
     <QueryErrorBoundary
@@ -83,11 +92,9 @@ export function TaskDetailBoundary() {
       }}
       fallback={({ error, reset }) => (
         <div className="task-detail__boundary" role="alert">
-          <p>
-            <strong>Detail query failed</strong> — {error.message}
-          </p>
-          <button type="button" onClick={reset}>
-            Try again
+          <p>Couldn&apos;t load this task — {error.message}</p>
+          <button type="button" className="btn btn--primary" onClick={reset}>
+            Retry
           </button>
         </div>
       )}

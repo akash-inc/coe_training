@@ -16,10 +16,14 @@ function TasksLayout() {
   return (
     <div className="app-grid">
       <div className="app-grid__main">
-        <CreateTaskForm />
+        <div className="create-task__wrap panel">
+          <CreateTaskForm />
+        </div>
         <div className="app-grid__split">
-          <TaskListInfinite />
-          <div className="app-grid__detail">
+          <div className="task-list panel">
+            <TaskListInfinite />
+          </div>
+          <div className="app-grid__detail panel panel--pad">
             <Outlet />
           </div>
         </div>
@@ -37,10 +41,17 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Navigate to="/tasks" replace />} />
         <Route path="tasks" element={<TasksLayout />}>
-          <Route index element={<p className="tasks-placeholder">Select a task to view details and comments.</p>} />
+          <Route
+            index
+            element={
+              <p className="tasks-placeholder">
+                Choose a task on the left to read details, comments, and run optimistic status updates
+              </p>
+            }
+          />
           <Route path=":taskId" element={<TaskDetailBoundary />} />
         </Route>
-        <Route path="*" element={<p className="not-found">Not found</p>} />
+        <Route path="*" element={<p className="not-found">Page not found</p>} />
       </Routes>
     </div>
   )
