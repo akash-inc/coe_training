@@ -27,7 +27,7 @@ The migration uses the same **demo RLS** idea as Day 8: anon/authenticated can o
 
 ## Learn + demo (TanStack Query topics)
 
-The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; on each learn page, **How it works** and **In plain English** sit **side by side** on wide viewports (stacked on small screens), then a **Try it** ordered checklist; only the copy changes per topic.
+The app is organized as a small **learning hub** with one page per RQ concept. The **full task demo** (header, new task, infinite list, detail, cache panel, error banner) is the same on every topic; on each learn page, the left half stacks **How it works** then **In plain English**; the right half is only **Try it**. On small screens the layout stacks to a single column in that order. Only the copy changes per topic.
 
 | URL | Topic |
 | --- | --- |
@@ -76,23 +76,6 @@ Copy and topic metadata live in [`src/data/learnTopics.ts`](src/data/learnTopics
 | Error boundary (detail) | [`src/components/QueryErrorBoundary.tsx`](src/components/QueryErrorBoundary.tsx) + `throwOnError` in detail query |
 | Cache tools / custom invalidation | [`src/components/CacheToolsPanel.tsx`](src/components/CacheToolsPanel.tsx) |
 | Simulated write failure | [`src/lib/simulateWriteFailure.ts`](src/lib/simulateWriteFailure.ts) + Cache panel toggle |
-
-## Provider stack
-
-```mermaid
-flowchart TB
-  main[src/main.tsx]
-  qc[QueryClientProvider]
-  err[ApiErrorLogProvider]
-  supa[SupabaseRequired]
-  router[BrowserRouter]
-  app[App routes]
-  main --> qc
-  qc --> err
-  err --> supa
-  supa --> router
-  router --> app
-```
 
 ## Self-check
 
