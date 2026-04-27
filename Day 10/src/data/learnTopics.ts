@@ -59,7 +59,7 @@ export const learnTopics: LearnTopic[] = [
     slug: 'optimistic-mutations',
     title: 'Optimistic updates and rollback',
     summaryPlain: 'Status changes in the UI immediately, then the server is called; failure restores the last snapshot.',
-    callout: 'Use “Cycle status”. Turn on “Next write fails” in Cache & debug to see rollback and the error banner.',
+    callout: 'Use “Cycle status”. Turn on “Fail writes while enabled” in Cache & debug to see rollback and the error banner.',
     bodyTechnical: `usePatchTask in features/tasks/usePatchTask.ts cancels in-flight task queries, snapshots previous list and detail cache, applies setQueryData for the new status, then calls patchTaskRemote. onError restores previous from context; onSettled invalidates taskKeys and workspace stats. The mutation uses cycleStatus for the next status. Simulated failure is in lib/simulateWriteFailure.ts, toggled in CacheToolsPanel.`,
     bodyPlain: `The app updates the card right away so it feels instant. If the server says no, it puts the old values back and shows a message—like undoing a mistaken edit when the save fails.`,
     focus: 'optimistic',

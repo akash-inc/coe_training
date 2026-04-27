@@ -96,7 +96,7 @@ flowchart TB
 
 ## Self-check
 
-1. **Optimistic path:** Open a task, click **Cycle status (optimistic)** — the status changes immediately; if you enabled **Simulate next write failure**, it rolls back and the global banner shows the error.
+1. **Optimistic path:** Open a task, click **Cycle status (optimistic)** — the status changes immediately; if **Fail writes while enabled** is on in Cache & debug, each write fails until you turn it off: the UI rolls back and the global banner shows the error.
 2. **Comments:** Comments load only after the task query succeeds (dependent query).
 3. **Parallel strip:** The header should show user, workspace name, and rolling stats (background refetch on an interval).
 4. **Cache lab:** Use **Invalidate tasks prefix** vs **Predicate for workspace id** and watch entries in React Query Devtools.

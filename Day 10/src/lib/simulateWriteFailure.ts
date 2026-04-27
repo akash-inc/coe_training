@@ -1,17 +1,9 @@
-let nextWriteShouldFail = false
+let simulateWriteFailure = false
 
 export function getSimulateWriteFailure(): boolean {
-  return nextWriteShouldFail
+  return simulateWriteFailure
 }
 
 export function setSimulateWriteFailure(value: boolean): void {
-  nextWriteShouldFail = value
-}
-
-export function consumeSimulatedWriteFailure(): boolean {
-  if (!nextWriteShouldFail) {
-    return false
-  }
-  nextWriteShouldFail = false
-  return true
+  simulateWriteFailure = value
 }

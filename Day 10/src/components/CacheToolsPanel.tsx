@@ -96,7 +96,7 @@ export function CacheToolsPanel() {
                 setSimFail(e.target.checked)
               }}
             />
-            Next write fails
+            Fail writes while enabled
           </label>
         </li>
       </ul>

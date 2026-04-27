@@ -1,5 +1,5 @@
 import { getRq10WorkspaceId, getSupabaseClient } from '../lib/supabase/client'
-import { consumeSimulatedWriteFailure } from '../lib/simulateWriteFailure'
+import { getSimulateWriteFailure } from '../lib/simulateWriteFailure'
 import { ApiError } from './errors'
 import type { Task, TaskComment, TaskPage, TaskStatus, UserProfile, WorkspaceStats, WorkspaceSummary } from './schemas'
 import {
@@ -25,7 +25,7 @@ function requireSupabase() {
 }
 
 function maybeThrowSimulatedWrite(): void {
-  if (consumeSimulatedWriteFailure()) {
+  if (getSimulateWriteFailure()) {
     throw new ApiError('Simulated write failure (toggle in Cache & debug)', 500)
   }
 }
