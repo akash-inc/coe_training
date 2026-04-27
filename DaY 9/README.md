@@ -4,6 +4,8 @@ A training app against the public [PokéAPI](https://pokeapi.co/): an **infinite
 
 This README maps **pre-onboarding UI topics** (atomic design through Storybook) and **advanced React Query topics** to **exact files** in this repo, with diagrams you can keep in sync when the code changes.
 
+**Battle simulation state (Zustand):** party lineups, the generated **turn log**, and the **timeline playhead** (scrub / undo–redo style stepping) live in [`useBattleStore`](src/stores/battleStore.ts) (`zustand`). That keeps local UI and simulation concerns out of React Query, which is still used only to **load** Pokémon resources for the fight via `ensureQueryData`. See [§8.7](#sec-8-7-battle).
+
 ## Scripts
 
 | Command | Purpose |
@@ -228,6 +230,19 @@ flowchart LR
 <a id="sec-8-7-battle"></a>
 ### 8.7 Battle flow: `ensureQueryData` + Zustand (not server cache in the store)
 
+The **party vs party** demo uses **Zustand** for all **client-only** simulation state. React Query remains the **network/cache** layer: `runBattle` pulls fresh or cached `PokemonResource` rows through the same `pokemonResourceQuery` factories as the rest of the app, then writes the result of the pure [`simulateBattle`](src/lib/battle/simulateBattle.ts) function into the store.
+
+**What Zustand owns** ([`battleStore.ts`](src/stores/battleStore.ts)):
+
+- **Teams:** `partyAIds` / `partyBIds`, with actions to add/remove slots, clear, and copy from the saved roster (`setTeamAFromIds` / `setTeamBFromIds`).
+- **Run lifecycle:** `status` (`idle` | `running` | `done` | `error`), `errorMessage` on fetch failure.
+- **Simulation output:** `turns` (full `BattleTurn[]`), `maxHpA` / `maxHpB` for HP bars when scrubbing.
+- **Timeline:** `playhead` plus `setPlayhead`, `step`, `toStart`, `toEnd` so the UI can move backward and forward through the log without re-running the sim.
+
+[`BattlePanel`](src/components/pokedex/BattlePanel.tsx) subscribes via `useBattleStore`; it does **not** put battle state in TanStack Query. That separation avoids overloading query keys with ephemeral “current fight” data and keeps the battle feature easy to reset (`resetLog`) without invalidating list or detail caches.
+
+**Zustand technical details:** the store is created with Zustand’s default `create()` API ([`battleStore.ts`](src/stores/battleStore.ts)) — **no** `devtools`, `persist`, `immer`, `subscribeWithSelector`, or other **middleware** wrapper. State updates are plain `set` / `get` calls (including the async `runBattle` thunk, which awaits `queryClient.ensureQueryData` then `set`s the completed `turns`). Scrubbing “back and forward” is a **single numeric `playhead`** over the existing `turns` array, not a separate undo stack or a package like `zundo`; you could add middleware later (e.g. `devtools` in dev, or `persist` for draft teams) without changing the React Query layer.
+
 | Step | What runs |
 | --- | --- |
 | Run | [`battleStore.runBattle`](src/stores/battleStore.ts) fetches every party member via `queryClient.ensureQueryData(pokemonResourceQuery(id))` |
@@ -312,6 +327,7 @@ Use this as a **checklist** against the code you actually ship.
 | Cache invalidation / strategies | `PokedexCacheControls` (see [§8.5](#sec-8-5-cache)) |
 | Type-safe query layer | `queryOptions` + `queryKeys` (see [§8.6](#sec-8-6-options)) |
 | Prefetch / background | Prefetch in list, optional `refetchInterval` (see [§8.4](#sec-8-4-prefetch)) |
+| Zustand (battle simulation UI) | [`useBattleStore`](src/stores/battleStore.ts) + [`BattlePanel`](src/components/pokedex/BattlePanel.tsx); teams, turn log, playhead (see [§8.7](#sec-8-7-battle)) |
 | “Global” error handling | Inline + optional modules **not** wired at root (see [§8.8](#sec-8-8-errors)) |
 
 ---
