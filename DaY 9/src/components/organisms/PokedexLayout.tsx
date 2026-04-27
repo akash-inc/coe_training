@@ -5,12 +5,18 @@ type PokedexLayoutProps = {
   headerAside?: ReactNode
   list: ReactNode
   detail: ReactNode
+  /** Replaces the default intro under the title (e.g. details vs battle mode). */
+  lede?: ReactNode
+  /** Aria label for the right-hand panel (list vs details vs battle). */
+  rightPanelLabel?: string
 }
 
 export function PokedexLayout({
   headerAside,
   list,
   detail,
+  lede,
+  rightPanelLabel = 'Details on the right — appears after you pick a Pokémon',
 }: PokedexLayoutProps) {
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 px-4 pb-6 pt-2">
@@ -21,17 +27,19 @@ export function PokedexLayout({
           </h1>
           {headerAside ? <div className="min-w-0">{headerAside}</div> : null}
         </div>
+        {lede ?? (
         <p className="max-w-2xl text-[0.95rem] leading-relaxed text-muted-foreground">
           You get two side-by-side areas: a searchable <strong className="font-medium text-foreground/90">Pokémon list on the left</strong> (cards you scroll and tap), and a{' '}
           <strong className="font-medium text-foreground/90">details area on the right</strong>. Data comes from
           the open PokéAPI. The shell uses your pick’s main type; adjust the app bar to match.
         </p>
+        )}
       </header>
       <main className="grid min-h-0 flex-1 grid-cols-1 items-start gap-5 min-[841px]:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
         <PokedexPanel aria-label="Pokémon list on the left — scroll and tap a card">
           {list}
         </PokedexPanel>
-        <PokedexPanel aria-label="Details on the right — appears after you pick a Pokémon">
+        <PokedexPanel aria-label={rightPanelLabel}>
           {detail}
         </PokedexPanel>
       </main>

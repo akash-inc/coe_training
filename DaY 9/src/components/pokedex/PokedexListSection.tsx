@@ -22,6 +22,8 @@ type PokedexListSectionProps = {
   filter: PokedexFilterResult
   selectedId: number | null
   onSelect: (pokemon: PokemonSummary) => void
+  /** Cache teaching controls live next to the list; hide in battle mode to reduce noise. */
+  showCacheControls?: boolean
 }
 
 export function PokedexListSection({
@@ -31,6 +33,7 @@ export function PokedexListSection({
   filter,
   selectedId,
   onSelect,
+  showCacheControls = true,
 }: PokedexListSectionProps) {
   const queryClient = useQueryClient()
   const { data: teamIds = [] } = useTeamRoster()
@@ -139,7 +142,9 @@ export function PokedexListSection({
                   : null
               }
             />
-            <PokedexCacheControls listLive={listLive} onListLiveChange={onListLiveChange} />
+            {showCacheControls ? (
+              <PokedexCacheControls listLive={listLive} onListLiveChange={onListLiveChange} />
+            ) : null}
             {s.status === 'ready' ? (
               <PokedexToolbar
                 query={query}
