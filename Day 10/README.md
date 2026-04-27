@@ -1,75 +1,81 @@
-# React + TypeScript + Vite
+# Day 10 — Task management (TanStack Query + Supabase)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small **tasks** app: **infinite list**, **task detail** with **dependent comments**, **parallel** header queries, **optimistic PATCH** with rollback, **cache lab** controls, **global** API error banner, and a **query error boundary** around the detail panel. All data comes from **Postgres via Supabase**. If env vars are missing, [`SupabaseRequired`](src/components/SupabaseRequired.tsx) shows setup instructions instead of the app.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Piece | Role |
+| --- | --- |
+| React 19 + Vite | UI and dev server |
+| TanStack Query v5 | Server state, cache, mutations |
+| Zod | Response shape at the API boundary |
+| Supabase JS | Typed Postgres access |
 
-## React Compiler
+## Quick start
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd "Day 10"
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. Create a Supabase project and copy **Project URL** and **anon public** key.
+2. In the SQL editor, run [`supabase/migrations/001_rq10.sql`](supabase/migrations/001_rq10.sql) (creates `rq10_*` tables, seed data, and dev RLS scoped to the demo workspace).
+3. Copy [`.env.example`](.env.example) to `.env` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (optionally `VITE_RQ10_WORKSPACE_ID`).
+4. `npm run dev`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The migration uses the same **demo RLS** idea as Day 8: anon/authenticated can only touch rows for the fixed workspace id. Tighten policies before any production use.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## npm scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Vite dev server (requires configured Supabase; see above) |
+| `npm run build` | `tsc` + production bundle |
+| `npm run lint` | ESLint |
+| `npm test` / `npm run test:watch` | Vitest |
+
+## Concept map (where to look in code)
+
+| Topic | Location |
+| --- | --- |
+| Supabase required gate | [`src/components/SupabaseRequired.tsx`](src/components/SupabaseRequired.tsx) |
+| Parallel queries (`useQueries`) | [`src/components/WorkspaceHeader.tsx`](src/components/WorkspaceHeader.tsx) |
+| Infinite list (`useInfiniteQuery`) | [`src/features/tasks/TaskListInfinite.tsx`](src/features/tasks/TaskListInfinite.tsx) + [`src/lib/queryOptions.ts`](src/lib/queryOptions.ts) |
+| Dependent query (comments `enabled` after task succeeds) | [`src/features/tasks/TaskDetailBoundary.tsx`](src/features/tasks/TaskDetailBoundary.tsx) |
+| Optimistic update + rollback | [`src/features/tasks/usePatchTask.ts`](src/features/tasks/usePatchTask.ts) |
+| Prefetch on hover | [`src/features/tasks/TaskListInfinite.tsx`](src/features/tasks/TaskListInfinite.tsx) (`prefetchQuery`) |
+| Query key factories + workspace scope | [`src/lib/queryKeys.ts`](src/lib/queryKeys.ts) |
+| Supabase data access (typed) | [`src/api/supabase/rq10Api.ts`](src/api/supabase/rq10Api.ts) |
+| Unified API entry | [`src/api/unified.ts`](src/api/unified.ts) |
+| Global mutation/query errors | [`src/lib/queryClient.ts`](src/lib/queryClient.ts) + [`src/lib/errorBus.ts`](src/lib/errorBus.ts) + [`src/components/GlobalErrorBanner.tsx`](src/components/GlobalErrorBanner.tsx) |
+| Error boundary (detail) | [`src/components/QueryErrorBoundary.tsx`](src/components/QueryErrorBoundary.tsx) + `throwOnError` in detail query |
+| Cache tools / custom invalidation | [`src/components/CacheToolsPanel.tsx`](src/components/CacheToolsPanel.tsx) |
+| Simulated write failure | [`src/lib/simulateWriteFailure.ts`](src/lib/simulateWriteFailure.ts) + Cache panel toggle |
+
+## Provider stack
+
+```mermaid
+flowchart TB
+  main[src/main.tsx]
+  qc[QueryClientProvider]
+  err[ApiErrorLogProvider]
+  supa[SupabaseRequired]
+  router[BrowserRouter]
+  app[App routes]
+  main --> qc
+  qc --> err
+  err --> supa
+  supa --> router
+  router --> app
 ```
+
+## Self-check
+
+1. **Optimistic path:** Open a task, click **Cycle status (optimistic)** — the status changes immediately; if you enabled **Simulate next write failure**, it rolls back and the global banner shows the error.
+2. **Comments:** Comments load only after the task query succeeds (dependent query).
+3. **Parallel strip:** The header should show user, workspace name, and rolling stats (background refetch on an interval).
+4. **Cache lab:** Use **Invalidate tasks prefix** vs **Predicate for workspace id** and watch entries in React Query Devtools.
+
+## Security note
+
+`001_rq10.sql` is for **local training** only. Replace broad policies with `auth.uid()`-based rules before shipping anything public.
