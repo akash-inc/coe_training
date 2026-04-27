@@ -41,7 +41,7 @@ export function PokemonCard({
         onPointerEnter={() => onPrefetch?.(p)}
         onFocus={() => onPrefetch?.(p)}
         aria-pressed={selected}
-        aria-label={`Open ${label}`}
+        aria-label={`Open ${label} in the right-hand details panel (from the left-hand list)`}
       >
       {p.spriteUrl ? (
         <img
@@ -80,7 +80,8 @@ export function PokemonCard({
               : 'border-border text-muted-foreground',
           )}
           aria-pressed={onTeam}
-          title={onTeam ? 'Remove from team' : 'Add to team'}
+          aria-label={onTeam ? 'Remove from your party' : 'Add to your party'}
+          title={onTeam ? 'Remove from party' : 'Add to party'}
         >
           {onTeam ? '✓' : '+'}
         </button>

@@ -3,7 +3,6 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { ThemeControls } from './components/organisms/ThemeControls'
 import { useNavbarScrollVisible } from './hooks/useNavbarScrollVisible'
 import { useThemePreferences } from './hooks/useThemePreferences'
-import { ApiErrorBanner } from './components/pokedex/ApiErrorBanner'
 import { cn } from './lib/cn'
 import {
   headlessTabClass,
@@ -51,7 +50,6 @@ function App() {
 
   return (
     <div className="flex min-h-svh w-full max-w-full flex-col bg-background">
-      <ApiErrorBanner />
       <TabGroup
         selectedIndex={view}
         onChange={setView}

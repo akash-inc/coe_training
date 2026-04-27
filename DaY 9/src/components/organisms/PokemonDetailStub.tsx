@@ -8,6 +8,10 @@ import {
   usePokemonDetailsQueries,
   type PokemonDetailsState,
 } from '../../hooks/usePokemonDetailsQueries'
+import {
+  detailSectionErrorCopy,
+  evolutionUnavailableCopy,
+} from '../../lib/userFacingErrors'
 import { DetailSelectPrompt } from '../pokedex/pokedexShells'
 import { IdChip } from '../atoms/IdChip'
 import { PokemonName } from '../atoms/PokemonName'
@@ -104,12 +108,25 @@ function RecordDisclosures({ pokemon, display }: { pokemon: PokemonSummary; disp
   )
 }
 
+function DetailPanelError() {
+  return (
+    <div className="text-sm" role="alert">
+      <p className="m-0 font-medium text-foreground">{detailSectionErrorCopy.heading}</p>
+      <p className="m-0 mt-1.5 text-muted-foreground">{detailSectionErrorCopy.body}</p>
+    </div>
+  )
+}
+
 function StatTable({ state }: { state: PokemonDetailsState }) {
   if (state.status === 'loading') {
-    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading base stats…</p>
+    return (
+      <p className="m-0 text-sm text-muted-foreground" role="status">
+        Loading stats…
+      </p>
+    )
   }
   if (state.status === 'error') {
-    return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+    return <DetailPanelError />
   }
   const { stats } = state.data
   return (
@@ -138,10 +155,14 @@ function StatTable({ state }: { state: PokemonDetailsState }) {
 
 function MovesBlock({ state }: { state: PokemonDetailsState }) {
   if (state.status === 'loading') {
-    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading moves…</p>
+    return (
+      <p className="m-0 text-sm text-muted-foreground" role="status">
+        Loading moves…
+      </p>
+    )
   }
   if (state.status === 'error') {
-    return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+    return <DetailPanelError />
   }
   const { moves } = state.data
   if (moves.length === 0) {
@@ -168,20 +189,32 @@ function EvolutionBlock({
   slugQueries: Array<UseQueryResult<PokemonSummary, Error>>
 }) {
   if (state.status === 'loading') {
-    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading evolution…</p>
+    return (
+      <p className="m-0 text-sm text-muted-foreground" role="status">
+        Loading evolution…
+      </p>
+    )
   }
   if (state.status === 'error') {
-    return <p className="m-0 text-sm text-foreground" role="alert">{state.error}</p>
+    return <DetailPanelError />
   }
   if (evolutionLineLoading) {
-    return <p className="m-0 text-sm text-muted-foreground" role="status">Loading evolution line…</p>
+    return (
+      <p className="m-0 text-sm text-muted-foreground" role="status">
+        Still loading the evolution line…
+      </p>
+    )
   }
   const { evolution, evolutionError } = state.data
   if (evolutionError) {
-    return <p className="m-0 text-sm text-muted-foreground">Evolution data could not be loaded.</p>
+    return <p className="m-0 text-sm text-muted-foreground">{evolutionUnavailableCopy}</p>
   }
   if (evolution.length === 0) {
-    return <p className="m-0 text-sm text-muted-foreground">No evolution line returned.</p>
+    return (
+      <p className="m-0 text-sm text-muted-foreground">
+        This Pokémon doesn’t have an evolution line to show here.
+      </p>
+    )
   }
   return (
     <div
@@ -287,7 +320,8 @@ export function PokemonDetailStub({ pokemon }: PokemonDetailStubProps) {
     return (
       <DetailSelectPrompt>
         <p className="m-0 max-w-sm text-center text-[0.95rem] text-muted-foreground">
-          Select a Pokémon from the list to see its sprite, types, stats, moves, and evolution.
+          Choose a Pokémon in the <strong className="font-medium text-foreground/90">list on the left</strong> to
+          see art, types, stats, moves, and evolution.
         </p>
       </DetailSelectPrompt>
     )

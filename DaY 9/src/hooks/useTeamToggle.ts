@@ -26,7 +26,6 @@ export function useTeamToggle() {
   const queryClient = useQueryClient()
   return useMutation<number[], Error, { pokemonId: number }, ToggleCtx>({
     mutationKey: ['pokemon', 'team', 'toggle'],
-    meta: { label: 'Team toggle' } as const,
     onMutate: async ({ pokemonId }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.team })
       const previous = queryClient.getQueryData<number[]>(queryKeys.team) ?? readTeamFromStorage()
@@ -48,7 +47,9 @@ export function useTeamToggle() {
     mutationFn: async () => {
       await delay(250)
       if (getSimulateTeamMutationFailure()) {
-        throw new Error('Simulated team save failure (see cache controls).')
+        throw new Error(
+          'Couldn’t save your party. In Extra options, turn off the “pretend save failed” toggle, then try + on the left-hand list again.',
+        )
       }
       return queryClient.getQueryData<number[]>(queryKeys.team) ?? readTeamFromStorage()
     },

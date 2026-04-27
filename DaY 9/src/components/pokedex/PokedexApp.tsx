@@ -1,12 +1,9 @@
-import { QueryErrorResetBoundary } from '@tanstack/react-query'
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { usePokedexFilter } from '../../hooks/usePokedexFilter'
 import { usePokedexInfiniteList } from '../../hooks/usePokedexInfiniteList'
 import type { PokemonSummary } from '../../lib/pokeapi'
 import { PokedexLayout } from '../organisms/PokedexLayout'
 import { PokedexListSection } from './PokedexListSection'
-import { QueryErrorBoundary } from './QueryErrorBoundary'
-import { ListFetchError } from './pokedexShells'
 
 const PokemonDetailStub = lazy(() =>
   import('../organisms/PokemonDetailStub').then((m) => ({
@@ -46,43 +43,18 @@ export function PokedexApp() {
     }
   }, [selectedInView])
 
-  const listErrorFallback = (args: { error: Error; reset: () => void }) => (
-    <ListFetchError role="alert" className="text-foreground">
-      <p className="m-0">The Pokédex list failed to load.</p>
-      <p className="m-0 mt-2 break-words text-sm text-muted-foreground">
-        {args.error.message}
-      </p>
-      <button
-        type="button"
-        className="mt-3 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground"
-        onClick={args.reset}
-      >
-        Try again
-      </button>
-    </ListFetchError>
-  )
-
-  const listNode: ReactNode = (
-    <QueryErrorResetBoundary>
-      {({ reset }) => (
-        <QueryErrorBoundary onReset={reset} fallback={listErrorFallback}>
-          <PokedexListSection
-            infinite={infinite}
-            listLive={listLive}
-            onListLiveChange={setListLive}
-            filter={filter}
-            selectedId={selectedInView?.id ?? null}
-            onSelect={setSelected}
-            showSentinel
-          />
-        </QueryErrorBoundary>
-      )}
-    </QueryErrorResetBoundary>
-  )
-
   return (
     <PokedexLayout
-      list={listNode}
+      list={
+        <PokedexListSection
+          infinite={infinite}
+          listLive={listLive}
+          onListLiveChange={setListLive}
+          filter={filter}
+          selectedId={selectedInView?.id ?? null}
+          onSelect={setSelected}
+        />
+      }
       detail={
         <Suspense fallback={<DetailLoadingFallback />}>
           <PokemonDetailStub pokemon={selectedInView} />

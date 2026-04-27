@@ -63,8 +63,8 @@ export function PokemonGrid({
   if (items.length === 0) {
     return (
       <p className="m-0 text-sm text-muted-foreground" role="status">
-        No Pokémon in the list. Try clearing search and type filters, or broaden
-        your query.
+        No Pokémon in the <strong className="font-medium text-foreground/85">left-hand list</strong> match. Try
+        clearing search and type filters, or a broader name.
       </p>
     )
   }

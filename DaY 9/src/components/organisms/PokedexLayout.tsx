@@ -22,13 +22,18 @@ export function PokedexLayout({
           {headerAside ? <div className="min-w-0">{headerAside}</div> : null}
         </div>
         <p className="max-w-2xl text-[0.95rem] leading-relaxed text-muted-foreground">
-          Full national list from the open PokéAPI—search, sort, and filter by type. The shell picks up
-          your selection’s primary type; adjust display in the app bar to match your setup.
+          You get two side-by-side areas: a searchable <strong className="font-medium text-foreground/90">Pokémon list on the left</strong> (cards you scroll and tap), and a{' '}
+          <strong className="font-medium text-foreground/90">details area on the right</strong>. Data comes from
+          the open PokéAPI. The shell uses your pick’s main type; adjust the app bar to match.
         </p>
       </header>
       <main className="grid min-h-0 flex-1 grid-cols-1 items-start gap-5 min-[841px]:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
-        <PokedexPanel aria-label="Pokémon list">{list}</PokedexPanel>
-        <PokedexPanel aria-label="Selected Pokémon">{detail}</PokedexPanel>
+        <PokedexPanel aria-label="Pokémon list on the left — scroll and tap a card">
+          {list}
+        </PokedexPanel>
+        <PokedexPanel aria-label="Details on the right — appears after you pick a Pokémon">
+          {detail}
+        </PokedexPanel>
       </main>
     </div>
   )

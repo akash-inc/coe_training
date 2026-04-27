@@ -61,12 +61,12 @@ export function PokedexToolbar({
       <div className="flex flex-col gap-2 min-[500px]:flex-row min-[500px]:flex-wrap min-[500px]:items-end min-[500px]:gap-3">
         <Field className="min-w-0 flex-1">
           <Label className="mb-0.5 block text-xs font-medium text-muted-foreground">
-            Search name
+            Find by name
           </Label>
           <Input
             className={cn('block w-full', control)}
             value={query}
-            placeholder="e.g. pika, char…"
+            placeholder="e.g. pikachu, charmeleon…"
             onChange={(e) => onQueryChange(e.target.value)}
             autoComplete="off"
             spellCheck={false}
@@ -116,16 +116,21 @@ export function PokedexToolbar({
         </Field>
       </div>
 
-      <div className="text-xs text-muted-foreground" aria-live="polite">
-        Showing {visibleCount} of {totalCount} loaded · national {nationalTotalCount.toLocaleString()}{' '}
-        species
-        {hasActiveFilters ? ' · filters on' : ''}
-      </div>
+      <p className="m-0 text-xs text-muted-foreground" aria-live="polite">
+        <span className="font-medium tabular-nums text-foreground/90">{visibleCount}</span>{' '}
+        {visibleCount === 1 ? 'card' : 'cards'} in the <strong className="font-medium text-foreground/85">left-hand list</strong> match
+        your search/filters ·{' '}
+        <span className="tabular-nums">{totalCount.toLocaleString()}</span> total loaded in that
+        list · <span className="tabular-nums">{nationalTotalCount.toLocaleString()}</span> species in
+        the full National Pokédex
+        {hasActiveFilters ? ' · filters are on' : ''}
+      </p>
 
       {availableTypes.length > 0 ? (
         <Fieldset>
           <legend className="text-xs font-medium text-muted-foreground">
-            Types — match <strong className="text-foreground/90">all</strong> selected
+            Types — Pokémon must have <strong className="text-foreground/90">every</strong> type you
+            pick
           </legend>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {availableTypes.map((t) => (
@@ -166,7 +171,7 @@ export function PokedexToolbar({
           className="self-start rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
           onClick={onClearFilters}
         >
-          Clear search & type filters
+          Clear search and type filters
         </Button>
       ) : null}
     </div>

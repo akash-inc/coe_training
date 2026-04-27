@@ -17,4 +17,5 @@ export {
   type PokemonSummary,
   type SummariesPageResult,
 } from './queries'
+export { defaultFrontSpriteUrl } from './spriteUrl'
 export { formatPokemonDisplayName } from './formatPokemonDisplayName'
