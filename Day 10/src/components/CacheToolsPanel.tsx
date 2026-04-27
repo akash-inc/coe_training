@@ -1,7 +1,7 @@
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import type { TaskPage } from '../api/schemas'
 import { getWorkspaceId } from '../api/unified'
-import { taskKeys, workspaceKeys } from '../lib/queryKeys'
+import { taskKeys } from '../lib/queryKeys'
 import { TASKS_PAGE_SIZE, tasksInfinite } from '../lib/queryOptions'
 import { setSimulateWriteFailure, getSimulateWriteFailure } from '../lib/simulateWriteFailure'
 import { useState } from 'react'
@@ -105,11 +105,26 @@ export function CacheToolsPanel() {
           type="button"
           className="cache-tools__link-btn"
           onClick={() => {
-            void qc.invalidateQueries({ queryKey: workspaceKeys.stats(ws) })
+            const id = getWorkspaceId()
+            void qc.invalidateQueries({
+              predicate: (q) =>
+                Array.isArray(q.queryKey) &&
+                q.queryKey[0] === 'workspace' &&
+                q.queryKey[1] === 'stats' &&
+                q.queryKey[2] === id,
+            })
           }}
         >
           Invalidate workspace stats
         </button>
+        <p className="cache-tools__devtools-note">
+          In React Query Devtools, select the query whose key is{' '}
+          <code>workspace</code> → <code>stats</code> → your workspace id. After this
+          click, that entry refetches: <code>fetchStatus</code> shows <code>fetching</code>{' '}
+          briefly, then <code>idle</code>; <code>dataUpdatedAt</code> and the cached counts
+          update if the server changed. Queries under <code>tasks</code> are not part of
+          this invalidation.
+        </p>
       </div>
     </aside>
   )

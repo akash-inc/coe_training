@@ -176,7 +176,7 @@ Reset is stronger than mark-stale: for infinite data it can throw away the remem
       'Do: click “Predicate: this workspace.” Expect: similar refetch for task queries scoped to this workspace. Why: same goal as prefix invalidation, but the plan shows how a predicate can express custom key matching in code.',
       'Do: load two pages with “Load more,” then click “Reset infinite list.” Expect: the infinite query’s cached pages are cleared; the list returns toward a first-page view and may refetch. Why: reset drops cached page history, not only staleness metadata.',
       'Do: click “setQueryData first title.” Expect: the first task’s title in the list changes immediately, with no network (check Network) until you refetch. Why: setQueryData is a local patch of the query result, useful for quick experiments, not a substitute for the server as source of truth.',
-      'Do: click “Invalidate workspace stats” in the footer. Expect: the open / in progress / done chips in the header refetch. Why: that button targets workspaceKeys.stats, separate from the tasks tree, so you see narrow invalidation.',
+      'Do: click “Invalidate workspace stats” in the footer. In Devtools, select the query with key workspace → stats → your workspace id; after the click, expect that row to refetch (fetchStatus goes to fetching, then idle), dataUpdatedAt to advance, and the JSON data to change if counts changed; task list queries are unchanged. In the UI, expect the header stat chips to refetch. Why: that button only invalidates workspaceKeys.stats, not the tasks tree—so you see scoped invalidation.',
     ],
     focus: 'cache',
   },
