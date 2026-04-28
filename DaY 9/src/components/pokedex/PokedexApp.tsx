@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { usePokedexFilter } from '../../hooks/usePokedexFilter'
 import { usePokedexInfiniteList } from '../../hooks/usePokedexInfiniteList'
 import type { PokemonSummary } from '../../lib/pokeapi'
@@ -23,6 +24,7 @@ function DetailLoadingFallback() {
 }
 
 export function PokedexApp() {
+  const reduced = useReducedMotion()
   const [listLive, setListLive] = useState(false)
   const [rightMode, setRightMode] = useState<PokedexRightPanelMode>('details')
   const infinite = usePokedexInfiniteList({ listLive })
@@ -100,13 +102,23 @@ export function PokedexApp() {
         />
       }
       detail={
-        rightMode === 'battle' ? (
-          <BattlePanel selected={selected} nameById={nameById} />
-        ) : (
-          <Suspense fallback={<DetailLoadingFallback />}>
-            <PokemonDetailStub pokemon={selectedInView} />
-          </Suspense>
-        )
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={rightMode}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={reduced ? { duration: 0 } : { duration: 0.18 }}
+          >
+            {rightMode === 'battle' ? (
+              <BattlePanel selected={selected} nameById={nameById} />
+            ) : (
+              <Suspense fallback={<DetailLoadingFallback />}>
+                <PokemonDetailStub pokemon={selectedInView} />
+              </Suspense>
+            )}
+          </motion.div>
+        </AnimatePresence>
       }
     />
   )
