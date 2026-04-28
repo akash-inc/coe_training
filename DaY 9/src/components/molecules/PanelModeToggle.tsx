@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { cn } from '../../lib/cn'
 
 export type PokedexRightPanelMode = 'details' | 'battle'
@@ -7,6 +8,9 @@ export type PanelModeToggleProps = {
   onChange: (v: PokedexRightPanelMode) => void
 }
 
+const MODES: PokedexRightPanelMode[] = ['details', 'battle']
+const LABELS: Record<PokedexRightPanelMode, string> = { details: 'Details', battle: 'Battle' }
+
 export function PanelModeToggle({ value, onChange }: PanelModeToggleProps) {
   return (
     <div
@@ -14,28 +18,27 @@ export function PanelModeToggle({ value, onChange }: PanelModeToggleProps) {
       role="group"
       aria-label="What the right side shows"
     >
-      <button
-        type="button"
-        className={cn(
-          'rounded-md px-3 py-1.5 text-xs font-medium',
-          value === 'details' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground',
-        )}
-        onClick={() => onChange('details')}
-        aria-pressed={value === 'details'}
-      >
-        Details
-      </button>
-      <button
-        type="button"
-        className={cn(
-          'rounded-md px-3 py-1.5 text-xs font-medium',
-          value === 'battle' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground',
-        )}
-        onClick={() => onChange('battle')}
-        aria-pressed={value === 'battle'}
-      >
-        Battle
-      </button>
+      {MODES.map((mode) => (
+        <button
+          key={mode}
+          type="button"
+          className={cn(
+            'relative rounded-md px-3 py-1.5 text-xs font-medium',
+            value === mode ? 'text-foreground' : 'text-muted-foreground',
+          )}
+          onClick={() => onChange(mode)}
+          aria-pressed={value === mode}
+        >
+          {value === mode && (
+            <motion.span
+              layoutId="panel-mode-indicator"
+              className="absolute inset-0 rounded-md bg-card shadow-sm"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <span className="relative">{LABELS[mode]}</span>
+        </button>
+      ))}
     </div>
   )
 }
