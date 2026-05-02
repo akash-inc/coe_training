@@ -1,0 +1,11 @@
+[
+  {
+    "task": "Write a Python function that parses an AWS CloudFormation template (JSON string) and returns a list of all resource logical IDs."
+  },
+  {
+    "task": "Create a JSON object that represents an AWS IAM policy allowing read-only access to S3 buckets with names starting with 'logs-'."
+  },
+  {
+    "task": "Write a regular expression that validates and extracts the region from an AWS ARN string in the format: arn:aws:service:region:account-id:resource."
+  }
+]
