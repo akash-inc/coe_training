@@ -1,17 +1,50 @@
 [
   {
-    "task": "Parse an AWS CloudWatch log entry and extract the timestamp, log level, and message using a regular expression",
-    "format": "regex",
-    "solution_criteria": "The regex should correctly capture timestamps in ISO 8601 format, identify log levels (ERROR, WARN, INFO, DEBUG), and extract the message content. Should handle variations in formatting."
+    "prompt_inputs": {
+      "height": "178 cm",
+      "weight": "68 kg",
+      "goal": "Marathon training with high carbohydrate intake and proper meal timing around a 90-minute morning run",
+      "restrictions": "None"
+    },
+    "solution_criteria": [
+      "Meal plan covers all three meals plus pre/post-workout nutrition",
+      "Total daily carbohydrates are 8-10g per kg of body weight (544-680g)",
+      "Pre-run meal provided 1-2 hours before the 90-minute session; post-run meal within 30-60 minutes",
+      "Plan is presented in a compact, single-day format with clear timing"
+    ],
+    "task_description": "Write a compact, concise 1 day meal plan for a single athlete",
+    "scenario": "Testing with a high-intensity endurance athlete (marathon runner) requiring high carbohydrate intake and specific timing around training sessions"
   },
   {
-    "task": "Create a Python function that takes an AWS S3 bucket name and object key, and returns the S3 URI in the format 's3://bucket-name/object-key'",
-    "format": "python",
-    "solution_criteria": "Function should accept bucket name and object key as parameters, properly format them into an S3 URI, and handle edge cases like trailing slashes or empty keys."
+    "prompt_inputs": {
+      "height": "180 cm",
+      "weight": "85 kg",
+      "goal": "Strength and muscle gain for weightlifting competition",
+      "restrictions": "None"
+    },
+    "solution_criteria": [
+      "Meal plan covers all 3 meals for one day with specific food items",
+      "Protein intake meets or exceeds 1.6-2.2g per kg bodyweight (136-187g total)",
+      "Macronutrient composition includes carbohydrates for training energy and fats for hormone production",
+      "Meals are practical and achievable for a single athlete without excessive complexity"
+    ],
+    "task_description": "Write a compact, concise 1 day meal plan for a single athlete",
+    "scenario": "Testing with a strength/power athlete (weightlifter) with elevated protein requirements and macro-focused meal composition"
   },
   {
-    "task": "Generate a JSON object representing an AWS IAM policy that allows read-only access to a specific DynamoDB table",
-    "format": "json",
-    "solution_criteria": "The JSON should follow AWS IAM policy structure with valid Effect, Action, and Resource fields. Should include only read operations (GetItem, Query, Scan) and reference a specific DynamoDB table ARN."
+    "prompt_inputs": {
+      "height": "178",
+      "weight": "72",
+      "goal": "endurance training with muscle maintenance",
+      "restrictions": "vegan, gluten-free, tree nut allergy"
+    },
+    "solution_criteria": [
+      "Meal plan contains exactly 3 meals covering breakfast, lunch, and dinner",
+      "All foods comply with vegan, gluten-free, and tree nut-free restrictions",
+      "Includes sufficient protein sources (legumes, seeds, plant-based alternatives) for muscle maintenance",
+      "Plan is compact and concise (under 200 words)"
+    ],
+    "task_description": "Write a compact, concise 1 day meal plan for a single athlete",
+    "scenario": "Testing with an athlete with dietary restrictions (vegan/vegetarian or food allergies) to verify the meal plan maintains nutritional completeness while accommodating constraints"
   }
 ]
