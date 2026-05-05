@@ -1,39 +1,39 @@
 [
   {
     "prompt_inputs": {
-      "content": "This study investigates the neural correlates of decision-making under uncertainty using functional magnetic resonance imaging (fMRI) combined with hierarchical Bayesian modeling. Participants performed a probabilistic learning task while brain activity was recorded, revealing significant activation in the ventromedial prefrontal cortex and anterior insula\u2014regions implicated in value representation and risk processing. We employed mixed-effects regression models with random intercepts to account for individual differences in learning rates and risk sensitivity. Our analysis demonstrates that dopaminergic signaling in the striatum correlates with prediction errors, consistent with reinforcement learning theory. Additionally, we utilized information-theoretic measures such as entropy and mutual information to quantify the complexity of decision strategies across participants. The findings bridge cognitive psychology, computational neuroscience, and statistical methodology, suggesting that Bayesian approaches provide superior predictive validity compared to frequentist alternatives for modeling adaptive behavior in uncertain environments."
+      "content": "This study examines how institutional frameworks shape the reproduction of economic inequality across generations within late-capitalist societies. Drawing on Bourdieu's theory of cultural capital and contemporary analyses of power dynamics, we argue that formal educational systems, despite ostensible meritocratic ideals, function as mechanisms through which dominant classes legitimate structural advantages. Our empirical analysis of intergenerational mobility patterns reveals that access to social networks, economic resources, and symbolic capital\u2014rather than individual aptitude\u2014predominantly determines occupational outcomes. Furthermore, we demonstrate how neoliberal governance structures have intensified these dynamics by dismantling redistributive policies while simultaneously expanding market-based stratification. The intersection of institutional barriers, class habitus, and systemic inequities creates self-perpetuating cycles that marginalize economically disadvantaged populations from accumulating the requisite forms of capital necessary for upward mobility."
     },
     "solution_criteria": [
-      "Extracts topics spanning all three domains: psychology (decision-making, learning, individual differences), neuroscience (fMRI, prefrontal cortex, striatum, dopaminergic signaling), and statistics (Bayesian modeling, mixed-effects regression, information theory)",
-      "Identifies both explicit technical terms and implicit domain concepts without duplication",
-      "Returns results as a valid JSON array of strings"
+      "Extracts all major conceptual topics explicitly mentioned or clearly implied (e.g., institutional frameworks, economic inequality, cultural capital, power dynamics, educational systems, social networks, neoliberal governance, class stratification, intergenerational mobility)",
+      "Returns output as a valid JSON array of strings",
+      "Avoids extracting overly broad terms (e.g., 'society') or trivial words that are not substantive topics"
     ],
     "task_description": "\n    Extract topics out of a passage of text from a scholarly article into a JSON array of strings\n    ",
-    "scenario": "Testing with interdisciplinary research abstract containing mixed domains (psychology, neuroscience, and statistics) to verify accurate extraction of cross-domain topics"
+    "scenario": "Testing with a dense social science passage containing abstract concepts and nuanced arguments (e.g., a sociology or economics abstract with embedded topics like 'institutional frameworks', 'power dynamics', and 'economic inequality' expressed through complex sentence structures)"
   },
   {
     "prompt_inputs": {
-      "content": "We conducted a mixed-methods longitudinal study employing multilevel regression analysis with hierarchical linear modeling (HLM) to examine the relationship between teacher efficacy and student achievement across 47 schools. Participants included 312 teachers and 2,847 students in grades 3-5. Data collection involved validated psychometric instruments including the Teacher Sense of Efficacy Scale (TSES) administered at baseline and 18-month follow-up, coupled with standardized achievement assessments in mathematics and reading comprehension. Statistical procedures incorporated maximum likelihood estimation with robust standard errors to account for clustering effects at the school and classroom levels. Qualitative semi-structured interviews (n=42) were transcribed and analyzed using thematic coding to triangulate quantitative findings. Results indicated significant positive associations between teacher self-efficacy and student mathematics performance (\u03b2 = 0.47, p < 0.001), with differential effects moderated by school socioeconomic status and teacher experience levels."
+      "content": "Anthropogenic climate change is fundamentally driven by the radiative forcing of greenhouse gases, particularly CO\u2082 and CH\u2084, which absorb infrared radiation and alter Earth's energy balance. In the atmosphere, these gases undergo photochemical reactions with hydroxyl radicals, affecting tropospheric ozone concentrations and atmospheric oxidation capacity. Simultaneously, ocean acidification\u2014driven by dissolved CO\u2082 forming carbonic acid\u2014disrupts marine calcification processes in pteropods and coral polyps, with cascading effects through food webs as zooplankton populations decline. Terrestrial ecosystems respond through shifts in phenology and range expansion of species, while permafrost thaw releases previously sequestered carbon, creating positive feedback loops that amplify warming. The interplay between atmospheric physics, aqueous geochemistry, marine biology, and ecosystem dynamics demonstrates how climate forcing mechanisms operate across multiple interconnected domains."
     },
     "solution_criteria": [
-      "Extracts both methodological topics (e.g., hierarchical linear modeling, mixed-methods, psychometric instruments, thematic coding) and subject matter topics (e.g., teacher efficacy, student achievement, mathematics, reading comprehension)",
-      "Returns output as a JSON array of strings with no duplicates",
-      "Includes at least 8 distinct topics covering research design, statistical methods, variables studied, and outcome measures"
+      "Extracts topics spanning physics, chemistry, and biology domains (e.g., radiative forcing, photochemical reactions, ocean acidification, marine biology, ecosystem dynamics)",
+      "Identifies both primary mechanisms and secondary effects (e.g., greenhouse gases as primary driver, food web disruption as secondary consequence)",
+      "Returns output as a JSON array of strings with no additional fields"
     ],
     "task_description": "\n    Extract topics out of a passage of text from a scholarly article into a JSON array of strings\n    ",
-    "scenario": "Testing with empirical study passage heavy in methodological jargon and technical procedures to evaluate extraction of both research methods and subject matter topics"
+    "scenario": "Testing with an interdisciplinary STEM passage containing overlapping and specialized terminology (e.g., a climate science article mixing physics, chemistry, and ecology concepts to evaluate accurate topic extraction across domains)"
   },
   {
     "prompt_inputs": {
-      "content": "Hegel's dialectical method posits that consciousness emerges through a negation of the immediate, wherein the subject encounters alterity as a constitutive moment of self-determination rather than mere external opposition. This phenomenological unfolding, which Adorno would later critique as potentially reifying the very contradictions it purports to overcome, suggests that the distinction between immanent critique and transcendent negation becomes philosophically unstable when subjected to rigorous interrogation. The aporias arising from this tension between determinate negation and absolute negativity implicate broader questions concerning the relationship between epistemological frameworks and ontological claims, particularly regarding whether dialectical reasoning can adequately theorize the non-identical without sublating its alterity into a totalizing system."
+      "content": "In Fitzgerald's narrative, the green light functions as a polysemous symbol that resists singular interpretation. The protagonist's yearning gaze across the bay encodes multiple layers of meaning\u2014romantic aspiration, class anxiety, and the elusive nature of the American Dream itself. Through fragmented flashbacks and unreliable narration, Fitzgerald constructs a temporal architecture that mirrors the psychological fragmentation of his characters. The author's deliberate use of impressionistic imagery and the withholding of crucial information forces readers into active interpretive labor, collapsing the distance between textual ambiguity and thematic preoccupation with the impossibility of recapturing the past."
     },
     "solution_criteria": [
-      "Extracts both explicit philosophical concepts (e.g., 'dialectical method', 'consciousness', 'negation') and implicit themes (e.g., critique of totalization, epistemology-ontology relationship)",
-      "Distinguishes between core topics and secondary references (e.g., 'Hegel' and 'Adorno' are figures, not primary topics)",
-      "Captures nuanced conceptual distinctions as separate topics where semantically distinct (e.g., 'determinate negation' vs 'absolute negativity' vs 'transcendent negation')",
-      "Returns results as a JSON array of strings with no additional metadata or explanations"
+      "Extracts implicit topics that must be inferred from context (e.g., symbolism, narrative technique, unreliable narration, temporal structure, authorial intent)",
+      "Returns output as a JSON array of strings",
+      "Identifies at least 4 distinct topics from the passage",
+      "Captures both explicit literary devices and interpretive concepts discussed in the text"
     ],
     "task_description": "\n    Extract topics out of a passage of text from a scholarly article into a JSON array of strings\n    ",
-    "scenario": "Testing with dense philosophical text containing abstract concepts and nuanced terminology to assess handling of implicit vs. explicit topics and conceptual distinctions"
+    "scenario": "Testing with a humanities passage containing implicit topics (e.g., a literary analysis excerpt where topics like 'narrative structure', 'symbolism', and 'authorial intent' must be inferred rather than explicitly stated)"
   }
 ]
