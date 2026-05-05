@@ -1,0 +1,266 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Prompt Evaluation Report</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                color: #333;
+            }
+            .header {
+                background-color: #f0f0f0;
+                padding: 20px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .summary-stats {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .stat-box {
+                background-color: #fff;
+                border-radius: 5px;
+                padding: 15px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                flex-basis: 30%;
+                min-width: 200px;
+            }
+            .stat-value {
+                font-size: 24px;
+                font-weight: bold;
+                margin-top: 5px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            th {
+                background-color: #4a4a4a;
+                color: white;
+                text-align: left;
+                padding: 12px;
+            }
+            td {
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+                vertical-align: top;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .output-cell {
+                white-space: pre-wrap;
+            }
+            .score {
+                font-weight: bold;
+                padding: 5px 10px;
+                border-radius: 3px;
+                display: inline-block;
+            }
+            .score-high {
+                background-color: #c8e6c9;
+                color: #2e7d32;
+            }
+            .score-medium {
+                background-color: #fff9c4;
+                color: #f57f17;
+            }
+            .score-low {
+                background-color: #ffcdd2;
+                color: #c62828;
+            }
+            .output {
+                overflow: auto;
+                white-space: pre-wrap;
+            }
+
+            .output pre {
+                background-color: #f5f5f5;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 10px;
+                margin: 0;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 14px;
+                line-height: 1.4;
+                color: #333;
+                box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+                overflow-x: auto;
+                white-space: pre-wrap; 
+                word-wrap: break-word; 
+            }
+
+            td {
+                width: 20%;
+            }
+            .score-col {
+                width: 80px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Prompt Evaluation Report</h1>
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <div>Total Test Cases</div>
+                    <div class="stat-value">3</div>
+                </div>
+                <div class="stat-box">
+                    <div>Average Score</div>
+                    <div class="stat-value">2.3 / 10</div>
+                </div>
+                <div class="stat-box">
+                    <div>Pass Rate (≥7)</div>
+                    <div class="stat-value">0.0%</div>
+                </div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Prompt Inputs</th>
+                    <th>Solution Criteria</th>
+                    <th>Output</th>
+                    <th>Score</th>
+                    <th>Reasoning</th>
+                </tr>
+            </thead>
+            <tbody>
+    
+            <tr>
+                <td>Testing with interdisciplinary research abstract containing mixed domains (psychology, neuroscience, and statistics) to verify accurate extraction of cross-domain topics</td>
+                <td class="prompt-inputs"><strong>content:</strong> This study investigates the neural correlates of decision-making under uncertainty using functional magnetic resonance imaging (fMRI) combined with hierarchical Bayesian modeling. Participants performed a probabilistic learning task while brain activity was recorded, revealing significant activation in the ventromedial prefrontal cortex and anterior insula—regions implicated in value representation and risk processing. We employed mixed-effects regression models with random intercepts to account for individual differences in learning rates and risk sensitivity. Our analysis demonstrates that dopaminergic signaling in the striatum correlates with prediction errors, consistent with reinforcement learning theory. Additionally, we utilized information-theoretic measures such as entropy and mutual information to quantify the complexity of decision strategies across participants. The findings bridge cognitive psychology, computational neuroscience, and statistical methodology, suggesting that Bayesian approaches provide superior predictive validity compared to frequentist alternatives for modeling adaptive behavior in uncertain environments.</td>
+                <td class="criteria">• Extracts topics spanning all three domains: psychology (decision-making, learning, individual differences), neuroscience (fMRI, prefrontal cortex, striatum, dopaminergic signaling), and statistics (Bayesian modeling, mixed-effects regression, information theory)<br>• Identifies both explicit technical terms and implicit domain concepts without duplication<br>• Returns results as a valid JSON array of strings</td>
+                <td class="output"><pre># Topics in This Study
+
+## Primary Research Areas
+- **Decision-making under uncertainty** - the core focus
+- **Neural correlates/Brain imaging** - using fMRI technology
+- **Probabilistic learning** - the experimental task used
+
+## Brain Regions & Neuroscience
+- Ventromedial prefrontal cortex
+- Anterior insula
+- Striatum (dopaminergic signaling)
+- Value representation and risk processing
+
+## Theoretical Frameworks
+- **Reinforcement learning theory**
+- **Bayesian modeling** (hierarchical)
+- Prediction error hypothesis
+- Risk sensitivity
+
+## Statistical & Computational Methods
+- Mixed-effects regression models
+- Random intercepts (accounting for individual differences)
+- Information-theoretic measures (entropy, mutual information)
+- Bayesian vs. frequentist approaches
+
+## Disciplinary Connections
+- Cognitive psychology
+- Computational neuroscience
+- Statistical methodology
+- Behavioral modeling
+
+## Key Concepts
+- Individual differences in learning rates
+- Decision strategy complexity
+- Adaptive behavior in uncertain environments
+- Predictive validity
+
+This is a **multidisciplinary neuroscience study** combining brain imaging, statistical modeling, and learning theory.</pre></td>
+                <td class="score-col"><span class="score score-low">3</span></td>
+                <td class="reasoning">The solution demonstrates excellent topical extraction and understanding of the source material, successfully identifying topics across psychology, neuroscience, and statistics domains. However, it commits a fatal violation of the mandatory requirements by failing to return a valid JSON array of strings as the sole output. Instead, it provides a formatted document with headers, explanatory text, and commentary. The mandatory requirements explicitly state the response should 'contain the JSON array and nothing else,' and that strings should contain 'only a topic without any extra commentary.' This is a clear and unambiguous violation that results in automatic failure according to the scoring guidelines.</td>
+            </tr>
+        
+            <tr>
+                <td>Testing with empirical study passage heavy in methodological jargon and technical procedures to evaluate extraction of both research methods and subject matter topics</td>
+                <td class="prompt-inputs"><strong>content:</strong> We conducted a mixed-methods longitudinal study employing multilevel regression analysis with hierarchical linear modeling (HLM) to examine the relationship between teacher efficacy and student achievement across 47 schools. Participants included 312 teachers and 2,847 students in grades 3-5. Data collection involved validated psychometric instruments including the Teacher Sense of Efficacy Scale (TSES) administered at baseline and 18-month follow-up, coupled with standardized achievement assessments in mathematics and reading comprehension. Statistical procedures incorporated maximum likelihood estimation with robust standard errors to account for clustering effects at the school and classroom levels. Qualitative semi-structured interviews (n=42) were transcribed and analyzed using thematic coding to triangulate quantitative findings. Results indicated significant positive associations between teacher self-efficacy and student mathematics performance (β = 0.47, p < 0.001), with differential effects moderated by school socioeconomic status and teacher experience levels.</td>
+                <td class="criteria">• Extracts both methodological topics (e.g., hierarchical linear modeling, mixed-methods, psychometric instruments, thematic coding) and subject matter topics (e.g., teacher efficacy, student achievement, mathematics, reading comprehension)<br>• Returns output as a JSON array of strings with no duplicates<br>• Includes at least 8 distinct topics covering research design, statistical methods, variables studied, and outcome measures</td>
+                <td class="output"><pre># Topics in This Research Study
+
+## **Primary Research Topic**
+- **Teacher Efficacy and Student Achievement** - the central relationship being examined
+
+## **Methodological Topics**
+- Mixed-methods research design
+- Longitudinal studies
+- Multilevel regression analysis
+- Hierarchical Linear Modeling (HLM)
+- Maximum likelihood estimation
+- Psychometric instruments
+- Qualitative thematic coding
+- Triangulation methods
+
+## **Variables/Constructs Studied**
+- Teacher self-efficacy (measured by TSES)
+- Student achievement (mathematics and reading comprehension)
+- School socioeconomic status
+- Teacher experience levels
+
+## **Educational/Contextual Topics**
+- Elementary education (grades 3-5)
+- Mathematics education
+- Reading comprehension
+- School-level factors
+- Classroom dynamics
+
+## **Statistical/Analytical Topics**
+- Clustering effects
+- Moderation effects
+- Robust standard errors
+- Semi-structured interviews
+- Qualitative data analysis
+
+This appears to be an **educational research study** examining how teachers' confidence in their teaching abilities relates to student learning outcomes, with attention to contextual factors that might influence this relationship.</pre></td>
+                <td class="score-col"><span class="score score-low">2</span></td>
+                <td class="reasoning">The solution demonstrates excellent understanding of the content and identifies relevant topics across all required categories. However, it catastrophically fails all three mandatory requirements: (1) it is not a JSON array of strings, (2) the strings contain extra commentary and are organized with headers rather than presented as clean topic strings, and (3) the response includes substantial additional text beyond the array. The task explicitly requires ONLY a JSON array of strings with no other content. This is a clear and unambiguous violation of mandatory requirements.</td>
+            </tr>
+        
+            <tr>
+                <td>Testing with dense philosophical text containing abstract concepts and nuanced terminology to assess handling of implicit vs. explicit topics and conceptual distinctions</td>
+                <td class="prompt-inputs"><strong>content:</strong> Hegel's dialectical method posits that consciousness emerges through a negation of the immediate, wherein the subject encounters alterity as a constitutive moment of self-determination rather than mere external opposition. This phenomenological unfolding, which Adorno would later critique as potentially reifying the very contradictions it purports to overcome, suggests that the distinction between immanent critique and transcendent negation becomes philosophically unstable when subjected to rigorous interrogation. The aporias arising from this tension between determinate negation and absolute negativity implicate broader questions concerning the relationship between epistemological frameworks and ontological claims, particularly regarding whether dialectical reasoning can adequately theorize the non-identical without sublating its alterity into a totalizing system.</td>
+                <td class="criteria">• Extracts both explicit philosophical concepts (e.g., 'dialectical method', 'consciousness', 'negation') and implicit themes (e.g., critique of totalization, epistemology-ontology relationship)<br>• Distinguishes between core topics and secondary references (e.g., 'Hegel' and 'Adorno' are figures, not primary topics)<br>• Captures nuanced conceptual distinctions as separate topics where semantically distinct (e.g., 'determinate negation' vs 'absolute negativity' vs 'transcendent negation')<br>• Returns results as a JSON array of strings with no additional metadata or explanations</td>
+                <td class="output"><pre># Topics in This Passage
+
+## Primary Philosophical Subjects:
+1. **Hegel's Dialectics** - the core method and theory of consciousness development
+2. **Phenomenology** - the study of consciousness and subjective experience
+3. **Negation** - both as a logical operation and existential process
+4. **Alterity/Otherness** - the role of "the other" in self-understanding
+
+## Secondary Theoretical Issues:
+5. **Adorno's Critique** - specifically his challenge to Hegelian dialectics as potentially reifying contradictions
+6. **Immanent vs. Transcendent Critique** - different approaches to philosophical negation
+7. **Epistemology vs. Ontology** - the relationship between knowledge and being
+
+## Underlying Conceptual Problems:
+8. **Non-identity** - whether dialectics can preserve genuine difference without absorbing it
+9. **Totalization/Totality** - the risk of systems becoming all-encompassing
+10. **Aporias** - logical contradictions or impossibilities within the framework
+
+## Core Question:
+Can dialectical reasoning preserve genuine otherness without dissolving it into a unified system?
+
+**Overall Domain**: German Idealism and Critical Theory (Hegel, Adorno, with phenomenological concerns)</pre></td>
+                <td class="score-col"><span class="score score-low">2</span></td>
+                <td class="reasoning">The solution demonstrates strong understanding of the philosophical content and applies the secondary criteria well by distinguishing between core and secondary topics and capturing nuanced conceptual distinctions. However, it commits a fatal violation of the mandatory requirements: the task explicitly requires 'a JSON array of strings, containing each topic mentioned in the article' with 'nothing else' in the response. The solution instead provides a structured markdown document with headers, explanations, and commentary. This is a clear and unambiguous violation of the format requirement that automatically triggers a score of 3 or lower per the mandatory requirements specification.</td>
+            </tr>
+        
+            </tbody>
+        </table>
+    </body>
+    </html>
+    
