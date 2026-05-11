@@ -69,6 +69,13 @@ pip install anthropic python-dotenv prompt-toolkit "mcp[cli]==1.8.0"
 python main.py
 ```
 
+4. MCP Inspector configuration (without uv):
+
+- Command: `/Users/akash/Training/anthropic-course/cli_project/.venv/bin/python`
+- Args: `mcp_server.py`
+
+This runs `mcp_server.py` directly over stdio and avoids requiring `uv`.
+
 ## Usage
 
 ### Basic Interaction
