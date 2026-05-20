@@ -73,3 +73,7 @@ export default defineConfig([
   },
 ])
 ```
+
+## Notes
+
+- [Tailwind layers and cascade behavior](docs/tailwind-layers.md)
