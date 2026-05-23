@@ -1,3 +1,6 @@
+# virtual environment
+.venv/
+
 # Dependencies
 **/node_modules/
 
