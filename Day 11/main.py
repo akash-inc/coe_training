@@ -57,6 +57,16 @@ class TaskUpdate(BaseModel):
     user_id: Optional[int] = Field(default=None, ge=1)
 
 
+async def get_task_or_404(
+    task_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> TaskModel:
+    task = await db.get(TaskModel, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "User"}
@@ -111,23 +121,16 @@ async def create_task(payload: TaskCreate, db: AsyncSession = Depends(get_db)):
 
 
 @app.get("/tasks/{task_id}", response_model=TaskOut)
-async def read_task(task_id: int, db: AsyncSession = Depends(get_db)):
-    task = await db.get(TaskModel, task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+async def read_task(task: TaskModel = Depends(get_task_or_404)):
     return task
 
 
 @app.put("/tasks/{task_id}", response_model=TaskOut)
 async def replace_task(
-    task_id: int,
     payload: TaskCreate,
+    task: TaskModel = Depends(get_task_or_404),
     db: AsyncSession = Depends(get_db),
 ):
-    task = await db.get(TaskModel, task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
     user = await db.get(UserModel, payload.user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -147,14 +150,10 @@ async def replace_task(
 
 @app.patch("/tasks/{task_id}", response_model=TaskOut)
 async def patch_task(
-    task_id: int,
     payload: TaskUpdate,
+    task: TaskModel = Depends(get_task_or_404),
     db: AsyncSession = Depends(get_db),
 ):
-    task = await db.get(TaskModel, task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
     changes = payload.model_dump(exclude_unset=True)
     if "user_id" in changes:
         user = await db.get(UserModel, changes["user_id"])
@@ -171,11 +170,10 @@ async def patch_task(
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
-async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):
-    task = await db.get(TaskModel, task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
+async def delete_task(
+    task: TaskModel = Depends(get_task_or_404),
+    db: AsyncSession = Depends(get_db),
+):
     await db.delete(task)
     await db.commit()
     return Response(status_code=204)
