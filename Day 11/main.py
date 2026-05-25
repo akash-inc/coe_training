@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -47,6 +47,11 @@ tasks_db: dict[int, Task] = {
     )
 }
 
+def get_task_or_404(task_id: int) -> Task:
+    task = tasks_db.get(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
 
 @app.get("/")
 def read_root():
@@ -71,46 +76,33 @@ def create_task(payload: TaskCreate):
     tasks_db[task_id] = task
     return task
 
-
 @app.get("/tasks/{task_id}", response_model=Task)
-def read_task(task_id: int):
-    task = tasks_db.get(task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+def read_task(task: Task = Depends(get_task_or_404)):
     return task
 
-
 @app.put("/tasks/{task_id}", response_model=Task)
-def replace_task(task_id: int, payload: TaskCreate):
-    existing = tasks_db.get(task_id)
-    if existing is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+def replace_task(payload: TaskCreate, existing: Task = Depends(get_task_or_404)):
     updated = Task(
-        id=task_id,
+        id=existing.id,
         created_at=existing.created_at,
         updated_at=datetime.now(timezone.utc),
         **payload.model_dump(),
     )
-    tasks_db[task_id] = updated
+    tasks_db[existing.id] = updated
     return updated
 
 
 @app.patch("/tasks/{task_id}", response_model=Task)
-def patch_task(task_id: int, payload: TaskUpdate):
-    existing = tasks_db.get(task_id)
-    if existing is None:
-        raise HTTPException(status_code=404, detail="Task not found")
+def patch_task(payload: TaskUpdate, existing: Task = Depends(get_task_or_404)):
     # Only apply fields the client actually sent
     changes = payload.model_dump(exclude_unset=True)
     updated = existing.model_copy(
         update={**changes, "updated_at": datetime.now(timezone.utc)}
     )
-    tasks_db[task_id] = updated
+    tasks_db[existing.id] = updated
     return updated
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
-def delete_task(task_id: int):
-    if task_id not in tasks_db:
-        raise HTTPException(status_code=404, detail="Task not found")
-    del tasks_db[task_id]
+def delete_task(existing: Task = Depends(get_task_or_404)):
+    del tasks_db[existing.id]
