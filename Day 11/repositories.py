@@ -88,6 +88,12 @@ class SqlAlchemyTaskRepository(TaskRepository):
         task = result.scalar_one_or_none()
         return task
 
+    async def _get_by_id_or_raise(self, task_id: int) -> Task:
+        task = await self.get_by_id(task_id)
+        if task is None:
+            raise ValueError(f"Task with id {task_id} not found")
+        return task
+
     async def create(self, task: Task) -> Task:
         self.session.add(task)
         await self.session.commit()
@@ -95,9 +101,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
         return task
 
     async def replace(self, task: Task) -> Task:
-        existing_task = await self.get_by_id(task.id)
-        if existing_task is None:
-            raise ValueError(f"Task with id {task.id} not found")
+        existing_task = await self._get_by_id_or_raise(task.id)
 
         existing_task.title = task.title
         existing_task.description = task.description
@@ -112,9 +116,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
         return existing_task
 
     async def update_partial(self, task: Task) -> Task:
-        existing_task = await self.get_by_id(task.id)
-        if existing_task is None:
-            raise ValueError(f"Task with id {task.id} not found")
+        existing_task = await self._get_by_id_or_raise(task.id)
 
         updatable_fields = (
             "title",
@@ -137,8 +139,6 @@ class SqlAlchemyTaskRepository(TaskRepository):
         return existing_task
 
     async def delete(self, task_id: int) -> None:
-        task = await self.get_by_id(task_id)
-        if not task:
-            raise ValueError(f"Task with id {task_id} not found")
+        task = await self._get_by_id_or_raise(task_id)
         await self.session.delete(task)
         await self.session.commit()
