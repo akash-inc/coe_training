@@ -76,8 +76,13 @@ async def ensure_user_exists(
         raise HTTPException(status_code=404, detail="User not found")
 
 
-def task_not_found_to_http_error(error: ValueError) -> HTTPException:
-    return HTTPException(status_code=404, detail=str(error))
+async def ensure_task_exists(
+    task_id: int,
+    task_repository: TaskRepository,
+) -> None:
+    task = await task_repository.get_by_id(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
 
 
 @app.get("/")
@@ -142,12 +147,10 @@ async def replace_task(
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     await ensure_user_exists(payload.user_id, user_repository)
+    await ensure_task_exists(task_id, task_repository)
     replacement_data = payload.model_dump()
     replacement_data["updated_at"] = datetime.now(timezone.utc)
-    try:
-        return await task_repository.replace(task_id, replacement_data)
-    except ValueError as error:
-        raise task_not_found_to_http_error(error) from error
+    return await task_repository.replace(task_id, replacement_data)
 
 
 @app.patch("/tasks/{task_id}", response_model=TaskOut)
@@ -158,13 +161,11 @@ async def patch_task(
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     changes = payload.model_dump(exclude_unset=True)
+    await ensure_task_exists(task_id, task_repository)
     if "user_id" in changes:
         await ensure_user_exists(changes["user_id"], user_repository)
     changes["updated_at"] = datetime.now(timezone.utc)
-    try:
-        return await task_repository.update_partial(task_id, changes)
-    except ValueError as error:
-        raise task_not_found_to_http_error(error) from error
+    return await task_repository.update_partial(task_id, changes)
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
@@ -172,8 +173,6 @@ async def delete_task(
     task_id: int,
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
-    try:
-        await task_repository.delete(task_id)
-    except ValueError as error:
-        raise task_not_found_to_http_error(error) from error
+    await ensure_task_exists(task_id, task_repository)
+    await task_repository.delete(task_id)
     return Response(status_code=204)

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from models import User, Task
 
 class UserRepository(ABC):
@@ -63,7 +63,7 @@ class SqlAlchemyUserRepository(UserRepository):
         return list(users)
 
     async def get_by_id(self, user_id: int) -> Optional[User]:
-        result = await self.session.execute(select(User).filter(User.id == user_id))
+        result = await self.session.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         return user
 
@@ -84,7 +84,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
         return list(tasks)
 
     async def get_by_id(self, task_id: int) -> Optional[Task]:
-        result = await self.session.execute(select(Task).filter(Task.id == task_id))
+        result = await self.session.execute(select(Task).where(Task.id == task_id))
         task = result.scalar_one_or_none()
         return task
 
