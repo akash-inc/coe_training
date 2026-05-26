@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -38,12 +38,12 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    async def replace(self, task: Task) -> Task:
+    async def replace(self, task_id: int, task_data: dict[str, Any]) -> Task:
         """Replace a task"""
         pass
 
     @abstractmethod
-    async def update_partial(self, task: Task) -> Task:
+    async def update_partial(self, task_id: int, task_data: dict[str, Any]) -> Task:
         """Update a task partially"""
         pass
 
@@ -100,39 +100,26 @@ class SqlAlchemyTaskRepository(TaskRepository):
         await self.session.refresh(task)
         return task
 
-    async def replace(self, task: Task) -> Task:
-        existing_task = await self._get_by_id_or_raise(task.id)
+    async def replace(self, task_id: int, task_data: dict[str, Any]) -> Task:
+        existing_task = await self._get_by_id_or_raise(task_id)
 
-        existing_task.title = task.title
-        existing_task.description = task.description
-        existing_task.status = task.status
-        existing_task.priority = task.priority
-        existing_task.due_date = task.due_date
-        existing_task.updated_at = task.updated_at
-        existing_task.user_id = task.user_id
+        existing_task.title = task_data["title"]
+        existing_task.description = task_data["description"]
+        existing_task.status = task_data["status"]
+        existing_task.priority = task_data["priority"]
+        existing_task.due_date = task_data["due_date"]
+        existing_task.updated_at = task_data["updated_at"]
+        existing_task.user_id = task_data["user_id"]
 
         await self.session.commit()
         await self.session.refresh(existing_task)
         return existing_task
 
-    async def update_partial(self, task: Task) -> Task:
-        existing_task = await self._get_by_id_or_raise(task.id)
+    async def update_partial(self, task_id: int, task_data: dict[str, Any]) -> Task:
+        existing_task = await self._get_by_id_or_raise(task_id)
 
-        updatable_fields = (
-            "title",
-            "description",
-            "status",
-            "priority",
-            "updated_at",
-            "user_id",
-        )
-        for field in updatable_fields:
-            value = getattr(task, field, None)
-            if value is not None:
-                setattr(existing_task, field, value)
-
-        # Allow explicit due_date removal.
-        existing_task.due_date = task.due_date
+        for field, value in task_data.items():
+            setattr(existing_task, field, value)
 
         await self.session.commit()
         await self.session.refresh(existing_task)

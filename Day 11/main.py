@@ -67,16 +67,6 @@ def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:
 def get_task_repository(db: AsyncSession = Depends(get_db)) -> TaskRepository:
     return SqlAlchemyTaskRepository(db)
 
-async def get_task_or_404(
-    task_id: int,
-    task_repository: TaskRepository = Depends(get_task_repository),
-) -> TaskModel:
-    task = await task_repository.get_by_id(task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
-
-
 async def ensure_user_exists(
     user_id: int,
     user_repository: UserRepository,
@@ -84,6 +74,10 @@ async def ensure_user_exists(
     user = await user_repository.get_by_id(user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
+
+
+def task_not_found_to_http_error(error: ValueError) -> HTTPException:
+    return HTTPException(status_code=404, detail=str(error))
 
 
 @app.get("/")
@@ -142,56 +136,44 @@ async def read_task(task_id: int, task_repository: TaskRepository = Depends(get_
 
 @app.put("/tasks/{task_id}", response_model=TaskOut)
 async def replace_task(
+    task_id: int,
     payload: TaskCreate,
-    task: TaskModel = Depends(get_task_or_404),
     task_repository: TaskRepository = Depends(get_task_repository),
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     await ensure_user_exists(payload.user_id, user_repository)
-    replacement_task = TaskModel(
-        id=task.id,
-        title=payload.title,
-        description=payload.description,
-        status=payload.status,
-        priority=payload.priority,
-        due_date=payload.due_date,
-        user_id=payload.user_id,
-        created_at=task.created_at,
-        updated_at=datetime.now(timezone.utc),
-    )
-    return await task_repository.replace(replacement_task)
+    replacement_data = payload.model_dump()
+    replacement_data["updated_at"] = datetime.now(timezone.utc)
+    try:
+        return await task_repository.replace(task_id, replacement_data)
+    except ValueError as error:
+        raise task_not_found_to_http_error(error) from error
 
 
 @app.patch("/tasks/{task_id}", response_model=TaskOut)
 async def patch_task(
+    task_id: int,
     payload: TaskUpdate,
-    task: TaskModel = Depends(get_task_or_404),
     task_repository: TaskRepository = Depends(get_task_repository),
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     changes = payload.model_dump(exclude_unset=True)
     if "user_id" in changes:
         await ensure_user_exists(changes["user_id"], user_repository)
-
-    partial_task = TaskModel(
-        id=task.id,
-        title=changes.get("title", task.title),
-        description=changes.get("description", task.description),
-        status=changes.get("status", task.status),
-        priority=changes.get("priority", task.priority),
-        due_date=changes["due_date"] if "due_date" in changes else task.due_date,
-        created_at=task.created_at,
-        updated_at=datetime.now(timezone.utc),
-        user_id=changes.get("user_id", task.user_id),
-    )
-    return await task_repository.update_partial(partial_task)
+    changes["updated_at"] = datetime.now(timezone.utc)
+    try:
+        return await task_repository.update_partial(task_id, changes)
+    except ValueError as error:
+        raise task_not_found_to_http_error(error) from error
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
 async def delete_task(
     task_id: int,
-    _: TaskModel = Depends(get_task_or_404),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
-    await task_repository.delete(task_id)
+    try:
+        await task_repository.delete(task_id)
+    except ValueError as error:
+        raise task_not_found_to_http_error(error) from error
     return Response(status_code=204)
