@@ -1,49 +1,96 @@
 import os
+import asyncio
+from pathlib import Path
 from collections.abc import AsyncGenerator
 
+import asyncpg
 import pytest
 import pytest_asyncio
+from alembic import command
+from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import delete
+from sqlalchemy import delete, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from database import Base, get_db
+from database import get_db
 from main import app
 from models import Task, User
 
-TEST_DB_URL = "sqlite+aiosqlite:///./test_tasks.db"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+TEST_DB_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://akash:password@localhost/tasks_test",
+)
+
+
+def _is_postgres(url: str) -> bool:
+    return make_url(url).get_backend_name() == "postgresql"
+
+
+async def _ensure_postgres_test_db_exists(url: str) -> None:
+    parsed_url = make_url(url)
+    db_name = parsed_url.database
+    if not db_name:
+        raise RuntimeError("TEST_DATABASE_URL must include a database name")
+
+    conn = await asyncpg.connect(
+        host=parsed_url.host or "localhost",
+        port=parsed_url.port or 5432,
+        user=parsed_url.username,
+        password=parsed_url.password,
+        database="postgres",
+    )
+    try:
+        exists = await conn.fetchval(
+            "SELECT 1 FROM pg_database WHERE datname = $1",
+            db_name,
+        )
+        if not exists:
+            # Identifiers cannot be bound parameters.
+            escaped_db_name = db_name.replace('"', '""')
+            await conn.execute(f'CREATE DATABASE "{escaped_db_name}"')
+    finally:
+        await conn.close()
+
+
+@pytest.fixture(scope="session")
+def migrated_test_db():
+    if _is_postgres(TEST_DB_URL):
+        asyncio.run(_ensure_postgres_test_db_exists(TEST_DB_URL))
+
+    alembic_cfg = Config(str(PROJECT_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("sqlalchemy.url", TEST_DB_URL)
+    command.upgrade(alembic_cfg, "head")
+    yield
+    command.downgrade(alembic_cfg, "base")
 
 
 @pytest_asyncio.fixture(scope="session")
-async def engine():
-    if os.path.exists("test_tasks.db"):
-        os.remove("test_tasks.db")
-
+async def engine(migrated_test_db):
     test_engine = create_async_engine(TEST_DB_URL, future=True)
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     yield test_engine
-
     await test_engine.dispose()
-    if os.path.exists("test_tasks.db"):
-        os.remove("test_tasks.db")
 
 
 @pytest_asyncio.fixture
 async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     Session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with Session() as session:
-        # clean before each test
-        await session.execute(delete(Task))
-        await session.execute(delete(User))
+        if _is_postgres(TEST_DB_URL):
+            await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
+        else:
+            await session.execute(delete(Task))
+            await session.execute(delete(User))
         await session.commit()
 
         yield session
 
-        # clean after each test
-        await session.execute(delete(Task))
-        await session.execute(delete(User))
+        if _is_postgres(TEST_DB_URL):
+            await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
+        else:
+            await session.execute(delete(Task))
+            await session.execute(delete(User))
         await session.commit()
 
 
