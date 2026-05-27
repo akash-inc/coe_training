@@ -1,8 +1,10 @@
 import os
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 
 import requests
 
+load_dotenv()
 
 class WeatherServiceError(Exception):
     """Base class for weather service failures."""
