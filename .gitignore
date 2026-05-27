@@ -19,6 +19,8 @@
 **/dist/
 **/build/
 **/.cache/
+**/.pytest_cache/
+**/__pycache__/
 **/.vite/
 **/.turbo/
 **/.next/
