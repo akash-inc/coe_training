@@ -109,6 +109,7 @@ Key files:
 - `tests/test_cache.py` - cache unit tests
 - `tests/test_main.py` - route tests and error-path tests
 - `tests/test_repositories.py` - repository unit tests (create/update/error branches)
+- `tests/test_api_integration.py` - full request-response integration cycles
 
 Advanced mocking already included:
 - `mocker.spy(...)`
@@ -123,6 +124,15 @@ python -m pytest
 Coverage settings are in `pytest.ini`:
 - minimum required: 90%
 - current implementation was validated above target
+
+## API Integration Testing (Full Request-Response Cycle)
+
+`tests/test_api_integration.py` exercises complete API flows through FastAPI routing, validation, repository, and SQLite persistence:
+
+- weather cache miss then cache hit for same query
+- preference create with `PUT /preferences` then read with `GET /preferences/{user_id}`
+- preference update cycle and read-back verification
+- 404 behavior for missing preferences
 
 ## Common Troubleshooting
 
