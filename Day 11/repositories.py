@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import User, Task
 
@@ -57,6 +58,14 @@ class SqlAlchemyUserRepository(UserRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def _commit_and_refresh(self, entity: User) -> None:
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise
+        await self.session.refresh(entity)
+
     async def list_all(self) -> list[User]:
         result = await self.session.execute(select(User))
         users = result.scalars().all()
@@ -69,14 +78,21 @@ class SqlAlchemyUserRepository(UserRepository):
 
     async def create(self, user: User) -> User:
         self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user)
+        await self._commit_and_refresh(user)
         return user
 
 
 class SqlAlchemyTaskRepository(TaskRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def _commit_and_refresh(self, entity: Task) -> None:
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise
+        await self.session.refresh(entity)
 
     async def list_all(self) -> list[Task]:
         result = await self.session.execute(select(Task))
@@ -96,8 +112,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
 
     async def create(self, task: Task) -> Task:
         self.session.add(task)
-        await self.session.commit()
-        await self.session.refresh(task)
+        await self._commit_and_refresh(task)
         return task
 
     async def replace(self, task_id: int, task_data: dict[str, Any]) -> Task:
@@ -111,8 +126,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
         existing_task.updated_at = task_data["updated_at"]
         existing_task.user_id = task_data["user_id"]
 
-        await self.session.commit()
-        await self.session.refresh(existing_task)
+        await self._commit_and_refresh(existing_task)
         return existing_task
 
     async def update_partial(self, task_id: int, task_data: dict[str, Any]) -> Task:
@@ -121,11 +135,14 @@ class SqlAlchemyTaskRepository(TaskRepository):
         for field, value in task_data.items():
             setattr(existing_task, field, value)
 
-        await self.session.commit()
-        await self.session.refresh(existing_task)
+        await self._commit_and_refresh(existing_task)
         return existing_task
 
     async def delete(self, task_id: int) -> None:
         task = await self._get_by_id_or_raise(task_id)
         await self.session.delete(task)
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise
