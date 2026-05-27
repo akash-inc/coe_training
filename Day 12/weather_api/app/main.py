@@ -1,10 +1,14 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
-from app.models import UserPreference
+from app.repositories import (
+    PreferenceConflictError,
+    PreferenceStorageError,
+    SqlAlchemyUserPreferenceRepository,
+    UserPreferenceRepository,
+)
 from app.services.cache import CacheService, CacheServiceError
 from app.services.weather import CityNotFoundError, UpstreamServiceError, WeatherService
 
@@ -39,6 +43,10 @@ def get_weather_service() -> WeatherService:
 
 def get_cache_service() -> CacheService:
     return CacheService()
+
+
+def get_preference_repository(db: Session = Depends(get_db)) -> UserPreferenceRepository:
+    return SqlAlchemyUserPreferenceRepository(db)
 
 
 @app.get("/health")
@@ -79,27 +87,19 @@ def read_weather(
 
 
 @app.put("/preferences", response_model=UserPreferenceOut)
-def upsert_preferences(payload: UserPreferenceIn, db: Session = Depends(get_db)):
+def upsert_preferences(
+    payload: UserPreferenceIn,
+    preference_repository: UserPreferenceRepository = Depends(get_preference_repository),
+):
     try:
-        preference = db.query(UserPreference).filter(UserPreference.user_id == payload.user_id).first()
-        if preference is None:
-            preference = UserPreference(
-                user_id=payload.user_id,
-                preferred_city=payload.preferred_city,
-                units=payload.units,
-            )
-            db.add(preference)
-        else:
-            preference.preferred_city = payload.preferred_city
-            preference.units = payload.units
-
-        db.commit()
-        db.refresh(preference)
-    except IntegrityError as error:
-        db.rollback()
+        preference = preference_repository.upsert(
+            user_id=payload.user_id,
+            preferred_city=payload.preferred_city,
+            units=payload.units,
+        )
+    except PreferenceConflictError as error:
         raise HTTPException(status_code=409, detail="Failed to store preference due to integrity conflict") from error
-    except SQLAlchemyError as error:
-        db.rollback()
+    except PreferenceStorageError as error:
         raise HTTPException(status_code=500, detail="Database error while storing preference") from error
 
     return UserPreferenceOut(
@@ -110,10 +110,13 @@ def upsert_preferences(payload: UserPreferenceIn, db: Session = Depends(get_db))
 
 
 @app.get("/preferences/{user_id}", response_model=UserPreferenceOut)
-def get_preferences(user_id: int, db: Session = Depends(get_db)):
+def get_preferences(
+    user_id: int,
+    preference_repository: UserPreferenceRepository = Depends(get_preference_repository),
+):
     try:
-        preference = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
-    except SQLAlchemyError as error:
+        preference = preference_repository.get_by_user_id(user_id)
+    except PreferenceStorageError as error:
         raise HTTPException(status_code=500, detail="Database error while fetching preference") from error
 
     if preference is None:

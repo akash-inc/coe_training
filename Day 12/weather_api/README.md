@@ -15,6 +15,7 @@ If you are new to backend development, here is the mental model:
 - `app/services/cache.py` - Redis cache access layer
 - `app/database.py` - SQLAlchemy engine/session setup
 - `app/models.py` - DB model (`UserPreference`)
+- `app/repositories.py` - repository interface + SQLAlchemy implementation for preferences
 - `tests/` - mocked tests for API/service/cache behavior
 - `.env.example` - environment variables template
 
@@ -29,6 +30,19 @@ If you are new to backend development, here is the mental model:
   - city not found
   - Redis read/write failures
   - DB integrity and generic DB errors
+
+## Repository Pattern (Why and How)
+
+This project now uses a repository layer for preference persistence:
+
+- Route handlers in `app/main.py` depend on `UserPreferenceRepository`
+- Concrete DB logic is in `SqlAlchemyUserPreferenceRepository`
+- This keeps API code focused on HTTP behavior and keeps database details in one place
+
+Benefits:
+- easier testing (mock repository instead of mocking SQLAlchemy chains)
+- cleaner separation of concerns
+- easier future swap to another storage backend
 
 ## Environment Variables
 
@@ -87,13 +101,14 @@ Expected output: `PONG`
 Tests in this project are designed to teach mocking external dependencies:
 - OpenWeatherMap (`requests`)
 - Redis (`redis.Redis`)
-- DB session (SQLAlchemy session mock)
+- Repository-backed DB operations (mocked `UserPreferenceRepository`)
 
 Key files:
 - `tests/conftest.py` - reusable fixtures and dependency overrides
 - `tests/test_weather.py` - weather service unit tests
 - `tests/test_cache.py` - cache unit tests
 - `tests/test_main.py` - route tests and error-path tests
+- `tests/test_repositories.py` - repository unit tests (create/update/error branches)
 
 Advanced mocking already included:
 - `mocker.spy(...)`

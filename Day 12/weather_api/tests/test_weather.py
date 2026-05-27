@@ -35,8 +35,9 @@ def test_get_current_weather_success(mocker):
     assert "observed_at" in result
 
 
-def test_get_current_weather_raises_when_api_key_missing():
-    service = WeatherService(api_key="")
+def test_get_current_weather_raises_when_api_key_missing(monkeypatch):
+    monkeypatch.delenv("OPENWEATHERMAP_API_KEY", raising=False)
+    service = WeatherService(api_key=None)
     with pytest.raises(UpstreamServiceError, match="Missing OPENWEATHERMAP_API_KEY"):
         service.get_current_weather("London")
 

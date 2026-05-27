@@ -1,17 +1,10 @@
 from types import SimpleNamespace
 
 import pytest
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from app.repositories import PreferenceConflictError, PreferenceStorageError
 from app.services.cache import CacheServiceError
 from app.services.weather import CityNotFoundError, UpstreamServiceError
-
-
-def _mock_query_chain(mock_db_session, first_result):
-    query = mock_db_session.query.return_value
-    filtered = query.filter.return_value
-    filtered.first.return_value = first_result
-    return filtered
 
 
 def test_healthcheck_returns_ok(client):
@@ -90,73 +83,71 @@ def test_weather_returns_502_for_upstream_failure(client, mock_weather_service):
     assert response.json()["detail"] == "upstream down"
 
 
-def test_upsert_preferences_creates_new_record(client, mock_db_session):
-    _mock_query_chain(mock_db_session, first_result=None)
-    refresh_target = SimpleNamespace(user_id=1, preferred_city="Rome", units="metric")
-
-    def fake_refresh(model):
-        model.user_id = refresh_target.user_id
-        model.preferred_city = refresh_target.preferred_city
-        model.units = refresh_target.units
-
-    mock_db_session.refresh.side_effect = fake_refresh
+def test_upsert_preferences_creates_new_record(client, mock_preference_repository):
+    mock_preference_repository.upsert.return_value = SimpleNamespace(
+        user_id=1,
+        preferred_city="Rome",
+        units="metric",
+    )
 
     response = client.put("/preferences", json={"user_id": 1, "preferred_city": "Rome", "units": "metric"})
     assert response.status_code == 200
     assert response.json() == {"user_id": 1, "preferred_city": "Rome", "units": "metric"}
-    mock_db_session.add.assert_called_once()
-    mock_db_session.commit.assert_called_once()
+    mock_preference_repository.upsert.assert_called_once_with(
+        user_id=1,
+        preferred_city="Rome",
+        units="metric",
+    )
 
 
-def test_upsert_preferences_updates_existing_record(client, mock_db_session):
-    existing = SimpleNamespace(user_id=2, preferred_city="Old", units="metric")
-    _mock_query_chain(mock_db_session, first_result=existing)
+def test_upsert_preferences_updates_existing_record(client, mock_preference_repository):
+    mock_preference_repository.upsert.return_value = SimpleNamespace(
+        user_id=2,
+        preferred_city="Berlin",
+        units="imperial",
+    )
 
     response = client.put("/preferences", json={"user_id": 2, "preferred_city": "Berlin", "units": "imperial"})
     assert response.status_code == 200
     assert response.json() == {"user_id": 2, "preferred_city": "Berlin", "units": "imperial"}
-    mock_db_session.add.assert_not_called()
-    assert existing.preferred_city == "Berlin"
-    assert existing.units == "imperial"
+    mock_preference_repository.upsert.assert_called_once()
 
 
-def test_upsert_preferences_returns_409_on_integrity_error(client, mock_db_session):
-    _mock_query_chain(mock_db_session, first_result=None)
-    mock_db_session.commit.side_effect = IntegrityError("insert", {}, Exception("dup"))
+def test_upsert_preferences_returns_409_on_integrity_error(client, mock_preference_repository):
+    mock_preference_repository.upsert.side_effect = PreferenceConflictError("conflict")
 
     response = client.put("/preferences", json={"user_id": 3, "preferred_city": "Madrid", "units": "metric"})
     assert response.status_code == 409
-    mock_db_session.rollback.assert_called_once()
 
 
-def test_upsert_preferences_returns_500_on_database_error(client, mock_db_session):
-    _mock_query_chain(mock_db_session, first_result=None)
-    mock_db_session.commit.side_effect = SQLAlchemyError("db down")
+def test_upsert_preferences_returns_500_on_database_error(client, mock_preference_repository):
+    mock_preference_repository.upsert.side_effect = PreferenceStorageError("db down")
 
     response = client.put("/preferences", json={"user_id": 4, "preferred_city": "Dublin", "units": "metric"})
     assert response.status_code == 500
-    mock_db_session.rollback.assert_called_once()
 
 
-def test_get_preferences_returns_value(client, mock_db_session):
-    existing = SimpleNamespace(user_id=9, preferred_city="Lisbon", units="metric")
-    _mock_query_chain(mock_db_session, first_result=existing)
+def test_get_preferences_returns_value(client, mock_preference_repository):
+    mock_preference_repository.get_by_user_id.return_value = SimpleNamespace(
+        user_id=9,
+        preferred_city="Lisbon",
+        units="metric",
+    )
 
     response = client.get("/preferences/9")
     assert response.status_code == 200
     assert response.json() == {"user_id": 9, "preferred_city": "Lisbon", "units": "metric"}
 
 
-def test_get_preferences_returns_404_when_missing(client, mock_db_session):
-    _mock_query_chain(mock_db_session, first_result=None)
+def test_get_preferences_returns_404_when_missing(client, mock_preference_repository):
+    mock_preference_repository.get_by_user_id.return_value = None
     response = client.get("/preferences/99")
     assert response.status_code == 404
     assert response.json()["detail"] == "Preferences not found"
 
 
-def test_get_preferences_returns_500_on_db_error(client, mock_db_session):
-    query = mock_db_session.query.return_value
-    query.filter.side_effect = SQLAlchemyError("query failed")
+def test_get_preferences_returns_500_on_db_error(client, mock_preference_repository):
+    mock_preference_repository.get_by_user_id.side_effect = PreferenceStorageError("query failed")
 
     response = client.get("/preferences/11")
     assert response.status_code == 500
