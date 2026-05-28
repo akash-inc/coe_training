@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from schemas import (
     CourseCreate,
     CourseResponse,
@@ -62,43 +63,57 @@ def create_enrollment(enrollment: EnrollmentCreate, db: Session = Depends(get_db
 
 @app.post("/populate-all")
 def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
-    if payload.reset:
-        db.query(Student).delete()
-        db.query(Course).delete()
-        db.query(Enrollment).delete()
-    db.commit()
+    try:
+        if payload.reset:
+            db.query(Enrollment).delete()
+            db.query(Course).delete()
+            db.query(Student).delete()
 
-    seeded_students = [create_student(student, db) for student in payload.students]
-    seeded_courses = [create_course(course, db) for course in payload.courses]
+        student_mappings = [student.model_dump() for student in payload.students]
+        course_mappings = [course.model_dump() for course in payload.courses]
 
-    seeded_enrollments = []
-    for enrollment_link in payload.enrollments:
-        if enrollment_link.student_ref >= len(seeded_students):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid student_ref: {enrollment_link.student_ref}",
+        if student_mappings:
+            db.bulk_insert_mappings(Student, student_mappings, return_defaults=True)
+        if course_mappings:
+            db.bulk_insert_mappings(Course, course_mappings, return_defaults=True)
+
+        enrollment_mappings = []
+        for enrollment_link in payload.enrollments:
+            if enrollment_link.student_ref >= len(student_mappings):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid student_ref: {enrollment_link.student_ref}",
+                )
+            if enrollment_link.course_ref >= len(course_mappings):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid course_ref: {enrollment_link.course_ref}",
+                )
+
+            enrollment_mappings.append(
+                {
+                    "student_id": student_mappings[enrollment_link.student_ref]["id"],
+                    "course_id": course_mappings[enrollment_link.course_ref]["id"],
+                }
             )
-        if enrollment_link.course_ref >= len(seeded_courses):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid course_ref: {enrollment_link.course_ref}",
-            )
 
-        enrollment = create_enrollment(
-            EnrollmentCreate(
-                student_id=seeded_students[enrollment_link.student_ref].id,
-                course_id=seeded_courses[enrollment_link.course_ref].id,
-            ),
-            db,
-        )
-        seeded_enrollments.append(enrollment)
+        if enrollment_mappings:
+            db.bulk_insert_mappings(Enrollment, enrollment_mappings, return_defaults=True)
+
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to populate data") from error
 
     return {
         "message": "Database populated successfully",
-        "students_added": len(seeded_students),
-        "courses_added": len(seeded_courses),
-        "enrollments_added": len(seeded_enrollments),
-        "student_ids": [student.id for student in seeded_students],
-        "course_ids": [course.id for course in seeded_courses],
-        "enrollment_ids": [enrollment.id for enrollment in seeded_enrollments],
+        "students_added": len(student_mappings),
+        "courses_added": len(course_mappings),
+        "enrollments_added": len(enrollment_mappings),
+        "student_ids": [item["id"] for item in student_mappings],
+        "course_ids": [item["id"] for item in course_mappings],
+        "enrollment_ids": [item["id"] for item in enrollment_mappings],
     }
