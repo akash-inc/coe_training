@@ -22,6 +22,7 @@ class Course(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(String(255))
+    subjects: Mapped[list[str]] = mapped_column(JSON, default=list)
 
 class Enrollment(Base):
     __tablename__ = "enrollments"

@@ -67,6 +67,7 @@ class StudentUpdate(BaseModel):
 class CourseBase(BaseModel):
     name: Name
     description: CourseDescription
+    subjects: SubjectList
 
 
 class CourseResponse(CourseBase):
@@ -81,6 +82,7 @@ class CourseCreate(CourseBase):
 class CourseUpdate(BaseModel):
     name: Name | None = None
     description: CourseDescription | None = None
+    subjects: SubjectList | None = None
 
 
 class EnrollmentResponse(BaseModel):
