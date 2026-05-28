@@ -112,3 +112,21 @@ class PopulateAllCreate(BaseModel):
     students: list[StudentCreate] = Field(default_factory=list)
     courses: list[CourseCreate] = Field(default_factory=list)
     enrollments: list[EnrollmentBulkLinkCreate] = Field(default_factory=list)
+
+
+class StudentBulkUpdate(StudentUpdate):
+    id: PositiveId
+
+
+class CourseBulkUpdate(CourseUpdate):
+    id: PositiveId
+
+
+class EnrollmentBulkUpdate(EnrollmentUpdate):
+    id: PositiveId
+
+
+class BulkUpdatePayload(BaseModel):
+    students: list[StudentBulkUpdate] = Field(default_factory=list)
+    courses: list[CourseBulkUpdate] = Field(default_factory=list)
+    enrollments: list[EnrollmentBulkUpdate] = Field(default_factory=list)

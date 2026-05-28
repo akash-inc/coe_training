@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from schemas import (
+    BulkUpdatePayload,
     CourseCreate,
     CourseResponse,
     EnrollmentCreate,
@@ -116,4 +117,43 @@ def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
         "student_ids": [item["id"] for item in student_mappings],
         "course_ids": [item["id"] for item in course_mappings],
         "enrollment_ids": [item["id"] for item in enrollment_mappings],
+    }
+
+
+@app.post("/bulk-update")
+def bulk_update(payload: BulkUpdatePayload, db: Session = Depends(get_db)):
+    try:
+        student_updates = [
+            item.model_dump(exclude_unset=True)
+            for item in payload.students
+            if len(item.model_dump(exclude_unset=True)) > 1
+        ]
+        course_updates = [
+            item.model_dump(exclude_unset=True)
+            for item in payload.courses
+            if len(item.model_dump(exclude_unset=True)) > 1
+        ]
+        enrollment_updates = [
+            item.model_dump(exclude_unset=True)
+            for item in payload.enrollments
+            if len(item.model_dump(exclude_unset=True)) > 1
+        ]
+
+        if student_updates:
+            db.bulk_update_mappings(Student, student_updates)
+        if course_updates:
+            db.bulk_update_mappings(Course, course_updates)
+        if enrollment_updates:
+            db.bulk_update_mappings(Enrollment, enrollment_updates)
+
+        db.commit()
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to bulk update data") from error
+
+    return {
+        "message": "Bulk update completed",
+        "students_updated": len(student_updates),
+        "courses_updated": len(course_updates),
+        "enrollments_updated": len(enrollment_updates),
     }
