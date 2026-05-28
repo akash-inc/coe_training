@@ -18,6 +18,63 @@ app = FastAPI(title="School Management System")
 Base.metadata.create_all(bind=engine)
 
 
+def _upsert_student(student: StudentCreate, db: Session) -> Student:
+    student_record = db.query(Student).filter(Student.email == student.email).first()
+    if student_record is None:
+        student_record = Student(**student.model_dump())
+        db.add(student_record)
+    else:
+        student_record.name = student.name
+        student_record.age = student.age
+        student_record.phone = student.phone
+        student_record.subjects = student.subjects
+        student_record.subject_grades = student.subject_grades
+
+    db.commit()
+    db.refresh(student_record)
+    return student_record
+
+
+def _upsert_course(course: CourseCreate, db: Session) -> Course:
+    course_record = db.query(Course).filter(Course.name == course.name).first()
+    if course_record is None:
+        course_record = Course(**course.model_dump())
+        db.add(course_record)
+    else:
+        course_record.description = course.description
+        course_record.subjects = course.subjects
+
+    db.commit()
+    db.refresh(course_record)
+    return course_record
+
+
+def _upsert_enrollment(enrollment: EnrollmentCreate, db: Session) -> Enrollment:
+    student = db.query(Student).filter(Student.id == enrollment.student_id).first()
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    course = db.query(Course).filter(Course.id == enrollment.course_id).first()
+    if course is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    enrollment_record = (
+        db.query(Enrollment)
+        .filter(
+            Enrollment.student_id == enrollment.student_id,
+            Enrollment.course_id == enrollment.course_id,
+        )
+        .first()
+    )
+    if enrollment_record is None:
+        enrollment_record = Enrollment(**enrollment.model_dump())
+        db.add(enrollment_record)
+
+    db.commit()
+    db.refresh(enrollment_record)
+    return enrollment_record
+
+
 @app.get("/")
 def home():
     return {"message": "Hello, World!"}
@@ -29,11 +86,7 @@ def get_students(db: Session = Depends(get_db)):
 
 @app.post("/students", response_model=StudentResponse)
 def create_student(student: StudentCreate, db: Session = Depends(get_db)):
-    student_record = Student(**student.model_dump())
-    db.add(student_record)
-    db.commit()
-    db.refresh(student_record)
-    return student_record
+    return _upsert_student(student, db)
 
 
 @app.get("/courses", response_model=list[CourseResponse])
@@ -43,11 +96,7 @@ def get_courses(db: Session = Depends(get_db)):
 
 @app.post("/courses", response_model=CourseResponse)
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
-    course_record = Course(**course.model_dump())
-    db.add(course_record)
-    db.commit()
-    db.refresh(course_record)
-    return course_record
+    return _upsert_course(course, db)
 
 
 @app.get("/enrollments", response_model=list[EnrollmentResponse])
@@ -56,11 +105,7 @@ def get_enrollments(db: Session = Depends(get_db)):
 
 @app.post("/enrollments", response_model=EnrollmentResponse)
 def create_enrollment(enrollment: EnrollmentCreate, db: Session = Depends(get_db)):
-    enrollment_record = Enrollment(**enrollment.model_dump())
-    db.add(enrollment_record)
-    db.commit()
-    db.refresh(enrollment_record)
-    return enrollment_record
+    return _upsert_enrollment(enrollment, db)
 
 @app.post("/populate-all")
 def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
@@ -69,39 +114,32 @@ def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
             db.query(Enrollment).delete()
             db.query(Course).delete()
             db.query(Student).delete()
+            db.commit()
 
-        student_mappings = [student.model_dump() for student in payload.students]
-        course_mappings = [course.model_dump() for course in payload.courses]
-
-        if student_mappings:
-            db.bulk_insert_mappings(Student, student_mappings, return_defaults=True)
-        if course_mappings:
-            db.bulk_insert_mappings(Course, course_mappings, return_defaults=True)
-
-        enrollment_mappings = []
+        seeded_students = [_upsert_student(student, db) for student in payload.students]
+        seeded_courses = [_upsert_course(course, db) for course in payload.courses]
+        seeded_enrollments = []
         for enrollment_link in payload.enrollments:
-            if enrollment_link.student_ref >= len(student_mappings):
+            if enrollment_link.student_ref >= len(seeded_students):
                 raise HTTPException(
                     status_code=400,
                     detail=f"Invalid student_ref: {enrollment_link.student_ref}",
                 )
-            if enrollment_link.course_ref >= len(course_mappings):
+            if enrollment_link.course_ref >= len(seeded_courses):
                 raise HTTPException(
                     status_code=400,
                     detail=f"Invalid course_ref: {enrollment_link.course_ref}",
                 )
 
-            enrollment_mappings.append(
-                {
-                    "student_id": student_mappings[enrollment_link.student_ref]["id"],
-                    "course_id": course_mappings[enrollment_link.course_ref]["id"],
-                }
+            seeded_enrollments.append(
+                _upsert_enrollment(
+                    EnrollmentCreate(
+                        student_id=seeded_students[enrollment_link.student_ref].id,
+                        course_id=seeded_courses[enrollment_link.course_ref].id,
+                    ),
+                    db,
+                )
             )
-
-        if enrollment_mappings:
-            db.bulk_insert_mappings(Enrollment, enrollment_mappings, return_defaults=True)
-
-        db.commit()
     except HTTPException:
         db.rollback()
         raise
@@ -111,12 +149,12 @@ def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
 
     return {
         "message": "Database populated successfully",
-        "students_added": len(student_mappings),
-        "courses_added": len(course_mappings),
-        "enrollments_added": len(enrollment_mappings),
-        "student_ids": [item["id"] for item in student_mappings],
-        "course_ids": [item["id"] for item in course_mappings],
-        "enrollment_ids": [item["id"] for item in enrollment_mappings],
+        "students_added": len(seeded_students),
+        "courses_added": len(seeded_courses),
+        "enrollments_added": len(seeded_enrollments),
+        "student_ids": [item.id for item in seeded_students],
+        "course_ids": [item.id for item in seeded_courses],
+        "enrollment_ids": [item.id for item in seeded_enrollments],
     }
 
 
