@@ -60,16 +60,45 @@ def create_enrollment(enrollment: EnrollmentCreate, db: Session = Depends(get_db
     db.refresh(enrollment_record)
     return enrollment_record
 
-@app.post("/populate-all", response_model=PopulateAllCreate)
+@app.post("/populate-all")
 def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
     if payload.reset:
         db.query(Student).delete()
         db.query(Course).delete()
         db.query(Enrollment).delete()
     db.commit()
+
     seeded_students = [create_student(student, db) for student in payload.students]
     seeded_courses = [create_course(course, db) for course in payload.courses]
-    seeded_enrollments = [create_enrollment(enrollment, db) for enrollment in payload.enrollments]
-    db.add_all(seeded_students + seeded_courses + seeded_enrollments)
-    db.commit()
-    return payload
+
+    seeded_enrollments = []
+    for enrollment_link in payload.enrollments:
+        if enrollment_link.student_ref >= len(seeded_students):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid student_ref: {enrollment_link.student_ref}",
+            )
+        if enrollment_link.course_ref >= len(seeded_courses):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid course_ref: {enrollment_link.course_ref}",
+            )
+
+        enrollment = create_enrollment(
+            EnrollmentCreate(
+                student_id=seeded_students[enrollment_link.student_ref].id,
+                course_id=seeded_courses[enrollment_link.course_ref].id,
+            ),
+            db,
+        )
+        seeded_enrollments.append(enrollment)
+
+    return {
+        "message": "Database populated successfully",
+        "students_added": len(seeded_students),
+        "courses_added": len(seeded_courses),
+        "enrollments_added": len(seeded_enrollments),
+        "student_ids": [student.id for student in seeded_students],
+        "course_ids": [course.id for course in seeded_courses],
+        "enrollment_ids": [enrollment.id for enrollment in seeded_enrollments],
+    }

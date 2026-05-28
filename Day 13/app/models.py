@@ -1,7 +1,8 @@
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
+
 
 class Student(Base):
     __tablename__ = "students"
@@ -11,6 +12,9 @@ class Student(Base):
     age: Mapped[int] = mapped_column(Integer)
     email: Mapped[str] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(255))
+    subjects: Mapped[list[str]] = mapped_column(JSON, default=list)
+    subject_grades: Mapped[dict[str, str]] = mapped_column(JSON, default=dict)
+
 
 class Course(Base):
     __tablename__ = "courses"
