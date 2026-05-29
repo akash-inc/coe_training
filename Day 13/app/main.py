@@ -94,6 +94,39 @@ def get_courses(db: Session = Depends(get_db)):
     return db.query(Course).all()
 
 
+@app.get("/courses-with-students")
+def get_courses_with_students(db: Session = Depends(get_db)):
+    courses = db.query(Course).all()
+    result = []
+
+    for course in courses:
+        enrollments = db.query(Enrollment).filter(Enrollment.course_id == course.id).all()
+        students = []
+
+        for enrollment in enrollments:
+            student = db.query(Student).filter(Student.id == enrollment.student_id).first()
+            if student is not None:
+                students.append(
+                    {
+                        "id": student.id,
+                        "name": student.name,
+                        "email": student.email,
+                    }
+                )
+
+        result.append(
+            {
+                "id": course.id,
+                "name": course.name,
+                "description": course.description,
+                "subjects": course.subjects,
+                "students": students,
+            }
+        )
+
+    return result
+
+
 @app.post("/courses", response_model=CourseResponse)
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     return _upsert_course(course, db)
