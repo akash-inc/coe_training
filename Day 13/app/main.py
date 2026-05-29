@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
 from schemas import (
     BulkUpdatePayload,
@@ -75,33 +75,7 @@ def _upsert_enrollment(enrollment: EnrollmentCreate, db: Session) -> Enrollment:
     return enrollment_record
 
 
-@app.get("/")
-def home():
-    return {"message": "Hello, World!"}
-
-@app.get("/students", response_model=list[StudentResponse])
-def get_students(db: Session = Depends(get_db)):
-    return db.query(Student).all()
-
-
-@app.post("/students", response_model=StudentResponse)
-def create_student(student: StudentCreate, db: Session = Depends(get_db)):
-    return _upsert_student(student, db)
-
-
-@app.get("/courses", response_model=list[CourseResponse])
-def get_courses(db: Session = Depends(get_db)):
-    return db.query(Course).all()
-
-
-@app.get("/courses-with-students-eager-joinedload")
-def get_courses_with_students_eager_joinedload(db: Session = Depends(get_db)):
-    courses = (
-        db.query(Course)
-        .options(joinedload(Course.enrollments).joinedload(Enrollment.student))
-        .all()
-    )
-
+def _build_courses_with_students_response(courses: list[Course]) -> list[dict]:
     result = []
     for course in courses:
         students = []
@@ -126,41 +100,67 @@ def get_courses_with_students_eager_joinedload(db: Session = Depends(get_db)):
                 "students": students,
             }
         )
-
     return result
+
+
+@app.get("/")
+def home():
+    return {"message": "Hello, World!"}
+
+@app.get("/students", response_model=list[StudentResponse])
+def get_students(db: Session = Depends(get_db)):
+    return db.query(Student).all()
+
+
+@app.post("/students", response_model=StudentResponse)
+def create_student(student: StudentCreate, db: Session = Depends(get_db)):
+    return _upsert_student(student, db)
+
+
+@app.get("/courses", response_model=list[CourseResponse])
+def get_courses(db: Session = Depends(get_db)):
+    return db.query(Course).all()
+
+
+@app.get("/courses-with-students-eager-joinedload")
+def get_courses_with_students_eager_joinedload(db: Session = Depends(get_db)):
+    # Best when result size is modest and you want everything in one SQL query.
+    courses = (
+        db.query(Course)
+        .options(joinedload(Course.enrollments).joinedload(Enrollment.student))
+        .all()
+    )
+    return _build_courses_with_students_response(courses)
 
 
 @app.get("/courses-with-students-naive")
 def get_courses_with_students_naive(db: Session = Depends(get_db)):
+    # Intentionally lazy: touching relationships below triggers N+1 queries.
     courses = db.query(Course).all()
-    result = []
+    return _build_courses_with_students_response(courses)
 
-    for course in courses:
-        enrollments = db.query(Enrollment).filter(Enrollment.course_id == course.id).all()
-        students = []
 
-        for enrollment in enrollments:
-            student = db.query(Student).filter(Student.id == enrollment.student_id).first()
-            if student is not None:
-                students.append(
-                    {
-                        "id": student.id,
-                        "name": student.name,
-                        "email": student.email,
-                    }
-                )
+@app.get("/courses-with-students-selectin")
+def get_courses_with_students_selectin(db: Session = Depends(get_db)):
+    # Best general-purpose choice for one-to-many collections.
+    # Load enrollments in batches, then join student on that secondary query.
+    courses = (
+        db.query(Course)
+        .options(selectinload(Course.enrollments).joinedload(Enrollment.student))
+        .all()
+    )
+    return _build_courses_with_students_response(courses)
 
-        result.append(
-            {
-                "id": course.id,
-                "name": course.name,
-                "description": course.description,
-                "subjects": course.subjects,
-                "students": students,
-            }
-        )
 
-    return result
+@app.get("/courses-with-students-subquery")
+def get_courses_with_students_subquery(db: Session = Depends(get_db)):
+    # Alternative collection strategy using subquery loading for enrollments.
+    courses = (
+        db.query(Course)
+        .options(subqueryload(Course.enrollments).joinedload(Enrollment.student))
+        .all()
+    )
+    return _build_courses_with_students_response(courses)
 
 
 @app.post("/courses", response_model=CourseResponse)
