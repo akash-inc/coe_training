@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from schemas import (
     BulkUpdatePayload,
@@ -94,30 +94,22 @@ def get_courses(db: Session = Depends(get_db)):
     return db.query(Course).all()
 
 
-@app.get("/courses-with-students")
-def get_courses_with_students(db: Session = Depends(get_db)):
-    rows = (
-        db.query(Course, Student)
-        .outerjoin(Enrollment, Enrollment.course_id == Course.id)
-        .outerjoin(Student, Student.id == Enrollment.student_id)
+@app.get("/courses-with-students-eager-joinedload")
+def get_courses_with_students_eager_joinedload(db: Session = Depends(get_db)):
+    courses = (
+        db.query(Course)
+        .options(joinedload(Course.enrollments).joinedload(Enrollment.student))
         .all()
     )
 
-    course_map: dict[int, dict] = {}
-    for course, student in rows:
-        course_entry = course_map.setdefault(
-            course.id,
-            {
-                "id": course.id,
-                "name": course.name,
-                "description": course.description,
-                "subjects": course.subjects,
-                "students": [],
-            },
-        )
-
-        if student is not None:
-            course_entry["students"].append(
+    result = []
+    for course in courses:
+        students = []
+        for enrollment in course.enrollments:
+            student = enrollment.student
+            if student is None:
+                continue
+            students.append(
                 {
                     "id": student.id,
                     "name": student.name,
@@ -125,7 +117,50 @@ def get_courses_with_students(db: Session = Depends(get_db)):
                 }
             )
 
-    return list(course_map.values())
+        result.append(
+            {
+                "id": course.id,
+                "name": course.name,
+                "description": course.description,
+                "subjects": course.subjects,
+                "students": students,
+            }
+        )
+
+    return result
+
+
+@app.get("/courses-with-students-naive")
+def get_courses_with_students_naive(db: Session = Depends(get_db)):
+    courses = db.query(Course).all()
+    result = []
+
+    for course in courses:
+        enrollments = db.query(Enrollment).filter(Enrollment.course_id == course.id).all()
+        students = []
+
+        for enrollment in enrollments:
+            student = db.query(Student).filter(Student.id == enrollment.student_id).first()
+            if student is not None:
+                students.append(
+                    {
+                        "id": student.id,
+                        "name": student.name,
+                        "email": student.email,
+                    }
+                )
+
+        result.append(
+            {
+                "id": course.id,
+                "name": course.name,
+                "description": course.description,
+                "subjects": course.subjects,
+                "students": students,
+            }
+        )
+
+    return result
 
 
 @app.post("/courses", response_model=CourseResponse)
