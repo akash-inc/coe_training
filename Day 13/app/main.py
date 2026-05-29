@@ -96,35 +96,36 @@ def get_courses(db: Session = Depends(get_db)):
 
 @app.get("/courses-with-students")
 def get_courses_with_students(db: Session = Depends(get_db)):
-    courses = db.query(Course).all()
-    result = []
+    rows = (
+        db.query(Course, Student)
+        .outerjoin(Enrollment, Enrollment.course_id == Course.id)
+        .outerjoin(Student, Student.id == Enrollment.student_id)
+        .all()
+    )
 
-    for course in courses:
-        enrollments = db.query(Enrollment).filter(Enrollment.course_id == course.id).all()
-        students = []
-
-        for enrollment in enrollments:
-            student = db.query(Student).filter(Student.id == enrollment.student_id).first()
-            if student is not None:
-                students.append(
-                    {
-                        "id": student.id,
-                        "name": student.name,
-                        "email": student.email,
-                    }
-                )
-
-        result.append(
+    course_map: dict[int, dict] = {}
+    for course, student in rows:
+        course_entry = course_map.setdefault(
+            course.id,
             {
                 "id": course.id,
                 "name": course.name,
                 "description": course.description,
                 "subjects": course.subjects,
-                "students": students,
-            }
+                "students": [],
+            },
         )
 
-    return result
+        if student is not None:
+            course_entry["students"].append(
+                {
+                    "id": student.id,
+                    "name": student.name,
+                    "email": student.email,
+                }
+            )
+
+    return list(course_map.values())
 
 
 @app.post("/courses", response_model=CourseResponse)
