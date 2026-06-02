@@ -171,3 +171,48 @@ Log output will include the full execution plan automatically — no manual `EXP
 | Auto-log execution plans | `auto_explain` |
 | One-off slow query check | `EXPLAIN ANALYZE <query>` |
 | Real-time activity | `SELECT * FROM pg_stat_activity` |
+
+
+### Priority
+
+`SET log_min_duration_statement = 500` is **session-scoped** — it dies the moment your session ends.
+
+---
+
+### To make it persist across sessions, you have 3 options:
+
+#### 1. Edit `postgresql.conf` (global, permanent)
+```ini
+log_min_duration_statement = 500
+```
+Then reload:
+```sql
+SELECT pg_reload_conf();
+```
+Every session from every user will be affected.
+
+---
+
+#### 2. Per database (permanent for that DB)
+```sql
+ALTER DATABASE mydb SET log_min_duration_statement = 500;
+```
+Anyone connecting to `mydb` will have this applied automatically.
+
+---
+
+#### 3. Per user/role (permanent for that user)
+```sql
+ALTER ROLE myuser SET log_min_duration_statement = 500;
+```
+Whenever `myuser` starts a new session, it's automatically applied.
+
+---
+
+### Priority order (highest wins):
+
+```
+Session SET  >  Role  >  Database  >  postgresql.conf
+```
+
+So a `SET` in session always overrides everything else — but only for that session's lifetime.
