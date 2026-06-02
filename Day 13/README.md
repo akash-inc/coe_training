@@ -216,3 +216,7 @@ Session SET  >  Role  >  Database  >  postgresql.conf
 ```
 
 So a `SET` in session always overrides everything else — but only for that session's lifetime.
+
+### A great read to learn Profiling and Optimizing SQL Queries
+
+[Introduction to Profiling and Optimizing SQL Queries for Software Engineers](https://medium.com/scopedev/introduction-to-profiling-and-optimizing-sql-queries-for-software-engineers-3cf376ecc712)
