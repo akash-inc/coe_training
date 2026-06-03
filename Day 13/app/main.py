@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
+from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload, selectinload, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
 from schemas import (
@@ -264,3 +265,18 @@ def bulk_update(payload: BulkUpdatePayload, db: Session = Depends(get_db)):
         "courses_updated": len(course_updates),
         "enrollments_updated": len(enrollment_updates),
     }
+
+
+@app.get("/report/course-enrollment-counts-slow")
+def course_enrollment_counts_slow(db: Session = Depends(get_db)):
+    rows = db.execute(
+        text(
+            """
+            SELECT c.id, c.name,
+              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrollment_count
+            FROM courses c
+            ORDER BY c.id
+            """
+        )
+    )
+    return [dict(row) for row in rows.mappings().all()]
