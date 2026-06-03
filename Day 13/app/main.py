@@ -267,16 +267,33 @@ def bulk_update(payload: BulkUpdatePayload, db: Session = Depends(get_db)):
     }
 
 
+def _enrollment_count_rows(db: Session, sql: str) -> list[dict]:
+    rows = db.execute(text(sql))
+    return [dict(row) for row in rows.mappings().all()]
+
+
 @app.get("/report/course-enrollment-counts-slow")
 def course_enrollment_counts_slow(db: Session = Depends(get_db)):
-    rows = db.execute(
-        text(
-            """
-            SELECT c.id, c.name,
-              (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrollment_count
-            FROM courses c
-            ORDER BY c.id
-            """
-        )
+    return _enrollment_count_rows(
+        db,
+        """
+        SELECT c.id, c.name,
+          (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrollment_count
+        FROM courses c
+        ORDER BY c.id
+        """,
     )
-    return [dict(row) for row in rows.mappings().all()]
+
+
+@app.get("/report/course-enrollment-counts")
+def course_enrollment_counts(db: Session = Depends(get_db)):
+    return _enrollment_count_rows(
+        db,
+        """
+        SELECT c.id, c.name, COUNT(e.id) AS enrollment_count
+        FROM courses c
+        LEFT JOIN enrollments e ON e.course_id = c.id
+        GROUP BY c.id, c.name
+        ORDER BY c.id
+        """,
+    )

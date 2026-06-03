@@ -118,7 +118,8 @@ Tests use `TEST_DATABASE_URL` (default: `school_test`). The suite creates that d
 | GET | `/courses-with-students-eager-joinedload` | `joinedload` demo |
 | GET | `/courses-with-students-selectin` | `selectinload` demo |
 | GET | `/courses-with-students-subquery` | `subqueryload` demo |
-| GET | `/report/course-enrollment-counts-slow` | Correlated subquery report (see [docs/course-enrollment-counts-slow-explain.md](docs/course-enrollment-counts-slow-explain.md)) |
+| GET | `/report/course-enrollment-counts-slow` | Correlated subquery demo (same result, slower plan) |
+| GET | `/report/course-enrollment-counts` | Optimized `JOIN` + `GROUP BY` (see [docs/course-enrollment-counts-slow-explain.md](docs/course-enrollment-counts-slow-explain.md)) |
 
 ## Troubleshooting
 

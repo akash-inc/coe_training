@@ -24,14 +24,25 @@ def test_populate_all(client, populate_payload):
     assert students_response.json()[0]["email"] == "alice@example.com"
 
 
+EXPECTED_ENROLLMENT_COUNTS = [
+    {"id": 1, "name": "CS101", "enrollment_count": 1},
+]
+
+
 def test_course_enrollment_counts_slow(client, populate_payload):
     client.post("/populate-all", json=populate_payload)
 
     response = client.get("/report/course-enrollment-counts-slow")
     assert response.status_code == 200
-    assert response.json() == [
-        {"id": 1, "name": "CS101", "enrollment_count": 1},
-    ]
+    assert response.json() == EXPECTED_ENROLLMENT_COUNTS
+
+
+def test_course_enrollment_counts(client, populate_payload):
+    client.post("/populate-all", json=populate_payload)
+
+    response = client.get("/report/course-enrollment-counts")
+    assert response.status_code == 200
+    assert response.json() == EXPECTED_ENROLLMENT_COUNTS
 
 
 def test_courses_with_students_selectin(client, populate_payload):
