@@ -25,6 +25,8 @@
 **/.turbo/
 **/.next/
 **/coverage/
+**/.coverage
+**/*.db
 
 # OS files
 **/.DS_Store

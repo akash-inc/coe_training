@@ -1,92 +1,57 @@
-# Weather Dashboard API (Day 12)
+# Day 12 — Weather Dashboard API
 
-This is a FastAPI backend project that fetches weather from OpenWeatherMap, caches responses in Redis, and stores user weather preferences in SQLite.
+A FastAPI backend that fetches weather from OpenWeatherMap, caches responses in Redis, and stores user weather preferences in PostgreSQL.
 
-If you are new to backend development, here is the mental model:
-- A client calls an endpoint like `/weather?city=Ahmedabad`
-- The API first checks Redis cache
-- If cache miss, API calls OpenWeatherMap and then stores result in Redis
-- Preferences are saved/retrieved from SQLite via SQLAlchemy
+## What you learn
 
-## Project Structure
+- Cache-first reads with Redis
+- External HTTP integration (OpenWeatherMap) with explicit error mapping
+- Repository pattern for preference persistence
+- Mocking external dependencies in unit tests
+- Full request–response integration tests against PostgreSQL
 
-- `app/main.py` - FastAPI routes and error mapping
-- `app/services/weather.py` - OpenWeatherMap integration via `requests`
-- `app/services/cache.py` - Redis cache access layer
-- `app/database.py` - SQLAlchemy engine/session setup
-- `app/models.py` - DB model (`UserPreference`)
-- `app/repositories.py` - repository interface + SQLAlchemy implementation for preferences
-- `tests/` - mocked tests for API/service/cache behavior
-- `.env.example` - environment variables template
+## Project structure
 
-## Features Implemented
+- `app/main.py` — FastAPI routes and error mapping
+- `app/services/weather.py` — OpenWeatherMap integration
+- `app/services/cache.py` — Redis cache layer
+- `app/database.py` — PostgreSQL engine and sessions
+- `app/models.py` — `UserPreference` model
+- `app/repositories.py` — repository interface and SQLAlchemy implementation
+- `tests/` — unit and integration tests
+- `.env.example` — environment variable template
 
-- `GET /health` basic health endpoint
-- `GET /weather` with cache-first strategy
-- `PUT /preferences` create/update user preferences
-- `GET /preferences/{user_id}` read preferences
-- Explicit handling for:
-  - weather timeout and upstream failures
-  - city not found
-  - Redis read/write failures
-  - DB integrity and generic DB errors
+## Prerequisites
 
-## Repository Pattern (Why and How)
+- Python 3.11+
+- PostgreSQL (`psql`)
+- Redis (for cache behavior in development)
+- OpenWeatherMap API key
 
-This project now uses a repository layer for preference persistence:
+## Setup
 
-- Route handlers in `app/main.py` depend on `UserPreferenceRepository`
-- Concrete DB logic is in `SqlAlchemyUserPreferenceRepository`
-- This keeps API code focused on HTTP behavior and keeps database details in one place
-
-Benefits:
-- easier testing (mock repository instead of mocking SQLAlchemy chains)
-- cleaner separation of concerns
-- easier future swap to another storage backend
-
-## Environment Variables
-
-Create `.env` in this folder (`Day 12/weather_api/.env`) using:
-
-```env
-OPENWEATHERMAP_API_KEY=your_api_key_here
-REDIS_URL=redis://localhost:6379/0
-WEATHER_DATABASE_URL=sqlite:///./weather.db
-```
-
-`python-dotenv` is used in `app/services/weather.py`, so env values are loaded from `.env`.
-
-## Install
+From `Day 12/weather_api`:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
+cp .env.example .env
 ```
 
-## Run the API
+Edit `.env` with your API key and database credentials.
+
+## Database (PostgreSQL)
 
 ```bash
-uvicorn app.main:app --reload
+psql -U postgres -c "CREATE DATABASE weather;"
+psql -U postgres -c "CREATE DATABASE weather_test;"
 ```
 
-Open docs:
-- `http://127.0.0.1:8000/docs`
+Tables are created on app startup via `Base.metadata.create_all`.
 
-## Verify Cache Hit vs API Call
-
-The `/weather` response includes a `source` field:
-- `"source": "api"` -> fetched from OpenWeatherMap
-- `"source": "cache"` -> returned from Redis
-
-Call the same request twice (same city + same units):
-1) first call normally returns `api`
-2) second call should return `cache`
-
-## Redis Setup (macOS)
-
-If you see `redis-cli: command not found`, install Redis:
+## Redis (macOS example)
 
 ```bash
 brew install redis
@@ -94,62 +59,53 @@ brew services start redis
 redis-cli ping
 ```
 
-Expected output: `PONG`
+Expected: `PONG`
 
-## Test Strategy
+## Run the API
 
-Tests in this project are designed to teach mocking external dependencies:
-- OpenWeatherMap (`requests`)
-- Redis (`redis.Redis`)
-- Repository-backed DB operations (mocked `UserPreferenceRepository`)
+```bash
+uvicorn app.main:app --reload
+```
 
-Key files:
-- `tests/conftest.py` - reusable fixtures and dependency overrides
-- `tests/test_weather.py` - weather service unit tests
-- `tests/test_cache.py` - cache unit tests
-- `tests/test_main.py` - route tests and error-path tests
-- `tests/test_repositories.py` - repository unit tests (create/update/error branches)
-- `tests/test_api_integration.py` - full request-response integration cycles
+- API: `http://127.0.0.1:8000`
+- Docs: `http://127.0.0.1:8000/docs`
 
-Advanced mocking already included:
-- `mocker.spy(...)`
-- `mocker.patch.object(...)`
+## Verify cache hit vs API call
 
-## Run Tests + Coverage
+The `/weather` response includes `source`:
+
+- `"api"` — fetched from OpenWeatherMap
+- `"cache"` — returned from Redis
+
+Call the same city and units twice; the second response should be `"cache"` when Redis is available.
+
+## Run tests
 
 ```bash
 python -m pytest
 ```
 
-Coverage settings are in `pytest.ini`:
-- minimum required: 90%
-- current implementation was validated above target
+- Unit tests mock weather, Redis, and the preference repository.
+- Integration tests use `TEST_DATABASE_URL` (default: `weather_test`) with real PostgreSQL persistence.
 
-## API Integration Testing (Full Request-Response Cycle)
+Coverage threshold is configured in `pytest.ini` (minimum 90%).
 
-`tests/test_api_integration.py` exercises complete API flows through FastAPI routing, validation, repository, and SQLite persistence:
+## API endpoints
 
-- weather cache miss then cache hit for same query
-- preference create with `PUT /preferences` then read with `GET /preferences/{user_id}`
-- preference update cycle and read-back verification
-- 404 behavior for missing preferences
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| GET | `/weather` | Current weather (cache-first) |
+| PUT | `/preferences` | Create or update preferences |
+| GET | `/preferences/{user_id}` | Read preferences |
 
-## Common Troubleshooting
+## Troubleshooting
 
-- **Always seeing `"source": "api"`**
-  - Redis is not running, unreachable, or wrong `REDIS_URL`
-  - Try `redis-cli ping` and verify same Redis DB index in URL
+- **Always `"source": "api"`** — Redis not running or wrong `REDIS_URL`; run `redis-cli ping`.
+- **OpenWeatherMap failures** — Check `OPENWEATHERMAP_API_KEY` in `.env` and restart the server.
+- **Database connection errors** — Confirm PostgreSQL is running and `WEATHER_DATABASE_URL` matches your setup.
+- **Import warnings** — Select `Day 12/weather_api/.venv/bin/python` as the interpreter.
 
-- **OpenWeatherMap failing**
-  - Missing or invalid `OPENWEATHERMAP_API_KEY`
-  - Check `.env` and restart server
+## Further reading
 
-- **Import warnings in editor**
-  - Select interpreter: `Day 12/weather_api/.venv/bin/python`
-
-## Beginner Next Steps
-
-- Add TTL configuration via environment variable
-- Add endpoint for deleting preferences
-- Add structured logging around cache hit/miss
-- Replace sync HTTP call with async client (`httpx`) if you want fully async flow
+See [RESOURCES.md](RESOURCES.md).

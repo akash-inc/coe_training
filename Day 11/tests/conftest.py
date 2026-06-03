@@ -1,7 +1,7 @@
-import os
 import asyncio
-from pathlib import Path
+import os
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 import asyncpg
 import pytest
@@ -9,23 +9,18 @@ import pytest_asyncio
 from alembic import command
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import delete, text
+from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from database import get_db
 from main import app
-from models import Task, User
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://akash:password@localhost/tasks_test",
 )
-
-
-def _is_postgres(url: str) -> bool:
-    return make_url(url).get_backend_name() == "postgresql"
 
 
 async def _ensure_postgres_test_db_exists(url: str) -> None:
@@ -47,7 +42,6 @@ async def _ensure_postgres_test_db_exists(url: str) -> None:
             db_name,
         )
         if not exists:
-            # Identifiers cannot be bound parameters.
             escaped_db_name = db_name.replace('"', '""')
             await conn.execute(f'CREATE DATABASE "{escaped_db_name}"')
     finally:
@@ -56,8 +50,7 @@ async def _ensure_postgres_test_db_exists(url: str) -> None:
 
 @pytest.fixture(scope="session")
 def migrated_test_db():
-    if _is_postgres(TEST_DB_URL):
-        asyncio.run(_ensure_postgres_test_db_exists(TEST_DB_URL))
+    asyncio.run(_ensure_postgres_test_db_exists(TEST_DB_URL))
 
     alembic_cfg = Config(str(PROJECT_ROOT / "alembic.ini"))
     alembic_cfg.set_main_option("sqlalchemy.url", TEST_DB_URL)
@@ -77,20 +70,12 @@ async def engine(migrated_test_db):
 async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     Session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with Session() as session:
-        if _is_postgres(TEST_DB_URL):
-            await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
-        else:
-            await session.execute(delete(Task))
-            await session.execute(delete(User))
+        await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
         await session.commit()
 
         yield session
 
-        if _is_postgres(TEST_DB_URL):
-            await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
-        else:
-            await session.execute(delete(Task))
-            await session.execute(delete(User))
+        await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
         await session.commit()
 
 
@@ -109,6 +94,7 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 def user_payload_factory():
     def _make(name: str = "Akash", email: str = "akash@example.com") -> dict:
         return {"name": name, "email": email}
+
     return _make
 
 

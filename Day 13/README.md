@@ -1,226 +1,130 @@
-## Slow Query Log in PostgreSQL
+# Day 13 — School Management API (N+1 and eager loading)
 
-PostgreSQL doesn't have a "slow query log" toggle like MySQL, but achieves the same thing via **`log_min_duration_statement`**.
+A FastAPI + SQLAlchemy API for students, courses, and enrollments. Compare naive lazy loading against `joinedload`, `selectinload`, and `subqueryload` on the same dataset.
 
----
+## What you learn
 
-### 1. Find your `postgresql.conf`
+- ORM relationships and the N+1 query problem
+- Eager loading strategies: `joinedload`, `selectinload`, `subqueryload`
+- Bulk seed and bulk update endpoints
+- PostgreSQL-only persistence with SQL echo controlled by environment
+- API testing against a real PostgreSQL test database
 
-```bash
-# Inside psql
-SHOW config_file;
+## Project structure
 
-# Or from terminal
-psql -U postgres -c "SHOW config_file;"
-```
+- `app/main.py` — routes and loading-strategy demos
+- `app/models.py` — `Student`, `Course`, `Enrollment`
+- `app/schemas.py` — Pydantic request/response models
+- `app/database.py` — PostgreSQL engine and sessions
+- `tests/` — smoke and integration-style API tests
+- `.env.example` — environment variable template
 
----
+## Prerequisites
 
-### 2. Set the threshold in `postgresql.conf`
+- Python 3.11+
+- PostgreSQL (`psql`)
 
-```ini
-# postgresql.conf
+## Setup
 
-log_min_duration_statement = 1000   # log queries taking > 1000ms (1 second)
-log_min_duration_statement = 500    # log queries > 500ms
-log_min_duration_statement = 0      # log ALL queries (use carefully!)
-log_min_duration_statement = -1     # disable slow query logging (default)
-```
-
-Also enable these for more useful output:
-
-```ini
-log_duration = off                  # don't log duration separately (redundant)
-log_statement = 'none'              # let log_min_duration handle it
-log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
-log_destination = 'stderr'         # or 'csvlog' for structured logs
-logging_collector = on             # enable log file collection
-log_directory = 'pg_log'           # log folder inside data dir
-log_filename = 'postgresql-%Y-%m-%d.log'
-```
-
----
-
-### 3. Reload config (no restart needed)
+From `Day 13`:
 
 ```bash
-# Option 1: inside psql
-SELECT pg_reload_conf();
-
-# Option 2: terminal
-pg_ctl reload
-
-# Option 3: system service
-sudo systemctl reload postgresql
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+cp .env.example .env
 ```
 
----
+Edit `.env` if your PostgreSQL credentials differ.
 
-### 4. Set it live without editing the file (session/db level)
-
-```sql
--- For current session only
-SET log_min_duration_statement = 500;
-
--- For a specific database
-ALTER DATABASE mydb SET log_min_duration_statement = 1000;
-
--- For a specific user
-ALTER ROLE myuser SET log_min_duration_statement = 500;
-```
-
----
-
-### 5. Read the logs
+## Database (PostgreSQL)
 
 ```bash
-# Default log location (varies by OS/install)
-tail -f /var/log/postgresql/postgresql-*.log
-
-# On Ubuntu/Debian
-tail -f /var/log/postgresql/postgresql-16-main.log
-
-# On macOS (Homebrew)
-tail -f /usr/local/var/log/postgresql@16.log
-
-# Inside the data directory
-tail -f $PGDATA/pg_log/postgresql-2024-01-15.log
+psql -U postgres -c "CREATE DATABASE school;"
+psql -U postgres -c "CREATE DATABASE school_test;"
 ```
 
-**Sample slow query log output:**
-```
-2024-01-15 10:23:45 UTC [12345]: user=app,db=mydb LOG:
-  duration: 2341.567 ms  statement: SELECT * FROM orders
-  JOIN users ON orders.user_id = users.id
-  WHERE orders.created_at > '2024-01-01';
-```
+Tables are created on app startup (`Base.metadata.create_all` in `main.py`).
 
----
+## Run the API
 
-### 6. Use `pg_stat_statements` (better for analysis)
+From `Day 13/app`:
 
-This extension tracks **cumulative stats** across all queries — more powerful than log files.
-
-```sql
--- Enable the extension
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-
--- Add to postgresql.conf
-shared_preload_libraries = 'pg_stat_statements'
-pg_stat_statements.track = all
+```bash
+cd app
+uvicorn main:app --reload
 ```
 
-Then query it:
+- API: `http://127.0.0.1:8000`
+- Docs: `http://127.0.0.1:8000/docs`
 
-```sql
--- Top 10 slowest queries by average time
-SELECT
-    round(mean_exec_time::numeric, 2)  AS avg_ms,
-    round(total_exec_time::numeric, 2) AS total_ms,
-    calls,
-    round((total_exec_time / sum(total_exec_time) OVER ()) * 100, 2) AS pct,
-    query
-FROM pg_stat_statements
-ORDER BY mean_exec_time DESC
-LIMIT 10;
+Set `DATABASE_ECHO=true` in `.env` to print SQL statements to the console while exploring loading strategies.
+
+## Seed data for experiments
+
+```bash
+curl -X POST http://127.0.0.1:8000/populate-all \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reset": true,
+    "students": [{
+      "name": "Alice Example",
+      "age": 20,
+      "email": "alice@example.com",
+      "phone": "+14155552671",
+      "subjects": ["Math"],
+      "subject_grades": {"Math": "A"}
+    }],
+    "courses": [{
+      "name": "CS101",
+      "description": "Introduction to computer science",
+      "subjects": ["Math"]
+    }],
+    "enrollments": [{"student_ref": 0, "course_ref": 0}]
+  }'
 ```
 
-```sql
--- Most frequently called slow queries
-SELECT
-    calls,
-    round(mean_exec_time::numeric, 2) AS avg_ms,
-    round(total_exec_time::numeric, 2) AS total_ms,
-    query
-FROM pg_stat_statements
-WHERE mean_exec_time > 100     -- avg over 100ms
-ORDER BY calls DESC
-LIMIT 10;
+Then compare these endpoints (watch SQL echo):
+
+| Endpoint | Loading behavior |
+|----------|------------------|
+| `GET /courses-with-students-naive` | Lazy load — N+1 risk |
+| `GET /courses-with-students-eager-joinedload` | Single query with joins |
+| `GET /courses-with-students-selectin` | Batched `IN` queries |
+| `GET /courses-with-students-subquery` | Subquery-based collection load |
+
+## Run tests
+
+From `Day 13`:
+
+```bash
+python -m pytest
 ```
 
-```sql
--- Reset stats
-SELECT pg_stat_statements_reset();
-```
+Tests use `TEST_DATABASE_URL` (default: `school_test`). The suite creates that database if missing.
 
----
+## API endpoints
 
-### 7. Enable `auto_explain` for query plans in logs
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Health / welcome |
+| GET/POST | `/students` | List / upsert students |
+| GET/POST | `/courses` | List / upsert courses |
+| GET/POST | `/enrollments` | List / upsert enrollments |
+| POST | `/populate-all` | Seed students, courses, enrollments |
+| POST | `/bulk-update` | Bulk update mappings |
+| GET | `/courses-with-students-naive` | Lazy loading demo |
+| GET | `/courses-with-students-eager-joinedload` | `joinedload` demo |
+| GET | `/courses-with-students-selectin` | `selectinload` demo |
+| GET | `/courses-with-students-subquery` | `subqueryload` demo |
 
-Automatically logs the **EXPLAIN plan** of slow queries:
+## Troubleshooting
 
-```ini
-# postgresql.conf
-shared_preload_libraries = 'auto_explain'
-auto_explain.log_min_duration = 1000   # explain queries > 1s
-auto_explain.log_analyze = on          # include ANALYZE output
-auto_explain.log_buffers = on          # include buffer usage
-auto_explain.log_nested_statements = on
-```
+- **Import errors when running uvicorn** — Run from `Day 13/app` so flat imports (`from database import …`) resolve.
+- **Connection refused** — Confirm PostgreSQL is running and `.env` URLs are correct.
+- **Validation errors on seed data** — Phone must match `+?[1-9]…`; grades must be `A+`, `A`, `B+`, etc.
 
-Log output will include the full execution plan automatically — no manual `EXPLAIN ANALYZE` needed.
+## Further reading
 
----
-
-### Quick Reference
-
-| Goal | Tool |
-|---|---|
-| Log queries over X ms | `log_min_duration_statement` |
-| Analyze query patterns | `pg_stat_statements` |
-| Auto-log execution plans | `auto_explain` |
-| One-off slow query check | `EXPLAIN ANALYZE <query>` |
-| Real-time activity | `SELECT * FROM pg_stat_activity` |
-
-
-### Priority
-
-`SET log_min_duration_statement = 500` is **session-scoped** — it dies the moment your session ends.
-
----
-
-### To make it persist across sessions, you have 3 options:
-
-#### 1. Edit `postgresql.conf` (global, permanent)
-```ini
-log_min_duration_statement = 500
-```
-Then reload:
-```sql
-SELECT pg_reload_conf();
-```
-Every session from every user will be affected.
-
----
-
-#### 2. Per database (permanent for that DB)
-```sql
-ALTER DATABASE mydb SET log_min_duration_statement = 500;
-```
-Anyone connecting to `mydb` will have this applied automatically.
-
----
-
-#### 3. Per user/role (permanent for that user)
-```sql
-ALTER ROLE myuser SET log_min_duration_statement = 500;
-```
-Whenever `myuser` starts a new session, it's automatically applied.
-
----
-
-### Priority order (highest wins):
-
-```
-Session SET  >  Role  >  Database  >  postgresql.conf
-```
-
-So a `SET` in session always overrides everything else — but only for that session's lifetime.
-
-### A great read to learn Profiling and Optimizing SQL Queries
-
-[Introduction to Profiling and Optimizing SQL Queries for Software Engineers](https://medium.com/scopedev/introduction-to-profiling-and-optimizing-sql-queries-for-software-engineers-3cf376ecc712)
-
-### Connection Pooling
-
-[Connection Pooling: PostgreSQL](https://medium.com/@jramcloud1/01-connection-pooling-postgresql-database-administration-connection-pooling-in-postgresql-17-1264aff21dae)
+- [RESOURCES.md](RESOURCES.md) — PostgreSQL slow-query logging, `pg_stat_statements`, profiling articles

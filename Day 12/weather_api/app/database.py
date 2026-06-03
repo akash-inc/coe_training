@@ -1,13 +1,19 @@
 import os
 from collections.abc import Generator
+from pathlib import Path
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-DATABASE_URL = os.getenv("WEATHER_DATABASE_URL", "sqlite:///./weather.db")
+DATABASE_URL = os.getenv(
+    "WEATHER_DATABASE_URL",
+    "postgresql+psycopg://akash:password@localhost/weather",
+)
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 

@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from datetime import date, datetime, timezone
 from typing import Optional
 
@@ -8,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Task as TaskModel
 from models import User as UserModel
 
-from database import get_db, init_db
+from database import get_db
 from repositories import (
     SqlAlchemyTaskRepository,
     SqlAlchemyUserRepository,
@@ -16,13 +15,7 @@ from repositories import (
     UserRepository,
 )
 
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    await init_db()
-    yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 
 class UserCreate(BaseModel):
