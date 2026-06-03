@@ -1,7 +1,10 @@
 from datetime import date, datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Task as TaskModel
@@ -15,7 +18,19 @@ from repositories import (
     UserRepository,
 )
 
-app = FastAPI()
+app = FastAPI(title="Task Management API")
+FRONTEND_DIST = Path(__file__).resolve().parent / "frontend" / "dist"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class UserCreate(BaseModel):
@@ -85,8 +100,8 @@ async def ensure_task_exists(
         raise HTTPException(status_code=404, detail="Task not found")
 
 
-@app.get("/")
-def read_root():
+@app.get("/health")
+def healthcheck():
     return {"Hello": "User"}
 
 
@@ -176,3 +191,7 @@ async def delete_task(
     await ensure_task_exists(task_id, task_repository)
     await task_repository.delete(task_id)
     return Response(status_code=204)
+
+
+if FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

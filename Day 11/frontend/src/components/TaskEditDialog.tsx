@@ -1,0 +1,166 @@
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { replaceTask } from '../api'
+import type { Task, TaskCreatePayload, TaskStatus, User } from '../types'
+import './TaskEditDialog.css'
+
+interface TaskEditDialogProps {
+  task: Task | null
+  users: User[]
+  onClose: () => void
+  onSaved: () => Promise<void>
+  onError: (message: string) => void
+}
+
+const emptyForm = {
+  title: '',
+  description: '',
+  status: 'open' as TaskStatus,
+  priority: 3,
+  user_id: '',
+  due_date: '',
+}
+
+export function TaskEditDialog({ task, users, onClose, onSaved, onError }: TaskEditDialogProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [form, setForm] = useState(emptyForm)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!task) {
+      dialogRef.current?.close()
+      return
+    }
+    setForm({
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      user_id: String(task.user_id),
+      due_date: task.due_date ?? '',
+    })
+    dialogRef.current?.showModal()
+  }, [task])
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (!task) return
+
+    setSubmitting(true)
+    const payload: TaskCreatePayload = {
+      title: form.title,
+      description: form.description,
+      status: form.status,
+      priority: form.priority,
+      user_id: Number(form.user_id),
+      due_date: form.due_date || null,
+    }
+
+    try {
+      await replaceTask(task.id, payload)
+      onClose()
+      await onSaved()
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Failed to update task')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="edit-dialog"
+      onClose={onClose}
+      onCancel={(event) => {
+        event.preventDefault()
+        onClose()
+      }}
+    >
+      <form onSubmit={handleSubmit}>
+        <header className="dialog-head">
+          <h3>Edit task</h3>
+          <button type="button" className="btn-icon" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </header>
+
+        <div className="form-grid form-grid-dialog">
+          <label>
+            Title
+            <input
+              value={form.title}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              required
+              minLength={1}
+              maxLength={255}
+            />
+          </label>
+          <label>
+            Owner
+            <select
+              value={form.user_id}
+              onChange={(e) => setForm((prev) => ({ ...prev, user_id: e.target.value }))}
+              required
+            >
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Status
+            <select
+              value={form.status}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, status: e.target.value as TaskStatus }))
+              }
+            >
+              <option value="open">Open</option>
+              <option value="in_progress">In progress</option>
+              <option value="done">Done</option>
+            </select>
+          </label>
+          <label>
+            Priority
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={form.priority}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, priority: Number(e.target.value) }))
+              }
+            />
+          </label>
+          <label className="span-2">
+            Description
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+            />
+          </label>
+          <label>
+            Due date
+            <input
+              type="date"
+              value={form.due_date}
+              onChange={(e) => setForm((prev) => ({ ...prev, due_date: e.target.value }))}
+            />
+          </label>
+        </div>
+
+        <footer className="dialog-actions">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'Saving…' : 'Save changes'}
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  )
+}

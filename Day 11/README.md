@@ -1,6 +1,6 @@
-# Day 11 — FastAPI Task Management API
+# Day 11 — FastAPI Task Management (Full-Stack)
 
-A beginner-friendly backend API built with FastAPI, async SQLAlchemy, and PostgreSQL.
+A task management app with a FastAPI backend (async SQLAlchemy + PostgreSQL) and a Vite + React frontend.
 
 ## What you learn
 
@@ -10,20 +10,23 @@ A beginner-friendly backend API built with FastAPI, async SQLAlchemy, and Postgr
 - Alembic migrations for versioned schema changes
 - `PUT` vs `PATCH` semantics for full vs partial updates
 - Async API testing with pytest and a real PostgreSQL test database
+- Vite + React UI consuming the REST API
 
 ## Project structure
 
-- `main.py` — routes, validation, dependency injection
+- `main.py` — routes, validation, dependency injection, optional static UI mount
 - `models.py` — SQLAlchemy models (`User`, `Task`)
 - `database.py` — async engine and session factory
 - `repositories.py` — repository interfaces and SQLAlchemy implementations
 - `alembic/` + `alembic.ini` — migration system
+- `frontend/` — Vite + React + TypeScript UI
 - `tests/` — API and repository tests
 - `.env.example` — environment variable template
 
 ## Prerequisites
 
 - Python 3.11+
+- Node.js 20+ (for the frontend)
 - PostgreSQL running locally (`psql` available)
 
 ## Setup
@@ -36,6 +39,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 cp .env.example .env
+
+cd frontend
+npm install
+cd ..
 ```
 
 Edit `.env` if your PostgreSQL user, password, or host differ from the defaults.
@@ -49,15 +56,17 @@ psql -U postgres -c "CREATE DATABASE tasks;"
 psql -U postgres -c "CREATE DATABASE tasks_test;"
 ```
 
-If your role is not `postgres`, use your superuser or an account that can create databases.
-
 Apply migrations:
 
 ```bash
 alembic upgrade head
 ```
 
-## Run the API
+## Run (development)
+
+Use two terminals.
+
+**Terminal 1 — API** (from `Day 11`):
 
 ```bash
 uvicorn main:app --reload
@@ -65,20 +74,44 @@ uvicorn main:app --reload
 
 - API: `http://127.0.0.1:8000`
 - Docs: `http://127.0.0.1:8000/docs`
+- Health: `http://127.0.0.1:8000/health`
+
+**Terminal 2 — Frontend** (from `Day 11/frontend`):
+
+```bash
+npm run dev
+```
+
+- UI: `http://127.0.0.1:5173` (proxies `/users`, `/tasks`, `/health` to the API)
+
+CORS is enabled on the API for the Vite dev server.
+
+## Run (production-style, single server)
+
+Build the UI and serve it from FastAPI:
+
+```bash
+cd frontend && npm run build && cd ..
+uvicorn main:app --reload
+```
+
+Open `http://127.0.0.1:8000` for the app (requires `frontend/dist` to exist).
 
 ## Run tests
+
+From `Day 11`:
 
 ```bash
 python -m pytest
 ```
 
-Tests use `TEST_DATABASE_URL` from `.env` (default: `tasks_test`). The test suite creates that database if needed, runs `alembic upgrade head`, then truncates tables between tests.
+Tests use `TEST_DATABASE_URL` from `.env` (default: `tasks_test`).
 
 ## API endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/` | Health / welcome |
+| GET | `/health` | Health / welcome |
 | GET | `/users` | List users |
 | POST | `/users` | Create user |
 | GET | `/tasks` | List tasks |
@@ -88,18 +121,24 @@ Tests use `TEST_DATABASE_URL` from `.env` (default: `tasks_test`). The test suit
 | PATCH | `/tasks/{task_id}` | Partial task update |
 | DELETE | `/tasks/{task_id}` | Delete task |
 
+## Frontend features
+
+- Create and list users
+- Create, list, filter, edit (PUT), and delete tasks
+- Quick status updates via PATCH
+- Toast feedback for API errors
+
 ## Why `PUT` and `PATCH` are separate
 
 - `PUT` replaces the full task representation (client sends all required fields).
-- `PATCH` updates only fields present in the request body.
+- `PATCH` updates only fields present in the request body (used for quick status changes in the UI).
 
 ## Troubleshooting
 
 - **Import warnings in the editor** — Select `Day 11/.venv/bin/python` as the interpreter.
-- **`ModuleNotFoundError` during tests** — Run from `Day 11` with `python -m pytest`; `pytest.ini` sets `pythonpath = .`.
+- **UI cannot reach API in dev** — Ensure uvicorn is running on port 8000 before `npm run dev`.
+- **Blank page on port 8000** — Run `npm run build` in `frontend/` so `frontend/dist` exists.
 - **Connection refused / authentication failed** — Confirm PostgreSQL is running and `.env` URLs match your local setup.
-- **Event loop / asyncpg errors in tests** — Keep `pytest.ini` asyncio settings unchanged.
-- **Alembic check/migration errors** — Ensure PostgreSQL is running and `alembic.ini` / `.env` URLs are valid; run `alembic upgrade head` before starting the API.
 
 ## Further reading
 
