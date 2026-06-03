@@ -220,3 +220,7 @@ So a `SET` in session always overrides everything else — but only for that ses
 ### A great read to learn Profiling and Optimizing SQL Queries
 
 [Introduction to Profiling and Optimizing SQL Queries for Software Engineers](https://medium.com/scopedev/introduction-to-profiling-and-optimizing-sql-queries-for-software-engineers-3cf376ecc712)
+
+### Connection Pooling
+
+[Connection Pooling: PostgreSQL](https://medium.com/@jramcloud1/01-connection-pooling-postgresql-database-administration-connection-pooling-in-postgresql-17-1264aff21dae)
