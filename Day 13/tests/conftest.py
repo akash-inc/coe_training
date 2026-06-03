@@ -4,10 +4,13 @@ from pathlib import Path
 
 import psycopg
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
+
+from sql_stats import CountingSession  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 TEST_DATABASE_URL = os.getenv(
@@ -49,11 +52,13 @@ os.environ["DATABASE_ECHO"] = "false"
 
 from database import Base, get_db  # noqa: E402
 from main import app  # noqa: E402
+from sql_stats import bind_request_to_session, register_engine_listeners  # noqa: E402
 
 
 @pytest.fixture(scope="session")
 def test_engine():
     engine = create_engine(TEST_DATABASE_URL)
+    register_engine_listeners(engine)
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
@@ -61,8 +66,8 @@ def test_engine():
 
 
 @pytest.fixture
-def db_session(test_engine) -> Generator[Session, None, None]:
-    SessionLocal = sessionmaker(bind=test_engine, expire_on_commit=False)
+def db_session(test_engine) -> Generator[CountingSession, None, None]:
+    SessionLocal = sessionmaker(bind=test_engine, expire_on_commit=False, class_=CountingSession)
     session = SessionLocal()
     session.execute(
         text("TRUNCATE TABLE enrollments, courses, students RESTART IDENTITY CASCADE")
@@ -79,8 +84,9 @@ def db_session(test_engine) -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def client(db_session: Session) -> Generator[TestClient, None, None]:
-    def override_get_db():
+def client(db_session: CountingSession) -> Generator[TestClient, None, None]:
+    def override_get_db(request: Request):
+        bind_request_to_session(db_session, request)
         try:
             yield db_session
         finally:

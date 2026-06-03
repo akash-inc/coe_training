@@ -78,7 +78,7 @@ npm run dev
 
 - UI: `http://127.0.0.1:5173` (proxies API routes to port 8000)
 
-In the UI: **Seed demo dataset**, set parallel clients (try 10+), run benchmarks or compare presets. Set `DATABASE_ECHO=true` in `.env` and watch SQL in the API terminal.
+In the UI: **Seed demo dataset**, set parallel clients (try 10+), run benchmarks or compare presets. Each response includes **`X-Sql-Queries`** (server-side statement count per request). Set `DATABASE_ECHO=true` in `.env` to see the actual SQL.
 
 ## Run (production-style, single server)
 

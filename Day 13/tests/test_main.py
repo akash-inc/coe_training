@@ -45,6 +45,12 @@ def test_course_enrollment_counts(client, populate_payload):
     assert response.json() == EXPECTED_ENROLLMENT_COUNTS
 
 
+def test_populate_sets_sql_query_header(client, populate_payload):
+    response = client.post("/populate-all", json=populate_payload)
+    assert response.status_code == 200
+    assert int(response.headers["X-Sql-Queries"]) > 0
+
+
 def test_naive_endpoint_runs_more_sql_than_selectin(client, populate_payload):
     client.post("/populate-all", json=populate_payload)
 
