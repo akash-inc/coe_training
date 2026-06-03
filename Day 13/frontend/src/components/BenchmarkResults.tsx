@@ -1,0 +1,84 @@
+import type { BenchmarkRun } from '../benchmark'
+import './BenchmarkResults.css'
+
+interface BenchmarkResultsProps {
+  run: BenchmarkRun | null
+}
+
+export function BenchmarkResults({ run }: BenchmarkResultsProps) {
+  if (!run) return null
+
+  return (
+    <div className="benchmark-results">
+      <header className="results-head">
+        <h3>{run.endpointLabel}</h3>
+        <code>{run.endpointPath}</code>
+      </header>
+
+      <div className="stats-grid">
+        <div className="stat">
+          <span className="stat-label">Clients</span>
+          <strong>{run.clientCount}</strong>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Wall time</span>
+          <strong>{run.wallMs.toFixed(1)} ms</strong>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Avg / client</span>
+          <strong>{run.avgMs.toFixed(1)} ms</strong>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Min – Max</span>
+          <strong>
+            {run.minMs.toFixed(1)} – {run.maxMs.toFixed(1)} ms
+          </strong>
+        </div>
+        <div className="stat">
+          <span className="stat-label">OK / Failed</span>
+          <strong>
+            {run.successCount} / {run.failureCount}
+          </strong>
+        </div>
+        {run.avgSqlQueries !== null ? (
+          <div className="stat stat-sql">
+            <span className="stat-label">SQL queries (server)</span>
+            <strong>
+              avg {run.avgSqlQueries.toFixed(0)} ({run.minSqlQueries}–{run.maxSqlQueries})
+            </strong>
+          </div>
+        ) : null}
+      </div>
+
+      <p className="results-hint">
+        Each bar is one simulated browser client firing the same endpoint in parallel.{' '}
+        <code>X-Sql-Queries</code> counts ORM statements per request (naive often ≫ selectinload).
+        Use <code>DATABASE_ECHO=true</code> to see the actual SQL.
+      </p>
+
+      <div className="client-grid" role="list">
+        {run.results.map((result) => (
+          <div
+            key={result.clientId}
+            role="listitem"
+            className={`client-card ${result.ok ? 'ok' : 'fail'}`}
+            title={result.error}
+          >
+            <span className="client-id">Client {result.clientId}</span>
+            <span className="client-ms">{result.durationMs.toFixed(1)} ms</span>
+            <span className="client-status">
+              {result.ok ? 'OK' : `ERR ${result.status}`}
+              {result.sqlQueries !== null ? ` · ${result.sqlQueries} SQL` : ''}
+            </span>
+            <div
+              className="client-bar"
+              style={{
+                width: `${Math.min(100, (result.durationMs / Math.max(run.maxMs, 1)) * 100)}%`,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

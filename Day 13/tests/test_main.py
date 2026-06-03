@@ -1,5 +1,5 @@
 def test_home(client):
-    response = client.get("/")
+    response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"message": "Hello, World!"}
 
@@ -43,6 +43,22 @@ def test_course_enrollment_counts(client, populate_payload):
     response = client.get("/report/course-enrollment-counts")
     assert response.status_code == 200
     assert response.json() == EXPECTED_ENROLLMENT_COUNTS
+
+
+def test_naive_endpoint_runs_more_sql_than_selectin(client, populate_payload):
+    client.post("/populate-all", json=populate_payload)
+
+    naive = client.get("/courses-with-students-naive")
+    selectin = client.get("/courses-with-students-selectin")
+
+    assert naive.status_code == 200
+    assert selectin.status_code == 200
+    assert "X-Sql-Queries" in naive.headers
+    assert "X-Sql-Queries" in selectin.headers
+
+    naive_sql = int(naive.headers["X-Sql-Queries"])
+    selectin_sql = int(selectin.headers["X-Sql-Queries"])
+    assert naive_sql > selectin_sql
 
 
 def test_courses_with_students_selectin(client, populate_payload):

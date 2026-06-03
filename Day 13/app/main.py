@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload, selectinload, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
@@ -13,9 +17,25 @@ from schemas import (
     StudentResponse,
 )
 from database import Base, engine, get_db
+from middleware import SQL_QUERY_COUNT_HEADER, SqlQueryCountMiddleware
 from models import Student, Course, Enrollment
 
 app = FastAPI(title="School Management System")
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+app.add_middleware(SqlQueryCountMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=[SQL_QUERY_COUNT_HEADER],
+)
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -104,8 +124,8 @@ def _build_courses_with_students_response(courses: list[Course]) -> list[dict]:
     return result
 
 
-@app.get("/")
-def home():
+@app.get("/health")
+def health():
     return {"message": "Hello, World!"}
 
 @app.get("/students", response_model=list[StudentResponse])
@@ -297,3 +317,7 @@ def course_enrollment_counts(db: Session = Depends(get_db)):
         ORDER BY c.id
         """,
     )
+
+
+if FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
