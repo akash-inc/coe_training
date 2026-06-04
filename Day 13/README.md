@@ -8,6 +8,9 @@ A FastAPI + SQLAlchemy API for students, courses, and enrollments, with a Vite +
 - Eager loading strategies: `joinedload`, `selectinload`, `subqueryload`
 - Correlated subquery vs `JOIN` + `GROUP BY` (see [docs/course-enrollment-counts-slow-explain.md](docs/course-enrollment-counts-slow-explain.md))
 - Bulk seed and bulk update endpoints
+- `bulk_insert_mappings` via `POST /populate-all-bulk` (compare with row-by-row `/populate-all`)
+- PostgreSQL `INSERT … ON CONFLICT` upserts (`/students/pg-upsert`, `/courses/pg-upsert`)
+- Indexing and `EXPLAIN ANALYZE` for indexed vs unindexed lookups (see [docs/student-lookup-index-explain.md](docs/student-lookup-index-explain.md))
 - Connection pooling: `NullPool` vs `QueuePool` benchmark endpoints
 - Pool tuning via `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`
 - SQLAlchemy vs **psycopg3** raw SQL on the same report query (`/orm-vs-raw` UI page)
@@ -20,7 +23,7 @@ A FastAPI + SQLAlchemy API for students, courses, and enrollments, with a Vite +
 - `app/schemas.py` — Pydantic request/response models
 - `app/database.py` — PostgreSQL engine, pool settings, sessions
 - `frontend/` — Vite + React lab (`/` query & pool compares, `/orm-vs-raw` driver compare)
-- `app/queries.py`, `app/raw_db.py` — shared SQL and psycopg3 raw fetch helper
+- `app/bulk_ops.py`, `app/pg_upserts.py` — bulk insert seed and PostgreSQL upserts
 - `tests/` — smoke and integration-style API tests
 - `docs/` — EXPLAIN ANALYZE notes
 - `.env.example` — environment variable template
@@ -58,6 +61,8 @@ psql -U postgres -c "CREATE DATABASE school_test;"
 
 Tables are created on app startup (`Base.metadata.create_all` in `main.py`).
 
+If you already have a `school` database from an older schema, drop and recreate it (or add unique constraints on `students.email` and `courses.name`) so `ON CONFLICT` upserts work.
+
 ## Run (development)
 
 Use two terminals.
@@ -82,7 +87,7 @@ npm run dev
 - UI: `http://127.0.0.1:5173` (proxies API routes to port 8000)
 - ORM vs raw: `http://127.0.0.1:5173/orm-vs-raw`
 
-**Query lab (`/`):** use **Seed large** for N+1 / report demos, or skip seed for **Unpooled vs connection pool** (right = optimized QueuePool). Set parallel clients above `DB_POOL_SIZE` (default 5) to see pool queueing.
+**Query lab (`/`):** use **Seed large** for N+1 / report demos, or **Seed large (bulk)** for the same counts via `bulk_insert_mappings`. Skip seed for **Unpooled vs connection pool** (right = optimized QueuePool). Set parallel clients above `DB_POOL_SIZE` (default 5) to see pool queueing.
 
 **ORM vs raw (`/orm-vs-raw`):** seed large, then compare SQLAlchemy `Session` + `text()` against psycopg3 executing the same SQL. Both paths should report **`X-Sql-Queries: 1`**; latency differences come from session/mapping vs direct driver + per-request connect on the raw path.
 
@@ -145,10 +150,13 @@ python -m pytest
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health / welcome |
-| GET/POST | `/students` | List / upsert students |
-| GET/POST | `/courses` | List / upsert courses |
+| GET/POST | `/students` | List / upsert students (ORM read-then-write) |
+| POST | `/students/pg-upsert` | Upsert student via `INSERT … ON CONFLICT` on `email` |
+| GET/POST | `/courses` | List / upsert courses (ORM read-then-write) |
+| POST | `/courses/pg-upsert` | Upsert course via `INSERT … ON CONFLICT` on `name` |
 | GET/POST | `/enrollments` | List / upsert enrollments |
-| POST | `/populate-all` | Seed students, courses, enrollments |
+| POST | `/populate-all` | Seed via row-by-row upserts |
+| POST | `/populate-all-bulk` | Seed via `bulk_insert_mappings` |
 | POST | `/bulk-update` | Bulk update mappings |
 | GET | `/courses-with-students-naive` | Lazy loading demo |
 | GET | `/courses-with-students-eager-joinedload` | `joinedload` demo |
@@ -172,3 +180,4 @@ python -m pytest
 
 - [RESOURCES.md](RESOURCES.md) — PostgreSQL slow-query logging, `pg_stat_statements`, profiling articles
 - [docs/course-enrollment-counts-slow-explain.md](docs/course-enrollment-counts-slow-explain.md) — slow vs optimized SQL plans
+- [docs/student-lookup-index-explain.md](docs/student-lookup-index-explain.md) — index scan vs sequential scan on student lookups

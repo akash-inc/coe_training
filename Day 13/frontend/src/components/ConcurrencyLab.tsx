@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { seedLargeDemoData, seedSmallDemoData } from '../api'
+import { seedLargeBulkDemoData, seedLargeDemoData, seedSmallDemoData } from '../api'
 import { runParallelClients, type BenchmarkRun } from '../benchmark'
 import type { SeedStats } from '../seedData'
 import {
@@ -69,6 +69,25 @@ export function ConcurrencyLab() {
       )
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Large seed failed')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  async function handleSeedLargeBulk() {
+    setSeeding(true)
+    try {
+      const result = await seedLargeBulkDemoData()
+      setSeedStats({
+        courseCount: result.courses_added,
+        enrollmentCount: result.enrollments_added,
+        studentCount: result.students_added,
+      })
+      showToast(
+        `Large bulk seed: ${result.courses_added} courses, ${result.enrollments_added} enrollments (bulk_insert_mappings)`,
+      )
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Large bulk seed failed')
     } finally {
       setSeeding(false)
     }
@@ -181,6 +200,14 @@ export function ConcurrencyLab() {
           >
             {seeding ? 'Seeding…' : 'Seed large (50 courses × 200 enrollments)'}
           </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={handleSeedLargeBulk}
+            disabled={seeding || running}
+          >
+            {seeding ? 'Seeding…' : 'Seed large (bulk)'}
+          </button>
         </div>
         {seedStats ? (
           <p className="tip">
@@ -194,9 +221,11 @@ export function ConcurrencyLab() {
           </p>
         )}
         <p className="tip">
-          Use the <strong>large seed</strong> for query-strategy compares. For{' '}
-          <strong>Unpooled vs connection pool</strong>, no seed is needed — set parallel clients
-          above <code>DB_POOL_SIZE</code> (default 5) so the right (pooled) side reuses connections.
+          Use the <strong>large seed</strong> for query-strategy compares.{' '}
+          <strong>Seed large (bulk)</strong> uses <code>bulk_insert_mappings</code> for the same
+          row counts. For <strong>Unpooled vs connection pool</strong>, no seed is needed — set
+          parallel clients above <code>DB_POOL_SIZE</code> (default 5) so the right (pooled) side
+          reuses connections.
         </p>
       </section>
 

@@ -4,13 +4,16 @@ import {
   type PopulatePayload,
 } from './seedData'
 
-async function postPopulate(payload: PopulatePayload): Promise<{
+async function postPopulate(
+  path: string,
+  payload: PopulatePayload,
+): Promise<{
   message: string
   students_added: number
   courses_added: number
   enrollments_added: number
 }> {
-  const response = await fetch('/populate-all', {
+  const response = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -23,12 +26,15 @@ async function postPopulate(payload: PopulatePayload): Promise<{
 }
 
 export async function seedSmallDemoData() {
-  return postPopulate(buildSmallSeedPayload())
+  return postPopulate('/populate-all', buildSmallSeedPayload())
 }
 
 export async function seedLargeDemoData() {
-  const payload = buildLargeSeedPayload(50, 200, 40)
-  return postPopulate(payload)
+  return postPopulate('/populate-all', buildLargeSeedPayload(50, 200, 40))
+}
+
+export async function seedLargeBulkDemoData() {
+  return postPopulate('/populate-all-bulk', buildLargeSeedPayload(50, 200, 40))
 }
 
 /** @deprecated Use seedSmallDemoData */

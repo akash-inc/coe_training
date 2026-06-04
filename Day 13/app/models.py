@@ -10,7 +10,7 @@ class Student(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     age: Mapped[int] = mapped_column(Integer)
-    email: Mapped[str] = mapped_column(String(255), index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True)
     phone: Mapped[str] = mapped_column(String(255))
     subjects: Mapped[list[str]] = mapped_column(JSON, default=list)
     subject_grades: Mapped[dict[str, str]] = mapped_column(JSON, default=dict)
@@ -21,7 +21,7 @@ class Course(Base):
     __tablename__ = "courses"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), index=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True)
     description: Mapped[str] = mapped_column(String(255))
     subjects: Mapped[list[str]] = mapped_column(JSON, default=list)
     enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="course")

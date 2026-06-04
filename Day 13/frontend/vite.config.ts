@@ -9,6 +9,7 @@ const apiRoutes = [
   '/courses',
   '/enrollments',
   '/populate-all',
+  '/populate-all-bulk',
   '/bulk-update',
   '/courses-with-students-naive',
   '/courses-with-students-eager-joinedload',

@@ -26,6 +26,8 @@ from database import (
 )
 from middleware import EXPOSED_HEADERS, SqlQueryCountMiddleware
 from models import Student, Course, Enrollment
+from bulk_ops import bulk_populate_all
+from pg_upserts import pg_upsert_course, pg_upsert_student
 from queries import ENROLLMENT_COUNT_BY_COURSE_SLOW_SQL, ENROLLMENT_COUNT_BY_COURSE_SQL
 from raw_db import fetch_enrollment_counts_raw
 
@@ -179,6 +181,15 @@ def create_student(student: StudentCreate, db: Session = Depends(get_db)):
     return _upsert_student(student, db)
 
 
+@app.post("/students/pg-upsert", response_model=StudentResponse)
+def create_student_pg_upsert(student: StudentCreate, db: Session = Depends(get_db)):
+    try:
+        return pg_upsert_student(db, student)
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to upsert student") from error
+
+
 @app.get("/courses", response_model=list[CourseResponse])
 def get_courses(db: Session = Depends(get_db)):
     return db.query(Course).all()
@@ -228,6 +239,15 @@ def get_courses_with_students_subquery(db: Session = Depends(get_db)):
 @app.post("/courses", response_model=CourseResponse)
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     return _upsert_course(course, db)
+
+
+@app.post("/courses/pg-upsert", response_model=CourseResponse)
+def create_course_pg_upsert(course: CourseCreate, db: Session = Depends(get_db)):
+    try:
+        return pg_upsert_course(db, course)
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to upsert course") from error
 
 
 @app.get("/enrollments", response_model=list[EnrollmentResponse])
@@ -287,6 +307,18 @@ def populate_all(payload: PopulateAllCreate, db: Session = Depends(get_db)):
         "course_ids": [item.id for item in seeded_courses],
         "enrollment_ids": [item.id for item in seeded_enrollments],
     }
+
+
+@app.post("/populate-all-bulk")
+def populate_all_bulk(payload: PopulateAllCreate, db: Session = Depends(get_db)):
+    try:
+        return bulk_populate_all(db, payload)
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as error:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to bulk populate data") from error
 
 
 @app.post("/bulk-update")

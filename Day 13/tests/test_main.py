@@ -24,6 +24,121 @@ def test_populate_all(client, populate_payload):
     assert students_response.json()[0]["email"] == "alice@example.com"
 
 
+def test_populate_all_bulk_matches_row_counts(client, populate_payload):
+    response = client.post("/populate-all-bulk", json=populate_payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["students_added"] == 1
+    assert body["courses_added"] == 1
+    assert body["enrollments_added"] == 1
+
+    report = client.get("/report/course-enrollment-counts")
+    assert report.status_code == 200
+    assert report.json() == EXPECTED_ENROLLMENT_COUNTS
+
+
+def test_populate_all_bulk_large_seed(client):
+    payload = _build_large_seed_payload(course_count=50, enrollment_count=200, student_count=40)
+    response = client.post("/populate-all-bulk", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["students_added"] == 40
+    assert body["courses_added"] == 50
+    assert body["enrollments_added"] == 200
+
+
+def test_bulk_update_students(client, populate_payload):
+    client.post("/populate-all", json=populate_payload)
+
+    response = client.post(
+        "/bulk-update",
+        json={"students": [{"id": 1, "name": "Updated Alice"}], "courses": [], "enrollments": []},
+    )
+    assert response.status_code == 200
+    assert response.json()["students_updated"] == 1
+
+    students = client.get("/students").json()
+    assert students[0]["name"] == "Updated Alice"
+
+
+def test_student_pg_upsert_updates_existing_row(client, populate_payload):
+    client.post("/populate-all", json=populate_payload)
+
+    updated_payload = {
+        **populate_payload["students"][0],
+        "name": "Alice Updated Via PG",
+    }
+    response = client.post("/students/pg-upsert", json=updated_payload)
+    assert response.status_code == 200
+    assert response.json()["name"] == "Alice Updated Via PG"
+
+    students = client.get("/students").json()
+    assert len(students) == 1
+    assert students[0]["email"] == "alice@example.com"
+    assert students[0]["name"] == "Alice Updated Via PG"
+
+
+def test_course_pg_upsert_updates_existing_row(client, populate_payload):
+    client.post("/populate-all", json=populate_payload)
+
+    updated_payload = {
+        **populate_payload["courses"][0],
+        "description": "Updated via ON CONFLICT",
+    }
+    response = client.post("/courses/pg-upsert", json=updated_payload)
+    assert response.status_code == 200
+    assert response.json()["description"] == "Updated via ON CONFLICT"
+
+    courses = client.get("/courses").json()
+    assert len(courses) == 1
+    assert courses[0]["name"] == "CS101"
+
+
+def _build_large_seed_payload(
+    course_count: int = 50,
+    enrollment_count: int = 200,
+    student_count: int = 40,
+) -> dict:
+    students = [
+        {
+            "name": f"Student {index + 1}",
+            "age": 18 + (index % 10),
+            "email": f"student{index + 1}@lab.example",
+            "phone": f"+1415555{3000 + index:04d}",
+            "subjects": ["Math"],
+            "subject_grades": {"Math": "B+"},
+        }
+        for index in range(student_count)
+    ]
+    courses = [
+        {
+            "name": f"Course {index + 1:03d}",
+            "description": f"Benchmark course {index + 1}",
+            "subjects": ["Math"],
+        }
+        for index in range(course_count)
+    ]
+    enrollments = []
+    seen: set[str] = set()
+    student_ref = 0
+    course_ref = 0
+    while len(enrollments) < enrollment_count:
+        key = f"{student_ref}-{course_ref}"
+        if key not in seen:
+            seen.add(key)
+            enrollments.append({"student_ref": student_ref, "course_ref": course_ref})
+        course_ref = (course_ref + 1) % course_count
+        if course_ref == 0:
+            student_ref = (student_ref + 1) % student_count
+
+    return {
+        "reset": True,
+        "students": students,
+        "courses": courses,
+        "enrollments": enrollments,
+    }
+
+
 EXPECTED_ENROLLMENT_COUNTS = [
     {"id": 1, "name": "CS101", "enrollment_count": 1},
 ]
