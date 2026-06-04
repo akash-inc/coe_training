@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { seedDemoData } from '../api'
+import { seedLargeDemoData, seedSmallDemoData } from '../api'
 import { runParallelClients, type BenchmarkRun } from '../benchmark'
 import {
   BENCHMARK_ENDPOINTS,
@@ -13,6 +13,7 @@ export function ConcurrencyLab() {
   const [clientCount, setClientCount] = useState(10)
   const [selectedId, setSelectedId] = useState('naive')
   const [running, setRunning] = useState(false)
+  const [warmingUp, setWarmingUp] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [toast, setToast] = useState('')
   const [singleRun, setSingleRun] = useState<BenchmarkRun | null>(null)
@@ -30,14 +31,16 @@ export function ConcurrencyLab() {
 
   function showToast(message: string) {
     setToast(message)
-    window.setTimeout(() => setToast(''), 4000)
+    window.setTimeout(() => setToast(''), 5000)
   }
 
-  async function handleSeed() {
+  async function handleSeedSmall() {
     setSeeding(true)
     try {
-      const result = await seedDemoData()
-      showToast(result.message)
+      const result = await seedSmallDemoData()
+      showToast(
+        `${result.message} (${result.students_added} students, ${result.courses_added} courses)`,
+      )
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Seed failed')
     } finally {
@@ -45,8 +48,29 @@ export function ConcurrencyLab() {
     }
   }
 
+  async function handleSeedLarge() {
+    setSeeding(true)
+    try {
+      const result = await seedLargeDemoData()
+      showToast(
+        `Large seed complete: ${result.courses_added} courses, ${result.enrollments_added} enrollments`,
+      )
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Large seed failed')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   async function runEndpoint(endpoint: BenchmarkEndpoint): Promise<BenchmarkRun> {
-    return runParallelClients(endpoint.path, endpoint.label, clientCount)
+    setWarmingUp(true)
+    try {
+      return await runParallelClients(endpoint.path, endpoint.label, clientCount, {
+        warmup: true,
+      })
+    } finally {
+      setWarmingUp(false)
+    }
   }
 
   async function handleSingleRun(event: FormEvent) {
@@ -73,12 +97,25 @@ export function ConcurrencyLab() {
     setRunning(true)
     setCompareRuns([null, null])
     try {
-      const leftRun = await runEndpoint(left)
-      const rightRun = await runEndpoint(right)
+      setWarmingUp(true)
+      await runParallelClients(left.path, left.label, clientCount, { warmup: true })
+      setWarmingUp(false)
+      const leftRun = await runParallelClients(left.path, left.label, clientCount, {
+        warmup: false,
+      })
+
+      setWarmingUp(true)
+      await runParallelClients(right.path, right.label, clientCount, { warmup: true })
+      setWarmingUp(false)
+      const rightRun = await runParallelClients(right.path, right.label, clientCount, {
+        warmup: false,
+      })
+
       setCompareRuns([leftRun, rightRun])
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Compare failed')
     } finally {
+      setWarmingUp(false)
       setRunning(false)
     }
   }
@@ -88,6 +125,18 @@ export function ConcurrencyLab() {
     leftCompare && rightCompare && leftCompare.avgMs > 0
       ? ((rightCompare.avgMs - leftCompare.avgMs) / leftCompare.avgMs) * 100
       : null
+  const sqlCompareDelta =
+    leftCompare &&
+    rightCompare &&
+    leftCompare.avgSqlQueries !== null &&
+    rightCompare.avgSqlQueries !== null &&
+    leftCompare.avgSqlQueries > 0
+      ? ((rightCompare.avgSqlQueries - leftCompare.avgSqlQueries) /
+          leftCompare.avgSqlQueries) *
+        100
+      : null
+
+  const runLabel = warmingUp ? 'Warming up…' : running ? 'Running…' : 'Run benchmark'
 
   return (
     <div className="concurrency-lab">
@@ -96,26 +145,31 @@ export function ConcurrencyLab() {
       <section className="panel setup-panel">
         <h2>Setup</h2>
         <p>
-          Seed demo data, then simulate <strong>multiple browser clients</strong> hitting the same
-          API in parallel. Each client opens its own HTTP request (and DB session on the server).
+          Seed data, then simulate <strong>multiple browser clients</strong> in parallel. Benchmarks
+          run a <strong>warm-up</strong> first (discarded), then record the second run.
         </p>
         <div className="setup-actions">
           <button
             type="button"
-            className="btn btn-primary"
-            onClick={handleSeed}
+            className="btn btn-ghost"
+            onClick={handleSeedSmall}
             disabled={seeding || running}
           >
-            {seeding ? 'Seeding…' : 'Seed demo dataset'}
+            {seeding ? 'Seeding…' : 'Seed small (3 courses)'}
           </button>
-          <span className="docs-note">
-            See <code>docs/course-enrollment-counts-slow-explain.md</code> in the repo for query
-            plans.
-          </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSeedLarge}
+            disabled={seeding || running}
+          >
+            {seeding ? 'Seeding…' : 'Seed large (50 courses × 200 enrollments)'}
+          </button>
         </div>
         <p className="tip">
-          Tip: set <code>DATABASE_ECHO=true</code> and default pool <code>DB_POOL_SIZE=5</code> in
-          `.env`, then run with more than 5 clients to observe connection pooling.
+          Use the <strong>large seed</strong> before comparing naive vs selectinload or slow vs
+          optimized reports — N+1 and correlated subqueries show up clearly. Set{' '}
+          <code>DATABASE_ECHO=true</code> to watch SQL in the API terminal.
         </p>
       </section>
 
@@ -151,20 +205,20 @@ export function ConcurrencyLab() {
               </optgroup>
             </select>
           </label>
-          <button type="submit" className="btn btn-primary" disabled={running}>
-            {running ? 'Running…' : 'Run benchmark'}
+          <button type="submit" className="btn btn-primary" disabled={running || seeding}>
+            {runLabel}
           </button>
         </form>
         <p className="endpoint-desc">{selected.description}</p>
 
         <div className="preset-row">
-          <span>Compare presets:</span>
+          <span>Compare presets (warm-up each side, then record):</span>
           {COMPARE_PRESETS.map((preset) => (
             <button
               key={preset.id}
               type="button"
               className="btn btn-ghost"
-              disabled={running}
+              disabled={running || seeding}
               onClick={() => handleCompare(preset.id)}
             >
               {preset.label}
@@ -175,14 +229,14 @@ export function ConcurrencyLab() {
 
       {singleRun ? (
         <section className="panel">
-          <h2>Last run</h2>
+          <h2>Recorded run (after warm-up)</h2>
           <BenchmarkResults run={singleRun} />
         </section>
       ) : null}
 
       {leftCompare && rightCompare ? (
         <section className="panel">
-          <h2>Comparison</h2>
+          <h2>Comparison (recorded runs)</h2>
           <div className="compare-grid">
             <BenchmarkResults run={leftCompare} />
             <BenchmarkResults run={rightCompare} />
@@ -197,6 +251,15 @@ export function ConcurrencyLab() {
               vs left ({leftCompare.avgMs.toFixed(1)} ms → {rightCompare.avgMs.toFixed(1)} ms per
               client). Wall times: {leftCompare.wallMs.toFixed(1)} ms vs{' '}
               {rightCompare.wallMs.toFixed(1)} ms.
+              {sqlCompareDelta !== null ? (
+                <>
+                  {' '}
+                  Avg <code>X-Sql-Queries</code>: {leftCompare.avgSqlQueries?.toFixed(0)} →{' '}
+                  {rightCompare.avgSqlQueries?.toFixed(0)} (
+                  {sqlCompareDelta > 0 ? '+' : ''}
+                  {sqlCompareDelta.toFixed(1)}%).
+                </>
+              ) : null}
             </p>
           ) : null}
         </section>

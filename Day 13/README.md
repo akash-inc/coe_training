@@ -78,7 +78,7 @@ npm run dev
 
 - UI: `http://127.0.0.1:5173` (proxies API routes to port 8000)
 
-In the UI: **Seed demo dataset**, set parallel clients (try 10+), run benchmarks or compare presets. Each response includes **`X-Sql-Queries`** (server-side statement count per request). Set `DATABASE_ECHO=true` in `.env` to see the actual SQL.
+In the UI: use **Seed large (50 courses × 200 enrollments)** for visible N+1 / subquery pain, set parallel clients (try 10+), then run benchmarks (each run **warms up once**, then records the second). Responses include **`X-Sql-Queries`**. Set `DATABASE_ECHO=true` in `.env` to see the actual SQL.
 
 ## Run (production-style, single server)
 

@@ -82,7 +82,7 @@ function summarizeSqlQueries(results: ClientResult[]) {
   }
 }
 
-export async function runParallelClients(
+async function runParallelClientsOnce(
   path: string,
   label: string,
   clientCount: number,
@@ -111,4 +111,17 @@ export async function runParallelClients(
     avgMs: durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
     ...sqlSummary,
   }
+}
+
+export async function runParallelClients(
+  path: string,
+  label: string,
+  clientCount: number,
+  options: { warmup?: boolean } = {},
+): Promise<BenchmarkRun> {
+  const withWarmup = options.warmup ?? true
+  if (withWarmup) {
+    await runParallelClientsOnce(path, label, clientCount)
+  }
+  return runParallelClientsOnce(path, label, clientCount)
 }

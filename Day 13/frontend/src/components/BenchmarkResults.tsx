@@ -51,9 +51,8 @@ export function BenchmarkResults({ run }: BenchmarkResultsProps) {
       </div>
 
       <p className="results-hint">
-        Each bar is one simulated browser client firing the same endpoint in parallel.{' '}
-        <code>X-Sql-Queries</code> counts ORM statements per request (naive often ≫ selectinload).
-        Use <code>DATABASE_ECHO=true</code> to see the actual SQL.
+        Recorded after a discarded warm-up run. Each bar is one parallel client;{' '}
+        <code>X-Sql-Queries</code> is the server statement count for that request.
       </p>
 
       <div className="client-grid" role="list">
