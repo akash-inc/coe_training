@@ -45,6 +45,20 @@ def test_course_enrollment_counts(client, populate_payload):
     assert response.json() == EXPECTED_ENROLLMENT_COUNTS
 
 
+def test_course_enrollment_counts_raw_matches_sqlalchemy(client, populate_payload):
+    client.post("/populate-all", json=populate_payload)
+
+    sqlalchemy_response = client.get("/report/course-enrollment-counts")
+    raw_response = client.get("/report/course-enrollment-counts-raw")
+
+    assert sqlalchemy_response.status_code == 200
+    assert raw_response.status_code == 200
+    assert raw_response.json() == sqlalchemy_response.json()
+    assert int(sqlalchemy_response.headers["X-Sql-Queries"]) == 1
+    assert int(raw_response.headers["X-Sql-Queries"]) == 1
+    assert raw_response.headers["X-Db-Pool-Mode"] == "raw"
+
+
 def test_populate_sets_sql_query_header(client, populate_payload):
     response = client.post("/populate-all", json=populate_payload)
     assert response.status_code == 200

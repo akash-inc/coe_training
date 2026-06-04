@@ -16,6 +16,7 @@ const apiRoutes = [
   '/courses-with-students-subquery',
   '/report/course-enrollment-counts-slow',
   '/report/course-enrollment-counts',
+  '/report/course-enrollment-counts-raw',
   '/benchmark/db-ping-pooled',
   '/benchmark/db-ping-unpooled',
   '/health/pool',

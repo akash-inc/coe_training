@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
@@ -26,6 +26,8 @@ from database import (
 )
 from middleware import EXPOSED_HEADERS, SqlQueryCountMiddleware
 from models import Student, Course, Enrollment
+from queries import ENROLLMENT_COUNT_BY_COURSE_SLOW_SQL, ENROLLMENT_COUNT_BY_COURSE_SQL
+from raw_db import fetch_enrollment_counts_raw
 
 app = FastAPI(title="School Management System")
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
@@ -333,29 +335,20 @@ def _enrollment_count_rows(db: Session, sql: str) -> list[dict]:
 
 @app.get("/report/course-enrollment-counts-slow")
 def course_enrollment_counts_slow(db: Session = Depends(get_db)):
-    return _enrollment_count_rows(
-        db,
-        """
-        SELECT c.id, c.name,
-          (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id) AS enrollment_count
-        FROM courses c
-        ORDER BY c.id
-        """,
-    )
+    return _enrollment_count_rows(db, ENROLLMENT_COUNT_BY_COURSE_SLOW_SQL)
 
 
 @app.get("/report/course-enrollment-counts")
 def course_enrollment_counts(db: Session = Depends(get_db)):
-    return _enrollment_count_rows(
-        db,
-        """
-        SELECT c.id, c.name, COUNT(e.id) AS enrollment_count
-        FROM courses c
-        LEFT JOIN enrollments e ON e.course_id = c.id
-        GROUP BY c.id, c.name
-        ORDER BY c.id
-        """,
-    )
+    return _enrollment_count_rows(db, ENROLLMENT_COUNT_BY_COURSE_SQL)
+
+
+@app.get("/report/course-enrollment-counts-raw")
+def course_enrollment_counts_raw(request: Request):
+    request.state.db_pool_mode = "raw"
+    rows = fetch_enrollment_counts_raw()
+    request.state.sql_query_count = 1
+    return rows
 
 
 if FRONTEND_DIST.is_dir():

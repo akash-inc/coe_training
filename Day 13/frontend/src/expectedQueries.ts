@@ -92,6 +92,19 @@ export function getExpectedQueryInfo(
         'QueuePool reuses connections (pool_size + overflow). Parallel clients share the pool instead of handshaking every time.',
       )
 
+    case 'report-sqlalchemy':
+      return withCounts(
+        '≈ 1',
+        1,
+        'SQLAlchemy Session executes the shared JOIN + GROUP BY via text().',
+      )
+
+    case 'report-raw':
+      return formulaOnly(
+        '≈ 1 SQL · psycopg3 per request',
+        'Same SQL string; psycopg3 opens a connection per request (no SQLAlchemy pool on this path).',
+      )
+
     default:
       return formulaOnly('—', 'No estimate for this endpoint.')
   }

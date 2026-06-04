@@ -10,6 +10,7 @@ A FastAPI + SQLAlchemy API for students, courses, and enrollments, with a Vite +
 - Bulk seed and bulk update endpoints
 - Connection pooling: `NullPool` vs `QueuePool` benchmark endpoints
 - Pool tuning via `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`
+- SQLAlchemy vs **psycopg3** raw SQL on the same report query (`/orm-vs-raw` UI page)
 - PostgreSQL-only persistence with SQL echo controlled by environment
 
 ## Project structure
@@ -18,7 +19,8 @@ A FastAPI + SQLAlchemy API for students, courses, and enrollments, with a Vite +
 - `app/models.py` — `Student`, `Course`, `Enrollment`
 - `app/schemas.py` — Pydantic request/response models
 - `app/database.py` — PostgreSQL engine, pool settings, sessions
-- `frontend/` — Vite + React concurrency lab
+- `frontend/` — Vite + React lab (`/` query & pool compares, `/orm-vs-raw` driver compare)
+- `app/queries.py`, `app/raw_db.py` — shared SQL and psycopg3 raw fetch helper
 - `tests/` — smoke and integration-style API tests
 - `docs/` — EXPLAIN ANALYZE notes
 - `.env.example` — environment variable template
@@ -78,8 +80,15 @@ npm run dev
 ```
 
 - UI: `http://127.0.0.1:5173` (proxies API routes to port 8000)
+- ORM vs raw: `http://127.0.0.1:5173/orm-vs-raw`
 
-In the UI: use **Seed large** for N+1 / report demos, or skip seed for **Unpooled vs connection pool** (right = optimized QueuePool). Set parallel clients above `DB_POOL_SIZE` (default 5) to see pool queueing. Each benchmark **warms up once**, then records the second run. Responses include **`X-Sql-Queries`** and **`X-Db-Pool-Mode`**.
+**Query lab (`/`):** use **Seed large** for N+1 / report demos, or skip seed for **Unpooled vs connection pool** (right = optimized QueuePool). Set parallel clients above `DB_POOL_SIZE` (default 5) to see pool queueing.
+
+**ORM vs raw (`/orm-vs-raw`):** seed large, then compare SQLAlchemy `Session` + `text()` against psycopg3 executing the same SQL. Both paths should report **`X-Sql-Queries: 1`**; latency differences come from session/mapping vs direct driver + per-request connect on the raw path.
+
+Each benchmark **warms up once**, then records the second run. Responses include **`X-Sql-Queries`** and **`X-Db-Pool-Mode`** (where applicable).
+
+**When to use which:** ORM/SQLAlchemy helps with models, migrations, and relationship loading; raw SQL suits tight control, bulk operations, or avoiding ORM overhead on hot paths — often you mix both in one app.
 
 ## Run (production-style, single server)
 
@@ -146,7 +155,8 @@ python -m pytest
 | GET | `/courses-with-students-selectin` | `selectinload` demo |
 | GET | `/courses-with-students-subquery` | `subqueryload` demo |
 | GET | `/report/course-enrollment-counts-slow` | Correlated subquery demo |
-| GET | `/report/course-enrollment-counts` | Optimized `JOIN` + `GROUP BY` |
+| GET | `/report/course-enrollment-counts` | Optimized `JOIN` + `GROUP BY` (SQLAlchemy) |
+| GET | `/report/course-enrollment-counts-raw` | Same SQL via psycopg3 (no SQLAlchemy session) |
 | GET | `/health/pool` | QueuePool status (checked in/out, overflow) |
 | GET | `/benchmark/db-ping-unpooled` | `SELECT 1` via NullPool (new connection per request) |
 | GET | `/benchmark/db-ping-pooled` | `SELECT 1` via shared QueuePool |
