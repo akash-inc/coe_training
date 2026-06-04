@@ -1,3 +1,9 @@
+export interface SeedStats {
+  courseCount: number
+  enrollmentCount: number
+  studentCount: number
+}
+
 export interface PopulatePayload {
   reset: boolean
   students: Array<{

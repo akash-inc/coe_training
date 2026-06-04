@@ -123,3 +123,55 @@
   background: #e9f5ee;
   font-size: 0.88rem;
 }
+
+.expected-queries {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #f0f4f8;
+  font-size: 0.85rem;
+}
+
+.expected-queries strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.expected-formula {
+  margin: 0 0 0.35rem;
+}
+
+.expected-formula code {
+  font-size: 0.9em;
+}
+
+.expected-detail,
+.expected-compare {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.expected-match {
+  border-color: #95d5b2;
+  background: #e9f5ee;
+}
+
+.expected-close {
+  border-color: #a8dadc;
+  background: #e8f4f8;
+}
+
+.expected-off {
+  border-color: #e9c46a;
+  background: #fff8e6;
+}
+
+.expected-unknown {
+  border-color: var(--border);
+}

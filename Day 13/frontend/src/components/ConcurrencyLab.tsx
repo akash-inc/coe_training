@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { seedLargeDemoData, seedSmallDemoData } from '../api'
 import { runParallelClients, type BenchmarkRun } from '../benchmark'
+import type { SeedStats } from '../seedData'
 import {
   BENCHMARK_ENDPOINTS,
   COMPARE_PRESETS,
@@ -21,6 +22,7 @@ export function ConcurrencyLab() {
     null,
     null,
   ])
+  const [seedStats, setSeedStats] = useState<SeedStats | null>(null)
 
   const endpointById = useMemo(
     () => new Map(BENCHMARK_ENDPOINTS.map((item) => [item.id, item])),
@@ -38,6 +40,11 @@ export function ConcurrencyLab() {
     setSeeding(true)
     try {
       const result = await seedSmallDemoData()
+      setSeedStats({
+        courseCount: result.courses_added,
+        enrollmentCount: result.enrollments_added,
+        studentCount: result.students_added,
+      })
       showToast(
         `${result.message} (${result.students_added} students, ${result.courses_added} courses)`,
       )
@@ -52,6 +59,11 @@ export function ConcurrencyLab() {
     setSeeding(true)
     try {
       const result = await seedLargeDemoData()
+      setSeedStats({
+        courseCount: result.courses_added,
+        enrollmentCount: result.enrollments_added,
+        studentCount: result.students_added,
+      })
       showToast(
         `Large seed complete: ${result.courses_added} courses, ${result.enrollments_added} enrollments`,
       )
@@ -65,9 +77,13 @@ export function ConcurrencyLab() {
   async function runEndpoint(endpoint: BenchmarkEndpoint): Promise<BenchmarkRun> {
     setWarmingUp(true)
     try {
-      return await runParallelClients(endpoint.path, endpoint.label, clientCount, {
-        warmup: true,
-      })
+      return await runParallelClients(
+        endpoint.id,
+        endpoint.path,
+        endpoint.label,
+        clientCount,
+        { warmup: true },
+      )
     } finally {
       setWarmingUp(false)
     }
@@ -98,16 +114,16 @@ export function ConcurrencyLab() {
     setCompareRuns([null, null])
     try {
       setWarmingUp(true)
-      await runParallelClients(left.path, left.label, clientCount, { warmup: true })
+      await runParallelClients(left.id, left.path, left.label, clientCount, { warmup: true })
       setWarmingUp(false)
-      const leftRun = await runParallelClients(left.path, left.label, clientCount, {
+      const leftRun = await runParallelClients(left.id, left.path, left.label, clientCount, {
         warmup: false,
       })
 
       setWarmingUp(true)
-      await runParallelClients(right.path, right.label, clientCount, { warmup: true })
+      await runParallelClients(right.id, right.path, right.label, clientCount, { warmup: true })
       setWarmingUp(false)
-      const rightRun = await runParallelClients(right.path, right.label, clientCount, {
+      const rightRun = await runParallelClients(right.id, right.path, right.label, clientCount, {
         warmup: false,
       })
 
@@ -166,10 +182,20 @@ export function ConcurrencyLab() {
             {seeding ? 'Seeding…' : 'Seed large (50 courses × 200 enrollments)'}
           </button>
         </div>
+        {seedStats ? (
+          <p className="tip">
+            Current seed: <strong>{seedStats.courseCount} courses</strong>,{' '}
+            <strong>{seedStats.enrollmentCount} enrollments</strong> — expected counts use these
+            values (e.g. naive ≈ 1 + {seedStats.courseCount} + {seedStats.enrollmentCount}).
+          </p>
+        ) : (
+          <p className="tip">
+            Seed the database first so expected query counts show numeric estimates.
+          </p>
+        )}
         <p className="tip">
           Use the <strong>large seed</strong> before comparing naive vs selectinload or slow vs
-          optimized reports — N+1 and correlated subqueries show up clearly. Set{' '}
-          <code>DATABASE_ECHO=true</code> to watch SQL in the API terminal.
+          optimized reports. Set <code>DATABASE_ECHO=true</code> to watch SQL in the API terminal.
         </p>
       </section>
 
@@ -230,7 +256,7 @@ export function ConcurrencyLab() {
       {singleRun ? (
         <section className="panel">
           <h2>Recorded run (after warm-up)</h2>
-          <BenchmarkResults run={singleRun} />
+          <BenchmarkResults run={singleRun} seedStats={seedStats} />
         </section>
       ) : null}
 
@@ -238,8 +264,8 @@ export function ConcurrencyLab() {
         <section className="panel">
           <h2>Comparison (recorded runs)</h2>
           <div className="compare-grid">
-            <BenchmarkResults run={leftCompare} />
-            <BenchmarkResults run={rightCompare} />
+            <BenchmarkResults run={leftCompare} seedStats={seedStats} />
+            <BenchmarkResults run={rightCompare} seedStats={seedStats} />
           </div>
           {compareDelta !== null ? (
             <p className="compare-summary">

@@ -1,12 +1,28 @@
 import type { BenchmarkRun } from '../benchmark'
+import { compareActualToExpected, getExpectedQueryInfo } from '../expectedQueries'
+import type { SeedStats } from '../seedData'
 import './BenchmarkResults.css'
 
 interface BenchmarkResultsProps {
   run: BenchmarkRun | null
+  seedStats: SeedStats | null
 }
 
-export function BenchmarkResults({ run }: BenchmarkResultsProps) {
+const MATCH_LABELS = {
+  match: 'Matches expected',
+  close: 'Close to expected',
+  off: 'Differs from expected',
+  unknown: 'Seed data needed for numeric estimate',
+} as const
+
+export function BenchmarkResults({ run, seedStats }: BenchmarkResultsProps) {
   if (!run) return null
+
+  const expected = getExpectedQueryInfo(run.endpointId, seedStats)
+  const comparison =
+    run.avgSqlQueries !== null
+      ? compareActualToExpected(run.avgSqlQueries, run.endpointId, seedStats)
+      : { status: 'unknown' as const, expected: null }
 
   return (
     <div className="benchmark-results">
@@ -48,6 +64,23 @@ export function BenchmarkResults({ run }: BenchmarkResultsProps) {
             </strong>
           </div>
         ) : null}
+      </div>
+
+      <div className={`expected-queries expected-${comparison.status}`}>
+        <strong>Expected query count</strong>
+        <p className="expected-formula">
+          <code>{expected.formula}</code>
+          {expected.estimateLabel ? <> → {expected.estimateLabel}</> : null}
+        </p>
+        <p className="expected-detail">{expected.explanation}</p>
+        {run.avgSqlQueries !== null && comparison.expected !== null ? (
+          <p className="expected-compare">
+            Observed avg <strong>{run.avgSqlQueries.toFixed(0)}</strong> vs expected{' '}
+            <strong>{comparison.expected}</strong> — {MATCH_LABELS[comparison.status]}
+          </p>
+        ) : (
+          <p className="expected-compare">{MATCH_LABELS[comparison.status]}</p>
+        )}
       </div>
 
       <p className="results-hint">

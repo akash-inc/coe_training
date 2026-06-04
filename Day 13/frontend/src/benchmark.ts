@@ -8,6 +8,7 @@ export interface ClientResult {
 }
 
 export interface BenchmarkRun {
+  endpointId: string
   endpointPath: string
   endpointLabel: string
   clientCount: number
@@ -83,6 +84,7 @@ function summarizeSqlQueries(results: ClientResult[]) {
 }
 
 async function runParallelClientsOnce(
+  endpointId: string,
   path: string,
   label: string,
   clientCount: number,
@@ -99,6 +101,7 @@ async function runParallelClientsOnce(
   const sqlSummary = summarizeSqlQueries(results)
 
   return {
+    endpointId,
     endpointPath: path,
     endpointLabel: label,
     clientCount,
@@ -114,6 +117,7 @@ async function runParallelClientsOnce(
 }
 
 export async function runParallelClients(
+  endpointId: string,
   path: string,
   label: string,
   clientCount: number,
@@ -121,7 +125,7 @@ export async function runParallelClients(
 ): Promise<BenchmarkRun> {
   const withWarmup = options.warmup ?? true
   if (withWarmup) {
-    await runParallelClientsOnce(path, label, clientCount)
+    await runParallelClientsOnce(endpointId, path, label, clientCount)
   }
-  return runParallelClientsOnce(path, label, clientCount)
+  return runParallelClientsOnce(endpointId, path, label, clientCount)
 }
