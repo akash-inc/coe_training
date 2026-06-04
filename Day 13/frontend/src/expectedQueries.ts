@@ -80,6 +80,18 @@ export function getExpectedQueryInfo(
         'One grouped query: LEFT JOIN enrollments and COUNT in a single pass.',
       )
 
+    case 'db-unpooled':
+      return formulaOnly(
+        '≈ 1 SQL · new connection each request',
+        'NullPool opens and closes a TCP connection per request — high overhead under concurrency.',
+      )
+
+    case 'db-pooled':
+      return formulaOnly(
+        '≈ 1 SQL · pooled connection',
+        'QueuePool reuses connections (pool_size + overflow). Parallel clients share the pool instead of handshaking every time.',
+      )
+
     default:
       return formulaOnly('—', 'No estimate for this endpoint.')
   }

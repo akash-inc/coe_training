@@ -8,7 +8,8 @@ A FastAPI + SQLAlchemy API for students, courses, and enrollments, with a Vite +
 - Eager loading strategies: `joinedload`, `selectinload`, `subqueryload`
 - Correlated subquery vs `JOIN` + `GROUP BY` (see [docs/course-enrollment-counts-slow-explain.md](docs/course-enrollment-counts-slow-explain.md))
 - Bulk seed and bulk update endpoints
-- Connection pooling under concurrent requests (`DB_POOL_SIZE`, `DB_MAX_OVERFLOW`)
+- Connection pooling: `NullPool` vs `QueuePool` benchmark endpoints
+- Pool tuning via `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`
 - PostgreSQL-only persistence with SQL echo controlled by environment
 
 ## Project structure
@@ -78,7 +79,7 @@ npm run dev
 
 - UI: `http://127.0.0.1:5173` (proxies API routes to port 8000)
 
-In the UI: use **Seed large (50 courses × 200 enrollments)** for visible N+1 / subquery pain, set parallel clients (try 10+), then run benchmarks (each run **warms up once**, then records the second). Responses include **`X-Sql-Queries`**. Set `DATABASE_ECHO=true` in `.env` to see the actual SQL.
+In the UI: use **Seed large** for N+1 / report demos, or skip seed for **Unpooled vs connection pool** (right = optimized QueuePool). Set parallel clients above `DB_POOL_SIZE` (default 5) to see pool queueing. Each benchmark **warms up once**, then records the second run. Responses include **`X-Sql-Queries`** and **`X-Db-Pool-Mode`**.
 
 ## Run (production-style, single server)
 
@@ -146,6 +147,9 @@ python -m pytest
 | GET | `/courses-with-students-subquery` | `subqueryload` demo |
 | GET | `/report/course-enrollment-counts-slow` | Correlated subquery demo |
 | GET | `/report/course-enrollment-counts` | Optimized `JOIN` + `GROUP BY` |
+| GET | `/health/pool` | QueuePool status (checked in/out, overflow) |
+| GET | `/benchmark/db-ping-unpooled` | `SELECT 1` via NullPool (new connection per request) |
+| GET | `/benchmark/db-ping-pooled` | `SELECT 1` via shared QueuePool |
 
 ## Troubleshooting
 

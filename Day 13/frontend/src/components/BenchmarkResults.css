@@ -44,6 +44,10 @@
   color: #1d3557;
 }
 
+.stat-pool strong {
+  color: #457b9d;
+}
+
 .results-hint {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;

@@ -64,6 +64,22 @@ export function BenchmarkResults({ run, seedStats }: BenchmarkResultsProps) {
             </strong>
           </div>
         ) : null}
+        {run.results[0]?.poolMode ? (
+          <div className="stat stat-pool">
+            <span className="stat-label">Pool mode</span>
+            <strong>{run.results[0].poolMode}</strong>
+          </div>
+        ) : null}
+        {run.results[0]?.poolMode === 'pooled' &&
+        run.results[0]?.poolCheckedOut !== null &&
+        run.results[0]?.poolSize !== null ? (
+          <div className="stat stat-pool">
+            <span className="stat-label">Pool checkout (sample)</span>
+            <strong>
+              {run.results[0].poolCheckedOut} / {run.results[0].poolSize} checked out
+            </strong>
+          </div>
+        ) : null}
       </div>
 
       <div className={`expected-queries expected-${comparison.status}`}>

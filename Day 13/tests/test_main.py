@@ -67,6 +67,31 @@ def test_naive_endpoint_runs_more_sql_than_selectin(client, populate_payload):
     assert naive_sql > selectin_sql
 
 
+def test_health_pool_returns_status(client):
+    response = client.get("/health/pool")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pool_class"] == "QueuePool"
+    assert "pool_size" in body
+    assert "checked_out" in body
+
+
+def test_benchmark_db_ping_pooled_uses_queue_pool(client):
+    response = client.get("/benchmark/db-ping-pooled")
+    assert response.status_code == 200
+    assert response.headers["X-Db-Pool-Mode"] == "pooled"
+    assert response.json()["mode"] == "pooled"
+    assert response.json()["pool"]["pool_class"] == "QueuePool"
+
+
+def test_benchmark_db_ping_unpooled_uses_null_pool(client):
+    response = client.get("/benchmark/db-ping-unpooled")
+    assert response.status_code == 200
+    assert response.headers["X-Db-Pool-Mode"] == "unpooled"
+    assert response.json()["mode"] == "unpooled"
+    assert response.json()["pool"]["pool_class"] == "NullPool"
+
+
 def test_courses_with_students_selectin(client, populate_payload):
     client.post("/populate-all", json=populate_payload)
 

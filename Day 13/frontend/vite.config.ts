@@ -16,6 +16,9 @@ const apiRoutes = [
   '/courses-with-students-subquery',
   '/report/course-enrollment-counts-slow',
   '/report/course-enrollment-counts',
+  '/benchmark/db-ping-pooled',
+  '/benchmark/db-ping-unpooled',
+  '/health/pool',
 ]
 
 export default defineConfig({

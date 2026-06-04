@@ -16,8 +16,15 @@ from schemas import (
     StudentCreate,
     StudentResponse,
 )
-from database import Base, engine, get_db
-from middleware import SQL_QUERY_COUNT_HEADER, SqlQueryCountMiddleware
+from database import (
+    Base,
+    engine,
+    get_db,
+    get_db_unpooled,
+    get_pool_status,
+    ping_database,
+)
+from middleware import EXPOSED_HEADERS, SqlQueryCountMiddleware
 from models import Student, Course, Enrollment
 
 app = FastAPI(title="School Management System")
@@ -33,7 +40,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=[SQL_QUERY_COUNT_HEADER],
+    expose_headers=EXPOSED_HEADERS,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -127,6 +134,38 @@ def _build_courses_with_students_response(courses: list[Course]) -> list[dict]:
 @app.get("/health")
 def health():
     return {"message": "Hello, World!"}
+
+
+@app.get("/health/pool")
+def health_pool():
+    return get_pool_status()
+
+
+@app.get("/benchmark/db-ping-pooled")
+def benchmark_db_ping_pooled(db: Session = Depends(get_db)):
+    ping_database(db)
+    return {
+        "mode": "pooled",
+        "description": "Shared QueuePool — connections are checked out and returned",
+        "pool": get_pool_status(),
+    }
+
+
+@app.get("/benchmark/db-ping-unpooled")
+def benchmark_db_ping_unpooled(db: Session = Depends(get_db_unpooled)):
+    ping_database(db)
+    return {
+        "mode": "unpooled",
+        "description": "NullPool — opens a new TCP connection per request",
+        "pool": {
+            "pool_class": "NullPool",
+            "pool_size": 0,
+            "checked_out": 0,
+            "checked_in": 0,
+            "overflow": 0,
+            "total_connections": 0,
+        },
+    }
 
 @app.get("/students", response_model=list[StudentResponse])
 def get_students(db: Session = Depends(get_db)):

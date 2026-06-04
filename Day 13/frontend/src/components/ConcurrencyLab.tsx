@@ -194,8 +194,9 @@ export function ConcurrencyLab() {
           </p>
         )}
         <p className="tip">
-          Use the <strong>large seed</strong> before comparing naive vs selectinload or slow vs
-          optimized reports. Set <code>DATABASE_ECHO=true</code> to watch SQL in the API terminal.
+          Use the <strong>large seed</strong> for query-strategy compares. For{' '}
+          <strong>Unpooled vs connection pool</strong>, no seed is needed — set parallel clients
+          above <code>DB_POOL_SIZE</code> (default 5) so the right (pooled) side reuses connections.
         </p>
       </section>
 
@@ -224,6 +225,13 @@ export function ConcurrencyLab() {
               </optgroup>
               <optgroup label="SQL reports">
                 {BENCHMARK_ENDPOINTS.filter((e) => e.group === 'report').map((endpoint) => (
+                  <option key={endpoint.id} value={endpoint.id}>
+                    {endpoint.label}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Connection pool">
+                {BENCHMARK_ENDPOINTS.filter((e) => e.group === 'pool').map((endpoint) => (
                   <option key={endpoint.id} value={endpoint.id}>
                     {endpoint.label}
                   </option>
@@ -263,6 +271,22 @@ export function ConcurrencyLab() {
       {leftCompare && rightCompare ? (
         <section className="panel">
           <h2>Comparison (recorded runs)</h2>
+          {(() => {
+            const preset = COMPARE_PRESETS.find(
+              (item) =>
+                item.left === leftCompare.endpointId && item.right === rightCompare.endpointId,
+            )
+            return preset ? (
+              <p className="compare-captions">
+                <span>
+                  <strong>Left:</strong> {preset.leftCaption}
+                </span>
+                <span>
+                  <strong>Right (optimized):</strong> {preset.rightCaption}
+                </span>
+              </p>
+            ) : null
+          })()}
           <div className="compare-grid">
             <BenchmarkResults run={leftCompare} seedStats={seedStats} />
             <BenchmarkResults run={rightCompare} seedStats={seedStats} />

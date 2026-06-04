@@ -87,6 +87,7 @@ def db_session(test_engine) -> Generator[CountingSession, None, None]:
 def client(db_session: CountingSession) -> Generator[TestClient, None, None]:
     def override_get_db(request: Request):
         bind_request_to_session(db_session, request)
+        request.state.db_pool_mode = "pooled"
         try:
             yield db_session
         finally:

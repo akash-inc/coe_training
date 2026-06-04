@@ -2,6 +2,9 @@ export interface ClientResult {
   clientId: number
   durationMs: number
   sqlQueries: number | null
+  poolMode: string | null
+  poolCheckedOut: number | null
+  poolSize: number | null
   ok: boolean
   status: number
   error?: string
@@ -36,12 +39,19 @@ async function fetchOneClient(clientId: number, path: string): Promise<ClientRes
   try {
     const response = await fetch(path)
     const durationMs = performance.now() - started
+    const poolMode = response.headers.get('X-Db-Pool-Mode')
+    const poolCheckedOut = parseHeaderInt(response.headers.get('X-Pool-Checked-Out'))
+    const poolSize = parseHeaderInt(response.headers.get('X-Pool-Size'))
+
     if (!response.ok) {
       const body = await response.text()
       return {
         clientId,
         durationMs,
         sqlQueries: parseSqlQueryCount(response),
+        poolMode,
+        poolCheckedOut,
+        poolSize,
         ok: false,
         status: response.status,
         error: body || response.statusText,
@@ -52,6 +62,9 @@ async function fetchOneClient(clientId: number, path: string): Promise<ClientRes
       clientId,
       durationMs,
       sqlQueries: parseSqlQueryCount(response),
+      poolMode,
+      poolCheckedOut,
+      poolSize,
       ok: true,
       status: response.status,
     }
@@ -60,11 +73,20 @@ async function fetchOneClient(clientId: number, path: string): Promise<ClientRes
       clientId,
       durationMs: performance.now() - started,
       sqlQueries: null,
+      poolMode: null,
+      poolCheckedOut: null,
+      poolSize: null,
       ok: false,
       status: 0,
       error: error instanceof Error ? error.message : 'Request failed',
     }
   }
+}
+
+function parseHeaderInt(value: string | null): number | null {
+  if (value === null) return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 function summarizeSqlQueries(results: ClientResult[]) {

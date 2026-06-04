@@ -35,6 +35,19 @@
   color: var(--muted);
 }
 
+.compare-captions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.compare-captions strong {
+  color: var(--text);
+}
+
 .controls-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

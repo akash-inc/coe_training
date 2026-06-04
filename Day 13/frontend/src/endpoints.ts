@@ -1,4 +1,4 @@
-export type EndpointGroup = 'loading' | 'report'
+export type EndpointGroup = 'loading' | 'report' | 'pool'
 
 export interface BenchmarkEndpoint {
   id: string
@@ -6,6 +6,15 @@ export interface BenchmarkEndpoint {
   path: string
   group: EndpointGroup
   description: string
+}
+
+export interface ComparePreset {
+  id: string
+  label: string
+  left: string
+  right: string
+  leftCaption: string
+  rightCaption: string
 }
 
 export const BENCHMARK_ENDPOINTS: BenchmarkEndpoint[] = [
@@ -51,19 +60,45 @@ export const BENCHMARK_ENDPOINTS: BenchmarkEndpoint[] = [
     group: 'report',
     description: 'Hash aggregate over one join',
   },
+  {
+    id: 'db-unpooled',
+    label: 'DB ping (unpooled)',
+    path: '/benchmark/db-ping-unpooled',
+    group: 'pool',
+    description: 'NullPool — new connection per request',
+  },
+  {
+    id: 'db-pooled',
+    label: 'DB ping (pooled)',
+    path: '/benchmark/db-ping-pooled',
+    group: 'pool',
+    description: 'QueuePool — reuse connections from the pool',
+  },
 ]
 
-export const COMPARE_PRESETS = [
+export const COMPARE_PRESETS: ComparePreset[] = [
   {
     id: 'loading',
     label: 'Naive vs Selectinload',
     left: 'naive',
     right: 'selectin',
+    leftCaption: 'Unoptimized ORM (N+1 queries)',
+    rightCaption: 'Optimized loading (batched queries)',
   },
   {
     id: 'report',
     label: 'Slow vs optimized report',
     left: 'report-slow',
     right: 'report-fast',
+    leftCaption: 'Correlated subquery per course',
+    rightCaption: 'JOIN + GROUP BY aggregate',
   },
-] as const
+  {
+    id: 'pool',
+    label: 'Unpooled vs connection pool',
+    left: 'db-unpooled',
+    right: 'db-pooled',
+    leftCaption: 'NullPool — new TCP connection each request',
+    rightCaption: 'QueuePool — shared pool, checkout & return',
+  },
+]
