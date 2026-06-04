@@ -191,6 +191,47 @@ export function OrmVsRawLab() {
           </div>
         </section>
       ) : null}
+
+      <section className="panel explanation-panel">
+        <h2>Why is SQLAlchemy often faster here?</h2>
+        <p>
+          This lab is not proof that ORMs beat raw SQL in general. Both sides send the{' '}
+          <strong>same SQL</strong> to PostgreSQL, so the database does the same work. When the left
+          side wins under parallel clients, it is usually for reasons visible in this setup:
+        </p>
+        <ul>
+          <li>
+            <strong>Connection pooling on the left.</strong> The SQLAlchemy route uses{' '}
+            <code>get_db</code> and a shared <code>QueuePool</code> — each request checks out an
+            existing TCP connection and returns it. The raw route calls{' '}
+            <code>psycopg.connect()</code> per request and closes it when done, paying handshake and
+            auth on every parallel client.
+          </li>
+          <li>
+            <strong>Not full ORM loading.</strong> The left path uses <code>Session.execute(text(...))</code>{' '}
+            and row mappings, not <code>db.query(Course)</code> with relationship traversal. ORM
+            object hydration overhead is minimal here; you are mostly comparing pool reuse vs
+            connect-per-request.
+          </li>
+          <li>
+            <strong>Concurrency amplifies connection cost.</strong> With many browser clients at
+            once, time spent opening sockets often dominates a single cheap <code>SELECT</code>. That
+            is why the gap grows when you raise parallel clients — not because the raw SQL plan is
+            worse.
+          </li>
+          <li>
+            <strong>Same query count.</strong> Both sides should show <code>X-Sql-Queries: 1</code>.
+            A faster left side means lower overhead around the query, not fewer round-trips to the
+            database.
+          </li>
+        </ul>
+        <p className="tip">
+          Raw SQL can match or beat this path once you add a connection pool (see the{' '}
+          <strong>Query lab</strong> pool compare) or use a long-lived connection. Use ORM/SQLAlchemy
+          for models and relationship loading; use raw SQL where you want explicit control — and
+          always pool connections in production APIs.
+        </p>
+      </section>
     </div>
   )
 }
