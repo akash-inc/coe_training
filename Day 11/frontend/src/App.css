@@ -23,7 +23,18 @@
 
 .header-nav {
   display: flex;
+  align-items: center;
   gap: 1rem;
+}
+
+.auth-layout {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-panel {
+  width: min(100%, 28rem);
 }
 
 .header-nav a {

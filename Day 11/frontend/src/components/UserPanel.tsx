@@ -12,15 +12,17 @@ interface UserPanelProps {
 export function UserPanel({ users, onCreated, onError }: UserPanelProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setSubmitting(true)
     try {
-      await createUser({ name, email })
+      await createUser({ name, email, password })
       setName('')
       setEmail('')
+      setPassword('')
       await onCreated()
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to create user')
@@ -56,6 +58,17 @@ export function UserPanel({ users, onCreated, onError }: UserPanelProps) {
             required
             minLength={3}
             maxLength={255}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            maxLength={128}
           />
         </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>

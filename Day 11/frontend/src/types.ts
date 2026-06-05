@@ -25,10 +25,15 @@ export interface TaskCreatePayload {
   status: TaskStatus
   priority: number
   due_date: string | null
-  user_id: number
 }
 
 export interface UserCreatePayload {
   name: string
   email: string
+  password: string
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
 }

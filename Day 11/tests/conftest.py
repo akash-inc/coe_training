@@ -92,8 +92,12 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture
 def user_payload_factory():
-    def _make(name: str = "Akash", email: str = "akash@example.com") -> dict:
-        return {"name": name, "email": email}
+    def _make(
+        name: str = "Akash",
+        email: str = "akash@example.com",
+        password: str = "secret123",
+    ) -> dict:
+        return {"name": name, "email": email, "password": password}
 
     return _make
 
@@ -101,7 +105,6 @@ def user_payload_factory():
 @pytest.fixture
 def task_payload_factory():
     def _make(
-        user_id: int,
         title: str = "Learn pytest",
         description: str = "Write tests",
         status: str = "open",
@@ -113,10 +116,36 @@ def task_payload_factory():
             "description": description,
             "status": status,
             "priority": priority,
-            "user_id": user_id,
         }
         if due_date is not None:
             payload["due_date"] = due_date
         return payload
 
     return _make
+
+
+async def register_user(client: AsyncClient, user_payload_factory, **overrides) -> dict:
+    payload = user_payload_factory(**overrides)
+    response = await client.post("/users", json=payload)
+    assert response.status_code == 201
+    return response.json()
+
+
+async def login_user(
+    client: AsyncClient,
+    email: str = "akash@example.com",
+    password: str = "secret123",
+) -> str:
+    response = await client.post(
+        "/token",
+        data={"username": email, "password": password},
+    )
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest_asyncio.fixture
+async def auth_headers(client, user_payload_factory) -> dict[str, str]:
+    await register_user(client, user_payload_factory)
+    token = await login_user(client)
+    return {"Authorization": f"Bearer {token}"}

@@ -5,7 +5,7 @@ import { TaskEditDialog } from './TaskEditDialog'
 import './TaskPanel.css'
 
 interface TaskPanelProps {
-  users: User[]
+  currentUser: User
   tasks: Task[]
   onChanged: () => Promise<void>
   onError: (message: string) => void
@@ -21,7 +21,7 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString()
 }
 
-export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskPanelProps) {
+export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }: TaskPanelProps) {
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [form, setForm] = useState({
@@ -29,15 +29,9 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
     description: '',
     status: 'open' as TaskStatus,
     priority: 3,
-    user_id: '',
     due_date: '',
   })
   const [submitting, setSubmitting] = useState(false)
-
-  const userById = useMemo(
-    () => new Map(users.map((user) => [user.id, user.name])),
-    [users],
-  )
 
   const visibleTasks = useMemo(() => {
     if (!statusFilter) return tasks
@@ -46,10 +40,6 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
 
   async function handleCreate(event: FormEvent) {
     event.preventDefault()
-    if (!form.user_id) {
-      onError('Select a user for the task')
-      return
-    }
 
     setSubmitting(true)
     const payload: TaskCreatePayload = {
@@ -57,7 +47,6 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
       description: form.description,
       status: form.status,
       priority: form.priority,
-      user_id: Number(form.user_id),
       due_date: form.due_date || null,
     }
 
@@ -68,7 +57,6 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
         description: '',
         status: 'open',
         priority: 3,
-        user_id: '',
         due_date: '',
       })
       onSuccess('Task created')
@@ -138,21 +126,6 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
           />
         </label>
         <label>
-          Owner
-          <select
-            value={form.user_id}
-            onChange={(e) => setForm((prev) => ({ ...prev, user_id: e.target.value }))}
-            required
-          >
-            <option value="">Select user…</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
           Status
           <select
             value={form.status}
@@ -193,8 +166,8 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
             onChange={(e) => setForm((prev) => ({ ...prev, due_date: e.target.value }))}
           />
         </label>
-        <button type="submit" className="btn btn-primary" disabled={submitting || users.length === 0}>
-          {submitting ? 'Adding…' : 'Add task'}
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {submitting ? 'Adding…' : `Add task for ${currentUser.name}`}
         </button>
       </form>
 
@@ -227,7 +200,7 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
               <div className="task-meta">
                 <span className={`chip status-${task.status}`}>{formatStatus(task.status)}</span>
                 <span className="chip">Priority {task.priority}</span>
-                <span className="chip">{userById.get(task.user_id) ?? `User #${task.user_id}`}</span>
+                <span className="chip">{currentUser.name}</span>
                 <span className="chip">Due {formatDate(task.due_date)}</span>
               </div>
               <div className="quick-status">
@@ -250,7 +223,6 @@ export function TaskPanel({ users, tasks, onChanged, onError, onSuccess }: TaskP
 
       <TaskEditDialog
         task={editingTask}
-        users={users}
         onClose={() => setEditingTask(null)}
         onSaved={async () => {
           onSuccess('Task updated')

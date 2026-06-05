@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { replaceTask } from '../api'
-import type { Task, TaskCreatePayload, TaskStatus, User } from '../types'
+import type { Task, TaskCreatePayload, TaskStatus } from '../types'
 import './TaskEditDialog.css'
 
 interface TaskEditDialogProps {
   task: Task | null
-  users: User[]
   onClose: () => void
   onSaved: () => Promise<void>
   onError: (message: string) => void
@@ -16,11 +15,10 @@ const emptyForm = {
   description: '',
   status: 'open' as TaskStatus,
   priority: 3,
-  user_id: '',
   due_date: '',
 }
 
-export function TaskEditDialog({ task, users, onClose, onSaved, onError }: TaskEditDialogProps) {
+export function TaskEditDialog({ task, onClose, onSaved, onError }: TaskEditDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [form, setForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
@@ -35,7 +33,6 @@ export function TaskEditDialog({ task, users, onClose, onSaved, onError }: TaskE
       description: task.description,
       status: task.status,
       priority: task.priority,
-      user_id: String(task.user_id),
       due_date: task.due_date ?? '',
     })
     dialogRef.current?.showModal()
@@ -51,7 +48,6 @@ export function TaskEditDialog({ task, users, onClose, onSaved, onError }: TaskE
       description: form.description,
       status: form.status,
       priority: form.priority,
-      user_id: Number(form.user_id),
       due_date: form.due_date || null,
     }
 
@@ -94,20 +90,6 @@ export function TaskEditDialog({ task, users, onClose, onSaved, onError }: TaskE
               minLength={1}
               maxLength={255}
             />
-          </label>
-          <label>
-            Owner
-            <select
-              value={form.user_id}
-              onChange={(e) => setForm((prev) => ({ ...prev, user_id: e.target.value }))}
-              required
-            >
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
           </label>
           <label>
             Status

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from auth import hash_password
 from models import Task, User
 from repositories import SqlAlchemyTaskRepository, SqlAlchemyUserRepository
 
@@ -14,6 +15,7 @@ async def test_user_create_rolls_back_on_integrity_error_and_recovers(db_session
     first_user = User(
         name="Akash One",
         email="akash@example.com",
+        password_hash=hash_password("secret123"),
         created_at=datetime.now(timezone.utc),
     )
     await user_repository.create(first_user)
@@ -21,6 +23,7 @@ async def test_user_create_rolls_back_on_integrity_error_and_recovers(db_session
     duplicate_user = User(
         name="Akash Duplicate",
         email="akash@example.com",
+        password_hash=hash_password("secret123"),
         created_at=datetime.now(timezone.utc),
     )
     with pytest.raises(IntegrityError):
@@ -29,6 +32,7 @@ async def test_user_create_rolls_back_on_integrity_error_and_recovers(db_session
     recovered_user = User(
         name="Akash Two",
         email="akash2@example.com",
+        password_hash=hash_password("secret123"),
         created_at=datetime.now(timezone.utc),
     )
     created_user = await user_repository.create(recovered_user)
@@ -61,6 +65,7 @@ async def test_task_create_rolls_back_on_fk_error_and_recovers(db_session):
         User(
             name="Task Owner",
             email="owner@example.com",
+            password_hash=hash_password("secret123"),
             created_at=datetime.now(timezone.utc),
         )
     )
@@ -91,6 +96,7 @@ async def test_task_replace_rolls_back_on_fk_error_and_keeps_original_state(db_s
         User(
             name="Owner",
             email="replace-owner@example.com",
+            password_hash=hash_password("secret123"),
             created_at=datetime.now(timezone.utc),
         )
     )

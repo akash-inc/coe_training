@@ -18,6 +18,11 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_email(self, email: str) -> Optional[User]:
+        """Get a user by email"""
+        pass
+
+    @abstractmethod
     async def create(self, user: User) -> User:
         """Create a new user"""
         pass
@@ -26,6 +31,11 @@ class TaskRepository(ABC):
     @abstractmethod
     async def list_all(self) -> list[Task]:
         """List all tasks"""
+        pass
+
+    @abstractmethod
+    async def list_by_user_id(self, user_id: int) -> list[Task]:
+        """List tasks owned by a user"""
         pass
 
     @abstractmethod
@@ -76,6 +86,11 @@ class SqlAlchemyUserRepository(UserRepository):
         user = result.scalar_one_or_none()
         return user
 
+    async def get_by_email(self, email: str) -> Optional[User]:
+        result = await self.session.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        return user
+
     async def create(self, user: User) -> User:
         self.session.add(user)
         await self._commit_and_refresh(user)
@@ -96,6 +111,11 @@ class SqlAlchemyTaskRepository(TaskRepository):
 
     async def list_all(self) -> list[Task]:
         result = await self.session.execute(select(Task))
+        tasks = result.scalars().all()
+        return list(tasks)
+
+    async def list_by_user_id(self, user_id: int) -> list[Task]:
+        result = await self.session.execute(select(Task).where(Task.user_id == user_id))
         tasks = result.scalars().all()
         return list(tasks)
 

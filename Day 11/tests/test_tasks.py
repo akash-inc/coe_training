@@ -1,25 +1,27 @@
 import pytest
 
+from tests.conftest import login_user, register_user
 
-async def _create_user_for_task_tests(client, user_payload_factory):
-    response = await client.post("/users", json=user_payload_factory())
-    assert response.status_code == 201
+
+async def _current_user(client, auth_headers):
+    response = await client.get("/me", headers=auth_headers)
+    assert response.status_code == 200
     return response.json()
 
 
 @pytest.mark.asyncio
-async def test_get_tasks_returns_empty_list(client):
-    response = await client.get("/tasks")
+async def test_get_tasks_returns_empty_list(client, auth_headers):
+    response = await client.get("/tasks", headers=auth_headers)
     assert response.status_code == 200
     assert response.json() == []
 
 
 @pytest.mark.asyncio
-async def test_post_tasks_creates_task(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    payload = task_payload_factory(user_id=user["id"])
+async def test_post_tasks_creates_task(client, task_payload_factory, auth_headers):
+    user = await _current_user(client, auth_headers)
+    payload = task_payload_factory()
 
-    response = await client.post("/tasks", json=payload)
+    response = await client.post("/tasks", json=payload, headers=auth_headers)
     assert response.status_code == 201
 
     data = response.json()
@@ -31,45 +33,35 @@ async def test_post_tasks_creates_task(client, user_payload_factory, task_payloa
 
 
 @pytest.mark.asyncio
-async def test_post_tasks_returns_404_when_user_not_found(client, task_payload_factory):
-    payload = task_payload_factory(user_id=9999)
-    response = await client.post("/tasks", json=payload)
-
-    assert response.status_code == 404
-    assert response.json()["detail"] == "User not found"
-
-
-@pytest.mark.asyncio
-async def test_get_task_by_id_returns_task(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
+async def test_get_task_by_id_returns_task(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    created = await client.post("/tasks", json=task_payload_factory(), headers=auth_headers)
     task_id = created.json()["id"]
 
-    response = await client.get(f"/tasks/{task_id}")
+    response = await client.get(f"/tasks/{task_id}", headers=auth_headers)
     assert response.status_code == 200
     assert response.json()["id"] == task_id
 
 
 @pytest.mark.asyncio
-async def test_get_task_by_id_returns_404_when_missing(client):
-    response = await client.get("/tasks/9999")
+async def test_get_task_by_id_returns_404_when_missing(client, auth_headers):
+    response = await client.get("/tasks/9999", headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"
 
 
 @pytest.mark.asyncio
-async def test_put_task_replaces_existing_task(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
+async def test_put_task_replaces_existing_task(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    created = await client.post("/tasks", json=task_payload_factory(), headers=auth_headers)
     task_id = created.json()["id"]
 
     payload = task_payload_factory(
-        user_id=user["id"],
         title="Replaced title",
         status="in_progress",
         priority=5,
     )
-    response = await client.put(f"/tasks/{task_id}", json=payload)
+    response = await client.put(f"/tasks/{task_id}", json=payload, headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
@@ -80,109 +72,102 @@ async def test_put_task_replaces_existing_task(client, user_payload_factory, tas
 
 
 @pytest.mark.asyncio
-async def test_patch_task_updates_only_provided_fields(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
+async def test_patch_task_updates_only_provided_fields(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    created = await client.post("/tasks", json=task_payload_factory(), headers=auth_headers)
     task_id = created.json()["id"]
 
     patch_payload = {"status": "done"}
-    response = await client.patch(f"/tasks/{task_id}", json=patch_payload)
+    response = await client.patch(f"/tasks/{task_id}", json=patch_payload, headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "done"
-    # unchanged field check
     assert data["title"] == "Learn pytest"
 
 
 @pytest.mark.asyncio
-async def test_delete_task_removes_task(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
+async def test_delete_task_removes_task(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    created = await client.post("/tasks", json=task_payload_factory(), headers=auth_headers)
     task_id = created.json()["id"]
 
-    delete_response = await client.delete(f"/tasks/{task_id}")
+    delete_response = await client.delete(f"/tasks/{task_id}", headers=auth_headers)
     assert delete_response.status_code == 204
 
-    get_response = await client.get(f"/tasks/{task_id}")
+    get_response = await client.get(f"/tasks/{task_id}", headers=auth_headers)
     assert get_response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_post_tasks_returns_422_for_invalid_priority(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    payload = task_payload_factory(user_id=user["id"], priority=10)  # max allowed is 5
+async def test_post_tasks_returns_422_for_invalid_priority(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    payload = task_payload_factory(priority=10)
 
-    response = await client.post("/tasks", json=payload)
+    response = await client.post("/tasks", json=payload, headers=auth_headers)
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_put_task_returns_404_when_missing(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    payload = task_payload_factory(user_id=user["id"])
+async def test_put_task_returns_404_when_missing(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    payload = task_payload_factory()
 
-    response = await client.put("/tasks/9999", json=payload)
+    response = await client.put("/tasks/9999", json=payload, headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"
 
 
 @pytest.mark.asyncio
-async def test_patch_task_returns_404_when_missing(client):
-    response = await client.patch("/tasks/9999", json={"status": "done"})
+async def test_patch_task_returns_404_when_missing(client, auth_headers):
+    response = await client.patch("/tasks/9999", json={"status": "done"}, headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"
 
 
 @pytest.mark.asyncio
-async def test_delete_task_returns_404_when_missing(client):
-    response = await client.delete("/tasks/9999")
+async def test_delete_task_returns_404_when_missing(client, auth_headers):
+    response = await client.delete("/tasks/9999", headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"
 
 
 @pytest.mark.asyncio
-async def test_post_tasks_returns_422_for_invalid_status(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    payload = task_payload_factory(user_id=user["id"], status="invalid_status")
+async def test_post_tasks_returns_422_for_invalid_status(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    payload = task_payload_factory(status="invalid_status")
 
-    response = await client.post("/tasks", json=payload)
+    response = await client.post("/tasks", json=payload, headers=auth_headers)
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_patch_task_returns_422_for_invalid_status(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
+async def test_patch_task_returns_422_for_invalid_status(client, task_payload_factory, auth_headers):
+    await _current_user(client, auth_headers)
+    created = await client.post("/tasks", json=task_payload_factory(), headers=auth_headers)
     task_id = created.json()["id"]
 
-    response = await client.patch(f"/tasks/{task_id}", json={"status": "invalid_status"})
+    response = await client.patch(f"/tasks/{task_id}", json={"status": "invalid_status"}, headers=auth_headers)
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_post_tasks_returns_422_for_non_positive_user_id(client, task_payload_factory):
-    payload = task_payload_factory(user_id=0)
-    response = await client.post("/tasks", json=payload)
-    assert response.status_code == 422
+async def test_user_cannot_access_another_users_task(client, user_payload_factory, task_payload_factory):
+    await register_user(client, user_payload_factory, email="owner@example.com")
+    owner_token = await login_user(client, email="owner@example.com")
+    owner_headers = {"Authorization": f"Bearer {owner_token}"}
 
-
-@pytest.mark.asyncio
-async def test_put_task_returns_422_for_non_positive_user_id(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
+    created = await client.post("/tasks", json=task_payload_factory(), headers=owner_headers)
     task_id = created.json()["id"]
 
-    payload = task_payload_factory(user_id=-1)
-    response = await client.put(f"/tasks/{task_id}", json=payload)
-    assert response.status_code == 422
+    await register_user(
+        client,
+        user_payload_factory,
+        name="Other",
+        email="other@example.com",
+    )
+    other_token = await login_user(client, email="other@example.com")
+    other_headers = {"Authorization": f"Bearer {other_token}"}
 
-
-@pytest.mark.asyncio
-async def test_patch_task_returns_422_for_non_positive_user_id(client, user_payload_factory, task_payload_factory):
-    user = await _create_user_for_task_tests(client, user_payload_factory)
-    created = await client.post("/tasks", json=task_payload_factory(user_id=user["id"]))
-    task_id = created.json()["id"]
-
-    response = await client.patch(f"/tasks/{task_id}", json={"user_id": 0})
-    assert response.status_code == 422
+    response = await client.get(f"/tasks/{task_id}", headers=other_headers)
+    assert response.status_code == 403
