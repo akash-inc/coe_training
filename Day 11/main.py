@@ -66,6 +66,18 @@ class Token(BaseModel):
     token_type: str
 
 
+class TaskCounts(BaseModel):
+    total: int
+    open: int
+    in_progress: int
+    done: int
+
+
+class DashboardOut(BaseModel):
+    user: UserOut
+    task_counts: TaskCounts
+
+
 class TaskOut(BaseModel):
     id: int
     title: str
@@ -140,6 +152,23 @@ async def login(
 @app.get("/me", response_model=UserOut)
 async def read_current_user(current_user: UserModel = Depends(get_current_user)):
     return current_user
+
+
+@app.get("/dashboard", response_model=DashboardOut)
+async def read_dashboard(
+    current_user: UserModel = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+):
+    tasks = await task_repository.list_by_user_id(current_user.id)
+    counts = TaskCounts(total=len(tasks), open=0, in_progress=0, done=0)
+    for task in tasks:
+        if task.status == "open":
+            counts.open += 1
+        elif task.status == "in_progress":
+            counts.in_progress += 1
+        elif task.status == "done":
+            counts.done += 1
+    return DashboardOut(user=current_user, task_counts=counts)
 
 
 @app.get("/users", response_model=list[UserOut])

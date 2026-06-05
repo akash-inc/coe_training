@@ -95,7 +95,7 @@ def user_payload_factory():
     def _make(
         name: str = "Akash",
         email: str = "akash@example.com",
-        password: str = "secret123",
+        password: str = "Secret1a",
     ) -> dict:
         return {"name": name, "email": email, "password": password}
 
@@ -134,7 +134,7 @@ async def register_user(client: AsyncClient, user_payload_factory, **overrides) 
 async def login_user(
     client: AsyncClient,
     email: str = "akash@example.com",
-    password: str = "secret123",
+    password: str = "Secret1a",
 ) -> str:
     response = await client.post(
         "/token",

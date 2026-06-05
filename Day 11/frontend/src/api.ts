@@ -1,4 +1,5 @@
 import type {
+  Dashboard,
   Task,
   TaskCreatePayload,
   TokenResponse,
@@ -70,6 +71,10 @@ export function login(email: string, password: string): Promise<TokenResponse> {
 
 export function fetchCurrentUser(): Promise<User> {
   return request<User>('/me')
+}
+
+export function fetchDashboard(): Promise<Dashboard> {
+  return request<Dashboard>('/dashboard')
 }
 
 export function fetchUsers(): Promise<User[]> {

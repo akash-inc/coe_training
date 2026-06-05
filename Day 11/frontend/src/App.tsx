@@ -2,21 +2,38 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   clearStoredToken,
   createUser,
-  fetchCurrentUser,
+  fetchDashboard,
   fetchTasks,
   fetchUsers,
   getStoredToken,
   login,
   setStoredToken,
 } from './api'
-import { TaskPanel } from './components/TaskPanel'
+import { Dashboard } from './components/Dashboard'
 import { Toast } from './components/Toast'
-import { UserPanel } from './components/UserPanel'
-import type { Task, User } from './types'
+import type { Dashboard as DashboardData, Task, User } from './types'
 import './App.css'
 
+function usePathname() {
+  const [path, setPath] = useState(window.location.pathname)
+
+  useEffect(() => {
+    const onPopState = () => setPath(window.location.pathname)
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  const navigate = useCallback((to: string) => {
+    window.history.pushState({}, '', to)
+    setPath(to)
+  }, [])
+
+  return { path, navigate }
+}
+
 function App() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const { path, navigate } = usePathname()
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,32 +50,39 @@ function App() {
   }, [])
 
   const loadData = useCallback(async () => {
-    const [current, usersData, tasksData] = await Promise.all([
-      fetchCurrentUser(),
+    const [dashboardData, usersData, tasksData] = await Promise.all([
+      fetchDashboard(),
       fetchUsers(),
       fetchTasks(),
     ])
-    setCurrentUser(current)
+    setDashboard(dashboardData)
     setUsers(usersData)
     setTasks(tasksData)
   }, [])
 
   const bootstrap = useCallback(async () => {
     if (!getStoredToken()) {
+      if (path === '/dashboard') {
+        navigate('/')
+      }
       setLoading(false)
       return
     }
 
     try {
       await loadData()
+      if (path !== '/dashboard') {
+        navigate('/dashboard')
+      }
     } catch (error) {
       clearStoredToken()
-      setCurrentUser(null)
+      setDashboard(null)
+      navigate('/')
       showToast(error instanceof Error ? error.message : 'Session expired', true)
     } finally {
       setLoading(false)
     }
-  }, [loadData, showToast])
+  }, [loadData, navigate, path, showToast])
 
   useEffect(() => {
     bootstrap()
@@ -76,6 +100,7 @@ function App() {
       setName('')
       setPassword('')
       await loadData()
+      navigate('/dashboard')
       showToast(authMode === 'register' ? 'Account created' : 'Logged in')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Authentication failed', true)
@@ -86,19 +111,20 @@ function App() {
 
   function handleLogout() {
     clearStoredToken()
-    setCurrentUser(null)
+    setDashboard(null)
     setUsers([])
     setTasks([])
     setEmail('')
     setPassword('')
     setName('')
+    navigate('/')
   }
 
   if (loading) {
     return <p className="loading">Loading…</p>
   }
 
-  if (!currentUser) {
+  if (!dashboard || path !== '/dashboard') {
     return (
       <>
         <header className="site-header">
@@ -174,7 +200,7 @@ function App() {
       <header className="site-header">
         <div className="header-inner">
           <h1>Task Manager</h1>
-          <p className="tagline">Signed in as {currentUser.name}</p>
+          <p className="tagline">Signed in as {dashboard.user.name}</p>
         </div>
         <nav className="header-nav">
           <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noopener noreferrer">
@@ -191,20 +217,14 @@ function App() {
 
       <Toast message={toast.message} isError={toast.isError} />
 
-      <main className="layout">
-        <UserPanel
-          users={users}
-          onCreated={loadData}
-          onError={(message) => showToast(message, true)}
-        />
-        <TaskPanel
-          currentUser={currentUser}
-          tasks={tasks}
-          onChanged={loadData}
-          onError={(message) => showToast(message, true)}
-          onSuccess={showToast}
-        />
-      </main>
+      <Dashboard
+        dashboard={dashboard}
+        users={users}
+        tasks={tasks}
+        onChanged={loadData}
+        onError={(message) => showToast(message, true)}
+        onSuccess={showToast}
+      />
     </>
   )
 }

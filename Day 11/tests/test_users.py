@@ -26,7 +26,7 @@ async def test_create_user_success(client, user_payload_factory):
 
 @pytest.mark.asyncio
 async def test_create_user_validation_error(client):
-    payload = {"name": "", "email": "a@b.com", "password": "secret123"}
+    payload = {"name": "", "email": "a@b.com", "password": "Secret1a"}
     response = await client.post("/users", json=payload)
 
     assert response.status_code == 422

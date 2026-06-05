@@ -37,3 +37,15 @@ export interface TokenResponse {
   access_token: string
   token_type: string
 }
+
+export interface TaskCounts {
+  total: number
+  open: number
+  in_progress: number
+  done: number
+}
+
+export interface Dashboard {
+  user: User
+  task_counts: TaskCounts
+}

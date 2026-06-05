@@ -11,6 +11,14 @@ export default defineConfig({
       '/tasks': apiTarget,
       '/token': apiTarget,
       '/me': apiTarget,
+      '/dashboard': {
+        target: apiTarget,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/health': apiTarget,
     },
   },
