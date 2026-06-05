@@ -4,14 +4,13 @@ import {
   createUser,
   fetchDashboard,
   fetchTasks,
-  fetchUsers,
   getStoredToken,
   login,
   setStoredToken,
 } from './api'
 import { Dashboard } from './components/Dashboard'
 import { Toast } from './components/Toast'
-import type { Dashboard as DashboardData, Task, User } from './types'
+import type { Dashboard as DashboardData, Task } from './types'
 import './App.css'
 
 function usePathname() {
@@ -34,7 +33,6 @@ function usePathname() {
 function App() {
   const { path, navigate } = usePathname()
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
-  const [users, setUsers] = useState<User[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
@@ -50,13 +48,8 @@ function App() {
   }, [])
 
   const loadData = useCallback(async () => {
-    const [dashboardData, usersData, tasksData] = await Promise.all([
-      fetchDashboard(),
-      fetchUsers(),
-      fetchTasks(),
-    ])
+    const [dashboardData, tasksData] = await Promise.all([fetchDashboard(), fetchTasks()])
     setDashboard(dashboardData)
-    setUsers(usersData)
     setTasks(tasksData)
   }, [])
 
@@ -112,7 +105,6 @@ function App() {
   function handleLogout() {
     clearStoredToken()
     setDashboard(null)
-    setUsers([])
     setTasks([])
     setEmail('')
     setPassword('')
@@ -219,7 +211,6 @@ function App() {
 
       <Dashboard
         dashboard={dashboard}
-        users={users}
         tasks={tasks}
         onChanged={loadData}
         onError={(message) => showToast(message, true)}

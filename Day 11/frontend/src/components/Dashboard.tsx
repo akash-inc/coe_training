@@ -1,11 +1,9 @@
 import { TaskPanel } from './TaskPanel'
-import { UserPanel } from './UserPanel'
-import type { Dashboard, Task, User } from '../types'
+import type { Dashboard, Task } from '../types'
 import './Dashboard.css'
 
 interface DashboardProps {
   dashboard: Dashboard
-  users: User[]
   tasks: Task[]
   onChanged: () => Promise<void>
   onError: (message: string) => void
@@ -14,7 +12,6 @@ interface DashboardProps {
 
 export function Dashboard({
   dashboard,
-  users,
   tasks,
   onChanged,
   onError,
@@ -47,8 +44,7 @@ export function Dashboard({
         </div>
       </section>
 
-      <main className="layout">
-        <UserPanel users={users} onCreated={onChanged} onError={onError} />
+      <main className="dashboard-main">
         <TaskPanel
           currentUser={user}
           tasks={tasks}
