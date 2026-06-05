@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -11,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Task as TaskModel
 from models import User as UserModel
 
-from auth import create_access_token, get_current_user, hash_password, verify_password
+from auth import REFRESH_TOKEN_EXPIRE_DAYS, create_access_token, create_refresh_token, get_current_user, hash_password, verify_password
 from database import get_db
 from repositories import (
+    RefreshTokenRepository,
+    SqlAlchemyRefreshTokenRepository,
     SqlAlchemyTaskRepository,
     SqlAlchemyUserRepository,
     TaskRepository,
@@ -114,6 +116,9 @@ def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:
 def get_task_repository(db: AsyncSession = Depends(get_db)) -> TaskRepository:
     return SqlAlchemyTaskRepository(db)
 
+def get_refresh_token_repository(db: AsyncSession = Depends(get_db)) -> RefreshTokenRepository:
+    return SqlAlchemyRefreshTokenRepository(db)
+
 
 async def get_owned_task(
     task_id: int,
@@ -137,6 +142,7 @@ def healthcheck():
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_repository: UserRepository = Depends(get_user_repository),
+    db: AsyncSession = Depends(get_db),
 ):
     user = await user_repository.get_by_email(form_data.username)
     if user is None or not verify_password(form_data.password, user.password_hash):
@@ -145,6 +151,35 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    access_token = create_access_token({"sub": str(user.id)})
+
+    refresh_token = create_refresh_token()
+    expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    await SqlAlchemyRefreshTokenRepository(db).save_refresh_token(user.id, refresh_token, expires_at)
+    return {
+        "access_token": access_token, 
+        "refresh_token": refresh_token, 
+        "token_type": "bearer"
+    }
+
+@app.post("token/refresh", response_model=Token)
+async def refresh_token(
+    refresh_token: str,
+    refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
+    user_repository: UserRepository = Depends(get_user_repository)):
+    record = await refresh_token_repository.get_refresh_token(refresh_token)
+
+    if record is None:
+        raise HTTPException(status_code=401, detail="Invalid refresh token", headers={"WWW-Authenticate": "Bearer"})
+
+    if record.expires_at < datetime.now(timezone.utc):
+        await refresh_token_repository.delete_refresh_token(refresh_token)
+        raise HTTPException(status_code=401, detail="Expired refresh token", headers={"WWW-Authenticate": "Bearer"})
+
+    user = await user_repository.get_by_id(record.user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found", headers={"WWW-Authenticate": "Bearer"})
+
     access_token = create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 

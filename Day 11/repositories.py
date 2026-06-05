@@ -1,10 +1,32 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
-
+from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import User, Task
+from models import RefreshToken, User, Task
+
+class RefreshTokenRepository(ABC):
+    @abstractmethod
+    async def save_refresh_token(self, user_id: int, token: str, expires_at: datetime) -> None:
+        """Save a refresh token for a user"""
+        pass
+
+    @abstractmethod
+    async def get_refresh_token(self, token: str) -> Optional[RefreshToken]:
+        """Get a refresh token by token"""
+        pass
+
+    @abstractmethod
+    async def delete_refresh_token(self, token: str) -> None:
+        """Delete a refresh token by token"""
+        pass
+
+    @abstractmethod
+    async def delete_all_refresh_tokens_for_user(self, user_id: int) -> None:
+        """Delete all refresh tokens for a user"""
+        pass
+
 
 class UserRepository(ABC):
     @abstractmethod
@@ -166,3 +188,34 @@ class SqlAlchemyTaskRepository(TaskRepository):
         except SQLAlchemyError:
             await self.session.rollback()
             raise
+
+class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def save_refresh_token(self, user_id: int, token: str, expires_at: datetime) -> None:
+        refresh_token = RefreshToken(user_id=user_id, token=token, expires_at=expires_at)
+        self.session.add(refresh_token)
+        await self.session.commit()
+
+    async def get_refresh_token(self, token: str) -> Optional[RefreshToken]:
+        result = await self.session.execute(select(RefreshToken).where(RefreshToken.token == token))
+        refresh_token = result.scalar_one_or_none()
+        return refresh_token
+
+    async def delete_refresh_token(self, token: str) -> None:
+        refresh_token = await self.get_refresh_token(token)
+        if refresh_token is None:
+            raise ValueError(f"Refresh token with token {token} not found")
+        await self.session.delete(refresh_token)
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise
+
+    async def delete_all_refresh_tokens_for_user(self, user_id: int) -> None:
+        result = await self.session.execute(select(RefreshToken).where(RefreshToken.user_id == user_id))
+        refresh_tokens = result.scalars().all()
+        for refresh_token in refresh_tokens:
+            await self.session.delete(refresh_token)

@@ -1,5 +1,6 @@
 import os
 import bcrypt
+import secrets
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException
@@ -11,7 +12,8 @@ from repositories import SqlAlchemyUserRepository
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-change-secret-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -20,6 +22,9 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
+
+def create_refresh_token() -> str:
+    return secrets.token_urlsafe(32)
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
