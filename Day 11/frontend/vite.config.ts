@@ -9,6 +9,8 @@ export default defineConfig({
     proxy: {
       '/users': apiTarget,
       '/tasks': apiTarget,
+      '/token': apiTarget,
+      '/me': apiTarget,
       '/health': apiTarget,
     },
   },
