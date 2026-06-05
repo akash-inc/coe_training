@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Task as TaskModel
 from models import User as UserModel
@@ -38,8 +38,20 @@ app.add_middleware(
 class UserCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     email: str = Field(min_length=3, max_length=255)
-    password: str = Field(min_length=6, max_length=128, pattern=r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$")
+    password: str = Field(min_length=8, max_length=128)
 
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, password: str) -> str:
+        if not any(c.islower() for c in password):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(c.isupper() for c in password):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.isdigit() for c in password):
+            raise ValueError("Password must contain at least one number")
+        if not any(c.isalnum() for c in password):
+            raise ValueError("Password must contain at least one alphanumeric character")
+        return password
 
 class UserOut(BaseModel):
     id: int
