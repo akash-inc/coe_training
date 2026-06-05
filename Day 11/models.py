@@ -29,3 +29,12 @@ class Task(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     owner: Mapped["User"] = relationship("User", back_populates="tasks")
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String(255), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
