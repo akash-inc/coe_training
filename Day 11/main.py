@@ -183,6 +183,14 @@ async def refresh_token(
     access_token = create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.post("/logout", status_code=204)
+async def logout(
+    refresh_token: str,
+    refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
+):
+    await refresh_token_repository.delete_refresh_token(refresh_token)
+    return Response(status_code=204)
+
 
 @app.get("/me", response_model=UserOut)
 async def read_current_user(current_user: UserModel = Depends(get_current_user)):
