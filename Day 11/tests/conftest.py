@@ -70,12 +70,16 @@ async def engine(migrated_test_db):
 async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     Session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with Session() as session:
-        await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
+        await session.execute(
+            text("TRUNCATE TABLE refresh_tokens, tasks, users RESTART IDENTITY CASCADE")
+        )
         await session.commit()
 
         yield session
 
-        await session.execute(text("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE"))
+        await session.execute(
+            text("TRUNCATE TABLE refresh_tokens, tasks, users RESTART IDENTITY CASCADE")
+        )
         await session.commit()
 
 
