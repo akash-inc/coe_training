@@ -1,11 +1,13 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { createTask, deleteTask, patchTask } from '../api'
+import { hasPermission } from '../permissions'
 import type { Task, TaskCreatePayload, TaskStatus, User } from '../types'
 import { TaskEditDialog } from './TaskEditDialog'
 import './TaskPanel.css'
 
 interface TaskPanelProps {
   currentUser: User
+  taskOwner: User
   tasks: Task[]
   onChanged: () => Promise<void>
   onError: (message: string) => void
@@ -21,7 +23,17 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString()
 }
 
-export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }: TaskPanelProps) {
+export function TaskPanel({
+  currentUser,
+  taskOwner,
+  tasks,
+  onChanged,
+  onError,
+  onSuccess,
+}: TaskPanelProps) {
+  const canWriteTasks = hasPermission(currentUser.role, 'tasks:write')
+  const canDeleteTasks = hasPermission(currentUser.role, 'tasks:delete')
+  const viewingOtherUser = taskOwner.id !== currentUser.id
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [form, setForm] = useState({
@@ -48,6 +60,9 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
       status: form.status,
       priority: form.priority,
       due_date: form.due_date || null,
+    }
+    if (viewingOtherUser) {
+      payload.user_id = taskOwner.id
     }
 
     try {
@@ -92,7 +107,9 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
   return (
     <section className="panel panel-wide" aria-labelledby="tasks-heading">
       <div className="panel-head">
-        <h2 id="tasks-heading">Tasks</h2>
+        <h2 id="tasks-heading">
+          {viewingOtherUser ? `${taskOwner.name}'s tasks` : 'Tasks'}
+        </h2>
         <span className="badge">{visibleTasks.length}</span>
       </div>
 
@@ -114,6 +131,11 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
         </button>
       </div>
 
+      {!canWriteTasks && (
+        <p className="readonly-banner">View-only access: you can browse tasks but not change them.</p>
+      )}
+
+      {canWriteTasks && (
       <form className="form-grid form-grid-task" onSubmit={handleCreate}>
         <label>
           Title
@@ -167,9 +189,10 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
           />
         </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Adding…' : `Add task for ${currentUser.name}`}
+          {submitting ? 'Adding…' : `Add task for ${taskOwner.name}`}
         </button>
       </form>
+      )}
 
       <div className="task-cards">
         {visibleTasks.length === 0 ? (
@@ -180,29 +203,33 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
               <div className="task-card-head">
                 <h3>{task.title}</h3>
                 <div className="task-actions">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => setEditingTask(task)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(task.id)}
-                  >
-                    Delete
-                  </button>
+                  {canWriteTasks && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => setEditingTask(task)}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {canDeleteTasks && (
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => handleDelete(task.id)}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
               <p className="task-desc">{task.description || 'No description'}</p>
               <div className="task-meta">
                 <span className={`chip status-${task.status}`}>{formatStatus(task.status)}</span>
                 <span className="chip">Priority {task.priority}</span>
-                <span className="chip">{currentUser.name}</span>
                 <span className="chip">Due {formatDate(task.due_date)}</span>
               </div>
+              {canWriteTasks && (
               <div className="quick-status">
                 {(['open', 'in_progress', 'done'] as TaskStatus[]).map((status) => (
                   <button
@@ -216,11 +243,13 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
                   </button>
                 ))}
               </div>
+              )}
             </article>
           ))
         )}
       </div>
 
+      {canWriteTasks && (
       <TaskEditDialog
         task={editingTask}
         onClose={() => setEditingTask(null)}
@@ -230,6 +259,7 @@ export function TaskPanel({ currentUser, tasks, onChanged, onError, onSuccess }:
         }}
         onError={onError}
       />
+      )}
     </section>
   )
 }

@@ -4,6 +4,7 @@ import {
   createUser,
   fetchDashboard,
   fetchTasks,
+  fetchUsers,
   getStoredAccessToken,
   getStoredRefreshToken,
   login,
@@ -12,7 +13,8 @@ import {
 } from './api'
 import { Dashboard } from './components/Dashboard'
 import { Toast } from './components/Toast'
-import type { Dashboard as DashboardData, Task } from './types'
+import { formatRole, hasPermission, isAdmin } from './permissions'
+import type { Dashboard as DashboardData, Task, User } from './types'
 import './App.css'
 
 function usePathname() {
@@ -36,6 +38,7 @@ function App() {
   const { path, navigate } = usePathname()
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -49,11 +52,34 @@ function App() {
     window.setTimeout(() => setToast({ message: '', isError: false }), 4000)
   }, [])
 
-  const loadData = useCallback(async () => {
-    const [dashboardData, tasksData] = await Promise.all([fetchDashboard(), fetchTasks()])
+  const loadData = useCallback(async (taskUserId?: number) => {
+    const dashboardData = await fetchDashboard()
     setDashboard(dashboardData)
+
+    const effectiveUserId = taskUserId ?? dashboardData.user.id
+    const tasksData = await fetchTasks(
+      isAdmin(dashboardData.user.role) ? effectiveUserId : undefined,
+    )
     setTasks(tasksData)
+
+    if (hasPermission(dashboardData.user.role, 'users:read')) {
+      setUsers(await fetchUsers())
+    } else {
+      setUsers([])
+    }
   }, [])
+
+  const reloadTasksForUser = useCallback(
+    async (taskUserId: number) => {
+      if (!dashboard) return
+      const tasksData = await fetchTasks(isAdmin(dashboard.user.role) ? taskUserId : undefined)
+      setTasks(tasksData)
+      if (taskUserId === dashboard.user.id) {
+        setDashboard(await fetchDashboard())
+      }
+    },
+    [dashboard],
+  )
 
   const bootstrap = useCallback(async () => {
     const hasRefresh = getStoredRefreshToken()
@@ -108,6 +134,7 @@ function App() {
     await logout()
     setDashboard(null)
     setTasks([])
+    setUsers([])
     setEmail('')
     setPassword('')
     setName('')
@@ -194,7 +221,9 @@ function App() {
       <header className="site-header">
         <div className="header-inner">
           <h1>Task Manager</h1>
-          <p className="tagline">Signed in as {dashboard.user.name}</p>
+          <p className="tagline">
+            Signed in as {dashboard.user.name} ({formatRole(dashboard.user.role)})
+          </p>
         </div>
         <nav className="header-nav">
           <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noopener noreferrer">
@@ -214,6 +243,8 @@ function App() {
       <Dashboard
         dashboard={dashboard}
         tasks={tasks}
+        users={users}
+        onReload={reloadTasksForUser}
         onChanged={loadData}
         onError={(message) => showToast(message, true)}
         onSuccess={showToast}

@@ -144,8 +144,9 @@ export function createUser(payload: UserCreatePayload): Promise<User> {
   return request<User>('/users', { method: 'POST', body: JSON.stringify(payload) })
 }
 
-export function fetchTasks(): Promise<Task[]> {
-  return request<Task[]>('/tasks')
+export function fetchTasks(userId?: number): Promise<Task[]> {
+  const query = userId !== undefined ? `?user_id=${userId}` : ''
+  return request<Task[]>(`/tasks${query}`)
 }
 
 export function createTask(payload: TaskCreatePayload): Promise<Task> {
@@ -165,4 +166,8 @@ export function patchTask(
 
 export function deleteTask(taskId: number): Promise<void> {
   return request<void>(`/tasks/${taskId}`, { method: 'DELETE' })
+}
+
+export function deleteUser(userId: number): Promise<void> {
+  return request<void>(`/users/${userId}`, { method: 'DELETE' })
 }

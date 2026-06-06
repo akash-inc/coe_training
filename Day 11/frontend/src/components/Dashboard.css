@@ -13,6 +13,41 @@
   margin: 0 0 1rem;
   color: var(--muted);
   font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-welcome .role-chip {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dashboard-welcome .role-admin {
+  background: #fde8e8;
+  color: #9b2226;
+}
+
+.dashboard-welcome .role-editor {
+  background: #e8f4fd;
+  color: #1d4e89;
+}
+
+.dashboard-welcome .role-viewer {
+  background: #eef1ea;
+  color: #52796f;
+}
+
+.dashboard-context {
+  margin: -0.5rem 0 1rem;
+  color: var(--accent);
+  font-size: 0.9rem;
 }
 
 .stat-grid {
@@ -46,4 +81,16 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.25rem 1.5rem 2rem;
+}
+
+.dashboard-main.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-main.layout {
+    grid-template-columns: 1fr;
+  }
 }

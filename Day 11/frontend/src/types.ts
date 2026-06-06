@@ -4,6 +4,7 @@ export interface User {
   id: number
   name: string
   email: string
+  role: string
   created_at: string
 }
 
@@ -25,6 +26,7 @@ export interface TaskCreatePayload {
   status: TaskStatus
   priority: number
   due_date: string | null
+  user_id?: number
 }
 
 export interface UserCreatePayload {

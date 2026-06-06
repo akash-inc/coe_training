@@ -1,33 +1,41 @@
-import { useState, type FormEvent } from 'react'
-import { createUser } from '../api'
+import { deleteUser } from '../api'
+import { formatRole, hasPermission, isAdmin } from '../permissions'
 import type { User } from '../types'
 import './UserPanel.css'
 
 interface UserPanelProps {
+  currentUser: User
   users: User[]
-  onCreated: () => Promise<void>
+  selectedUserId: number
+  onSelectUser: (user: User) => void
+  onChanged: () => Promise<void>
   onError: (message: string) => void
+  onSuccess: (message: string) => void
 }
 
-export function UserPanel({ users, onCreated, onError }: UserPanelProps) {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+export function UserPanel({
+  currentUser,
+  users,
+  selectedUserId,
+  onSelectUser,
+  onChanged,
+  onError,
+  onSuccess,
+}: UserPanelProps) {
+  const canDeleteUsers = hasPermission(currentUser.role, 'users:delete')
+  const canSelectUsers = isAdmin(currentUser.role)
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    setSubmitting(true)
+  async function handleDelete(user: User, event: React.MouseEvent) {
+    event.stopPropagation()
+    if (user.id === currentUser.id) return
+    if (!confirm(`Delete ${user.name}? This removes their tasks and sessions.`)) return
+
     try {
-      await createUser({ name, email, password })
-      setName('')
-      setEmail('')
-      setPassword('')
-      await onCreated()
+      await deleteUser(user.id)
+      onSuccess(`${user.name} deleted`)
+      await onChanged()
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Failed to create user')
-    } finally {
-      setSubmitting(false)
+      onError(error instanceof Error ? error.message : 'Failed to delete user')
     }
   }
 
@@ -38,54 +46,58 @@ export function UserPanel({ users, onCreated, onError }: UserPanelProps) {
         <span className="badge">{users.length}</span>
       </div>
 
-      <form className="form-grid" onSubmit={handleSubmit}>
-        <label>
-          Name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            minLength={1}
-            maxLength={255}
-          />
-        </label>
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            minLength={3}
-            maxLength={255}
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            maxLength={128}
-          />
-        </label>
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Adding…' : 'Add user'}
-        </button>
-      </form>
+      <p className="user-panel-hint">
+        {canSelectUsers
+          ? 'Select a user to view and manage their tasks.'
+          : canDeleteUsers
+            ? 'Admins can remove other accounts.'
+            : 'Team directory (read-only).'}
+      </p>
 
       <ul className="item-list">
         {users.length === 0 ? (
-          <li className="empty-state">No users yet. Add one above.</li>
+          <li className="empty-state">No users found.</li>
         ) : (
-          users.map((user) => (
-            <li key={user.id}>
-              <strong>{user.name}</strong>
-              <span>{user.email}</span>
-            </li>
-          ))
+          users.map((user) => {
+            const isSelected = canSelectUsers && user.id === selectedUserId
+            const rowClass = `user-row${isSelected ? ' user-row-selected' : ''}${canSelectUsers ? ' user-row-clickable' : ''}`
+
+            const content = (
+              <>
+                <div className="user-row-main">
+                  <strong>{user.name}</strong>
+                  <span>{user.email}</span>
+                  <span className={`role-chip role-${user.role}`}>{formatRole(user.role)}</span>
+                </div>
+                {canDeleteUsers && user.id !== currentUser.id && (
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={(event) => handleDelete(user, event)}
+                  >
+                    Delete
+                  </button>
+                )}
+              </>
+            )
+
+            return (
+              <li key={user.id} className={rowClass}>
+                {canSelectUsers ? (
+                  <button
+                    type="button"
+                    className="user-row-button"
+                    aria-pressed={isSelected}
+                    onClick={() => onSelectUser(user)}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  content
+                )}
+              </li>
+            )
+          })
         )}
       </ul>
     </section>

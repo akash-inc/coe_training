@@ -24,6 +24,15 @@
   }
 }
 
+.readonly-banner {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #eef1ea;
+  color: #52796f;
+  font-size: 0.85rem;
+}
+
 .task-cards {
   display: flex;
   flex-direction: column;
