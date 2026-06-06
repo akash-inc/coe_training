@@ -73,6 +73,34 @@ async def test_refresh_token_rejects_invalid_token(client):
 
 
 @pytest.mark.asyncio
+async def test_login_revokes_previous_refresh_tokens(client, user_payload_factory, db_session):
+    first = await _login_tokens(client, user_payload_factory)
+
+    second_response = await client.post(
+        "/token",
+        data={"username": "akash@example.com", "password": "Secret1a"},
+    )
+    assert second_response.status_code == 200
+    second = second_response.json()
+    assert first["refresh_token"] != second["refresh_token"]
+
+    old_refresh = await client.post(
+        "/token/refresh",
+        json={"refresh_token": first["refresh_token"]},
+    )
+    assert old_refresh.status_code == 401
+
+    new_refresh = await client.post(
+        "/token/refresh",
+        json={"refresh_token": second["refresh_token"]},
+    )
+    assert new_refresh.status_code == 200
+
+    result = await db_session.execute(select(RefreshToken))
+    assert len(result.scalars().all()) == 1
+
+
+@pytest.mark.asyncio
 async def test_logout_revokes_refresh_token(client, user_payload_factory):
     data = await _login_tokens(client, user_payload_factory)
 
