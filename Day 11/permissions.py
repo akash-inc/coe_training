@@ -27,10 +27,15 @@ ROLE_PERMISSIONS: dict[str, Set[str]] = {
 }
 
 DEFAULT_ROLE = "editor"
+ADMIN_ROLE = "admin"
 
 
 def get_permissions(role: str) -> Set[str]:
     return ROLE_PERMISSIONS.get(role, set())
+
+
+def is_admin(role: str) -> bool:
+    return role == ADMIN_ROLE
 
 
 def require_permission(permission: str):

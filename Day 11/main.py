@@ -13,7 +13,7 @@ from models import User as UserModel
 
 from auth import REFRESH_TOKEN_EXPIRE_DAYS, create_access_token, create_refresh_token, get_current_user, hash_password, verify_password
 from database import get_db
-from permissions import DEFAULT_ROLE, require_permission
+from permissions import DEFAULT_ROLE, is_admin, require_permission
 from repositories import (
     RefreshTokenRepository,
     SqlAlchemyRefreshTokenRepository,
@@ -104,6 +104,7 @@ class TaskCreate(BaseModel):
     status: str = Field(default="open", pattern="^(open|in_progress|done)$")
     priority: int = Field(default=1, ge=1, le=5)
     due_date: Optional[date] = None
+    user_id: Optional[int] = None
 
 
 class TaskUpdate(BaseModel):
@@ -125,7 +126,7 @@ def get_refresh_token_repository(db: AsyncSession = Depends(get_db)) -> RefreshT
     return SqlAlchemyRefreshTokenRepository(db)
 
 
-async def get_owned_task(
+async def get_accessible_task(
     task_id: int,
     current_user: UserModel = Depends(get_current_user),
     task_repository: TaskRepository = Depends(get_task_repository),
@@ -133,9 +134,24 @@ async def get_owned_task(
     task = await task_repository.get_by_id(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    if task.user_id != current_user.id:
+    if not is_admin(current_user.role) and task.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this task")
     return task
+
+
+async def _resolve_task_owner_id(
+    requested_user_id: int | None,
+    current_user: UserModel,
+    user_repository: UserRepository,
+) -> int:
+    if requested_user_id is None:
+        return current_user.id
+    if not is_admin(current_user.role):
+        raise HTTPException(status_code=403, detail="Not authorized to assign tasks to other users")
+    target_user = await user_repository.get_by_id(requested_user_id)
+    if target_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return requested_user_id
 
 
 @app.get("/health")
@@ -271,10 +287,22 @@ async def delete_user(
 
 @app.get("/tasks", response_model=list[TaskOut])
 async def read_tasks(
+    user_id: Optional[int] = None,
     current_user: UserModel = Depends(require_permission("tasks:read")),
     task_repository: TaskRepository = Depends(get_task_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
-    return await task_repository.list_by_user_id(current_user.id)
+    if user_id is None:
+        return await task_repository.list_by_user_id(current_user.id)
+
+    if not is_admin(current_user.role):
+        raise HTTPException(status_code=403, detail="Not authorized to view other users' tasks")
+
+    target_user = await user_repository.get_by_id(user_id)
+    if target_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return await task_repository.list_by_user_id(user_id)
 
 
 @app.post("/tasks", response_model=TaskOut, status_code=201)
@@ -282,7 +310,9 @@ async def create_task(
     payload: TaskCreate,
     current_user: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
+    owner_id = await _resolve_task_owner_id(payload.user_id, current_user, user_repository)
     now = datetime.now(timezone.utc)
     task = TaskModel(
         title=payload.title,
@@ -290,7 +320,7 @@ async def create_task(
         status=payload.status,
         priority=payload.priority,
         due_date=payload.due_date,
-        user_id=current_user.id,
+        user_id=owner_id,
         created_at=now,
         updated_at=now,
     )
@@ -299,7 +329,7 @@ async def create_task(
 
 @app.get("/tasks/{task_id}", response_model=TaskOut)
 async def read_task(
-    task: TaskModel = Depends(get_owned_task),
+    task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:read")),
 ):
     return task
@@ -308,7 +338,7 @@ async def read_task(
 @app.put("/tasks/{task_id}", response_model=TaskOut)
 async def replace_task(
     payload: TaskCreate,
-    task: TaskModel = Depends(get_owned_task),
+    task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
@@ -321,7 +351,7 @@ async def replace_task(
 @app.patch("/tasks/{task_id}", response_model=TaskOut)
 async def patch_task(
     payload: TaskUpdate,
-    task: TaskModel = Depends(get_owned_task),
+    task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
@@ -332,7 +362,7 @@ async def patch_task(
 
 @app.delete("/tasks/{task_id}", status_code=204)
 async def delete_task(
-    task: TaskModel = Depends(get_owned_task),
+    task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:delete")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
