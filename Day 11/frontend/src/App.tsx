@@ -21,6 +21,8 @@ import { formatRole, hasPermission, isAdmin } from './permissions'
 import type { Dashboard as DashboardData, Task, User } from './types'
 import './App.css'
 
+let githubCallbackCompletion: Promise<void> | null = null
+
 function usePathname() {
   const [path, setPath] = useState(window.location.pathname)
 
@@ -92,9 +94,9 @@ function App() {
       setGithubCallback(true)
       const params = new URLSearchParams(window.location.search)
       const error = params.get('error')
-      window.history.replaceState({}, '', '/auth/callback')
 
       if (error) {
+        window.history.replaceState({}, '', '/auth/callback')
         clearStoredTokens()
         navigate('/')
         showToast(githubAuthErrorMessage(error, params.get('detail')), true)
@@ -105,8 +107,12 @@ function App() {
 
       const accessToken = params.get('access_token')
       const refreshToken = params.get('refresh_token')
-      if (!accessToken || !refreshToken) {
-        clearStoredTokens()
+
+      if (accessToken && refreshToken) {
+        setStoredTokens(accessToken, refreshToken)
+        window.history.replaceState({}, '', '/auth/callback')
+      } else if (!getStoredAccessToken() || !getStoredRefreshToken()) {
+        window.history.replaceState({}, '', '/auth/callback')
         navigate('/')
         showToast('GitHub sign-in failed', true)
         setGithubCallback(false)
@@ -115,10 +121,17 @@ function App() {
       }
 
       try {
-        setStoredTokens(accessToken, refreshToken)
-        await loadData()
-        navigate('/dashboard')
-        showToast('Logged in with GitHub')
+        if (!githubCallbackCompletion) {
+          githubCallbackCompletion = loadData()
+            .then(() => {
+              navigate('/dashboard')
+              showToast('Logged in with GitHub')
+            })
+            .finally(() => {
+              githubCallbackCompletion = null
+            })
+        }
+        await githubCallbackCompletion
       } catch {
         clearStoredTokens()
         navigate('/')
