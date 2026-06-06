@@ -97,7 +97,7 @@ function App() {
       if (error) {
         clearStoredTokens()
         navigate('/')
-        showToast(githubAuthErrorMessage(error), true)
+        showToast(githubAuthErrorMessage(error, params.get('detail')), true)
         setGithubCallback(false)
         setLoading(false)
         return

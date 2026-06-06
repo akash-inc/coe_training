@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
+import logging
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
@@ -39,6 +40,7 @@ from repositories import (
 
 app = FastAPI(title="Task Management API")
 FRONTEND_DIST = Path(__file__).resolve().parent / "frontend" / "dist"
+logger = logging.getLogger(__name__)
 
 _cors_origins = os.getenv("CORS_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173")
 CORS_ORIGINS = [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
@@ -222,8 +224,13 @@ async def github_callback(
         email = profile.get("email") or await fetch_github_primary_email(github_access_token)
         user = await resolve_user_from_github(profile, email, user_repository)
         tokens = await issue_tokens(user.id, refresh_token_repository)
-    except Exception:
-        return RedirectResponse(f"{FRONTEND_URL}/auth/callback?error=github_auth_failed", status_code=302)
+    except Exception as exc:
+        logger.exception("GitHub OAuth callback failed")
+        detail = str(exc).replace(" ", "_")[:120]
+        return RedirectResponse(
+            f"{FRONTEND_URL}/auth/callback?error=github_auth_failed&detail={detail}",
+            status_code=302,
+        )
 
     query = urlencode(
         {

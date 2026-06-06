@@ -1,10 +1,17 @@
+import logging
 import os
+from pathlib import Path
 from urllib.parse import urlencode
 
 import httpx
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 
 from auth import ALGORITHM, JWT_SECRET
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+logger = logging.getLogger(__name__)
 
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
@@ -17,6 +24,17 @@ GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"
 GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 GITHUB_USER_URL = "https://api.github.com/user"
 GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
+GITHUB_USER_AGENT = "Day11-TaskManager"
+
+
+def _github_headers(github_access_token: str | None = None) -> dict[str, str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": GITHUB_USER_AGENT,
+    }
+    if github_access_token:
+        headers["Authorization"] = f"Bearer {github_access_token}"
+    return headers
 
 
 def github_oauth_configured() -> bool:
@@ -54,7 +72,7 @@ async def exchange_github_code(code: str) -> str:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             GITHUB_TOKEN_URL,
-            headers={"Accept": "application/json"},
+            headers={"Accept": "application/json", "User-Agent": GITHUB_USER_AGENT},
             json={
                 "client_id": GITHUB_CLIENT_ID,
                 "client_secret": GITHUB_CLIENT_SECRET,
@@ -74,10 +92,7 @@ async def fetch_github_profile(github_access_token: str) -> dict:
     async with httpx.AsyncClient() as client:
         response = await client.get(
             GITHUB_USER_URL,
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {github_access_token}",
-            },
+            headers=_github_headers(github_access_token),
         )
         response.raise_for_status()
         return response.json()
@@ -87,10 +102,7 @@ async def fetch_github_primary_email(github_access_token: str) -> str | None:
     async with httpx.AsyncClient() as client:
         response = await client.get(
             GITHUB_EMAILS_URL,
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {github_access_token}",
-            },
+            headers=_github_headers(github_access_token),
         )
         response.raise_for_status()
         emails = response.json()
