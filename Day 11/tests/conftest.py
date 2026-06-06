@@ -135,6 +135,27 @@ async def register_user(client: AsyncClient, user_payload_factory, **overrides) 
     return response.json()
 
 
+async def set_user_role(db_session: AsyncSession, user_id: int, role: str) -> None:
+    await db_session.execute(
+        text("UPDATE users SET role = :role WHERE id = :id"),
+        {"role": role, "id": user_id},
+    )
+    await db_session.commit()
+
+
+async def auth_headers_for_role(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user_payload_factory,
+    role: str = "editor",
+    **overrides,
+) -> dict[str, str]:
+    user = await register_user(client, user_payload_factory, **overrides)
+    await set_user_role(db_session, user["id"], role)
+    token = await login_user(client, email=user["email"])
+    return {"Authorization": f"Bearer {token}"}
+
+
 async def login_user(
     client: AsyncClient,
     email: str = "akash@example.com",
