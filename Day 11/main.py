@@ -1,9 +1,12 @@
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlencode
+import os
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -11,8 +14,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Task as TaskModel
 from models import User as UserModel
 
-from auth import REFRESH_TOKEN_EXPIRE_DAYS, create_access_token, create_refresh_token, get_current_user, hash_password, verify_password
+from auth import create_access_token, get_current_user, hash_password, issue_tokens, verify_password
 from database import get_db
+from github_auth import resolve_user_from_github
+from github_oauth import (
+    FRONTEND_URL,
+    build_github_authorize_url,
+    create_github_oauth_state,
+    exchange_github_code,
+    fetch_github_primary_email,
+    fetch_github_profile,
+    github_oauth_configured,
+    verify_github_oauth_state,
+)
 from permissions import DEFAULT_ROLE, is_admin, require_permission
 from repositories import (
     RefreshTokenRepository,
@@ -26,12 +40,12 @@ from repositories import (
 app = FastAPI(title="Task Management API")
 FRONTEND_DIST = Path(__file__).resolve().parent / "frontend" / "dist"
 
+_cors_origins = os.getenv("CORS_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173")
+CORS_ORIGINS = [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +77,7 @@ class UserOut(BaseModel):
     name: str
     email: str
     role: str
+    github_id: str | None = None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
@@ -172,17 +187,52 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token({"sub": str(user.id)})
+    return await issue_tokens(user.id, refresh_token_repository)
 
-    await refresh_token_repository.delete_all_refresh_tokens_for_user(user.id)
-    refresh_token = create_refresh_token()
-    expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    await refresh_token_repository.save_refresh_token(user.id, refresh_token, expires_at)
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    }
+
+@app.get("/auth/github/enabled")
+def github_auth_enabled():
+    return {"enabled": github_oauth_configured()}
+
+
+@app.get("/auth/github/login")
+async def github_login():
+    if not github_oauth_configured():
+        raise HTTPException(status_code=503, detail="GitHub OAuth is not configured")
+    state = create_github_oauth_state()
+    return RedirectResponse(build_github_authorize_url(state), status_code=302)
+
+
+@app.get("/auth/github/callback")
+async def github_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    user_repository: UserRepository = Depends(get_user_repository),
+    refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
+):
+    if error:
+        return RedirectResponse(f"{FRONTEND_URL}/auth/callback?error={error}", status_code=302)
+    if not code or not state or not verify_github_oauth_state(state):
+        return RedirectResponse(f"{FRONTEND_URL}/auth/callback?error=invalid_oauth_state", status_code=302)
+
+    try:
+        github_access_token = await exchange_github_code(code)
+        profile = await fetch_github_profile(github_access_token)
+        email = profile.get("email") or await fetch_github_primary_email(github_access_token)
+        user = await resolve_user_from_github(profile, email, user_repository)
+        tokens = await issue_tokens(user.id, refresh_token_repository)
+    except Exception:
+        return RedirectResponse(f"{FRONTEND_URL}/auth/callback?error=github_auth_failed", status_code=302)
+
+    query = urlencode(
+        {
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "token_type": tokens["token_type"],
+        }
+    )
+    return RedirectResponse(f"{FRONTEND_URL}/auth/callback?{query}", status_code=302)
 
 
 @app.post("/token/refresh", response_model=Token)

@@ -45,6 +45,16 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_github_id(self, github_id: str) -> Optional[User]:
+        """Get a user by GitHub id"""
+        pass
+
+    @abstractmethod
+    async def link_github_id(self, user_id: int, github_id: str) -> User:
+        """Attach a GitHub id to an existing user"""
+        pass
+
+    @abstractmethod
     async def create(self, user: User) -> User:
         """Create a new user"""
         pass
@@ -116,6 +126,19 @@ class SqlAlchemyUserRepository(UserRepository):
     async def get_by_email(self, email: str) -> Optional[User]:
         result = await self.session.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
+        return user
+
+    async def get_by_github_id(self, github_id: str) -> Optional[User]:
+        result = await self.session.execute(select(User).where(User.github_id == github_id))
+        user = result.scalar_one_or_none()
+        return user
+
+    async def link_github_id(self, user_id: int, github_id: str) -> User:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise ValueError(f"User with id {user_id} not found")
+        user.github_id = github_id
+        await self._commit_and_refresh(user)
         return user
 
     async def create(self, user: User) -> User:
