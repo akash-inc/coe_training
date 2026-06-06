@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  clearStoredToken,
+  clearStoredTokens,
   createUser,
   fetchDashboard,
   fetchTasks,
-  getStoredToken,
+  getStoredAccessToken,
+  getStoredRefreshToken,
   login,
-  setStoredToken,
+  logout,
+  setStoredTokens,
 } from './api'
 import { Dashboard } from './components/Dashboard'
 import { Toast } from './components/Toast'
@@ -54,24 +56,23 @@ function App() {
   }, [])
 
   const bootstrap = useCallback(async () => {
-    if (!getStoredToken()) {
-      if (path === '/dashboard') {
-        navigate('/')
-      }
+    const hasRefresh = getStoredRefreshToken()
+    const hasAccess = getStoredAccessToken()
+  
+    if (!hasRefresh && !hasAccess) {
+      if (path === '/dashboard') navigate('/')
       setLoading(false)
       return
     }
-
+  
     try {
-      await loadData()
-      if (path !== '/dashboard') {
-        navigate('/dashboard')
-      }
-    } catch (error) {
-      clearStoredToken()
+      await loadData()  // request() will auto-refresh on 401
+      if (path !== '/dashboard') navigate('/dashboard')
+    } catch {
+      clearStoredTokens()
       setDashboard(null)
       navigate('/')
-      showToast(error instanceof Error ? error.message : 'Session expired', true)
+      showToast('Session expired', true)
     } finally {
       setLoading(false)
     }
@@ -89,7 +90,7 @@ function App() {
         await createUser({ name, email, password })
       }
       const tokenResponse = await login(email, password)
-      setStoredToken(tokenResponse.access_token)
+      setStoredTokens(tokenResponse.access_token, tokenResponse.refresh_token)
       setName('')
       setPassword('')
       await loadData()
@@ -102,8 +103,8 @@ function App() {
     }
   }
 
-  function handleLogout() {
-    clearStoredToken()
+  async function handleLogout() {
+    await logout()
     setDashboard(null)
     setTasks([])
     setEmail('')

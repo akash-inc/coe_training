@@ -1,5 +1,6 @@
 import type {
   Dashboard,
+  RefreshTokenResponse,
   Task,
   TaskCreatePayload,
   TokenResponse,
@@ -7,18 +8,31 @@ import type {
   UserCreatePayload,
 } from './types'
 
-const TOKEN_KEY = 'task_manager_token'
+const ACCESS_TOKEN_KEY = 'task_manager_access_token'
+const REFRESH_TOKEN_KEY = 'task_manager_refresh_token'
 
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+let refreshPromise: Promise<boolean> | null = null;
+
+export function getStoredAccessToken(): string | null {
+  return localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 
-export function setStoredToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token)
+export function getStoredRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY)
 }
 
-export function clearStoredToken(): void {
-  localStorage.removeItem(TOKEN_KEY)
+export function setStoredAccessToken(access: string): void {
+  localStorage.setItem(ACCESS_TOKEN_KEY, access)
+}
+
+export function setStoredTokens(access: string, refresh: string): void {
+  localStorage.setItem(ACCESS_TOKEN_KEY, access)
+  localStorage.setItem(REFRESH_TOKEN_KEY, refresh)
+}
+
+export function clearStoredTokens(): void {
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
 async function parseError(response: Response): Promise<string> {
@@ -29,8 +43,48 @@ async function parseError(response: Response): Promise<string> {
   return `Request failed (${response.status})`
 }
 
+export async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = getStoredRefreshToken()
+  if (!refreshToken) return false;
+  const response = await fetch('/token/refresh', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  })
+  if (!response.ok) return false;
+  const data = (await response.json()) as RefreshTokenResponse
+  setStoredAccessToken(data.access_token)
+  return true
+}
+
+async function refreshOnce(): Promise<boolean> {
+  if(!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getStoredToken()
+  const response = await sendRequest(path, options);
+
+  if (response.status === 401 && !path.startsWith('/token')) {
+    const refreshed = await refreshOnce();
+    if (refreshed) {
+      const retry = await sendRequest(path, options);
+      return handleResponse<T>(retry);
+    }
+    clearStoredTokens();
+    throw new Error('Session expired');
+  }
+  return handleResponse<T>(response);
+}
+
+async function sendRequest(path: string, options: RequestInit): Promise<Response> {
+  const token = getStoredAccessToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> | undefined),
@@ -38,20 +92,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (token) {
     headers.Authorization = `Bearer ${token}`
   }
-
-  const response = await fetch(path, {
-    ...options,
-    headers,
-  })
-
-  if (response.status === 204) {
-    return undefined as T
-  }
-
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-
+  return fetch(path, { ...options, headers })
+}
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) return undefined as T
+  if (!response.ok) throw new Error(await parseError(response))
   return response.json() as Promise<T>
 }
 
@@ -67,6 +112,20 @@ export function login(email: string, password: string): Promise<TokenResponse> {
     }
     return response.json() as Promise<TokenResponse>
   })
+}
+
+export async function logout(): Promise<void> {
+  const refresh = getStoredRefreshToken();
+  if (refresh) {
+    await fetch('/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refresh }),
+    }).catch(() => {});
+  }
+  clearStoredTokens();
 }
 
 export function fetchCurrentUser(): Promise<User> {

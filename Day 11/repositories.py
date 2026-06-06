@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -194,9 +194,18 @@ class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
         self.session = session
 
     async def save_refresh_token(self, user_id: int, token: str, expires_at: datetime) -> None:
-        refresh_token = RefreshToken(user_id=user_id, token=token, expires_at=expires_at)
+        refresh_token = RefreshToken(
+            user_id=user_id,
+            token=token,
+            expires_at=expires_at,
+            created_at=datetime.now(timezone.utc),
+        )
         self.session.add(refresh_token)
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise
 
     async def get_refresh_token(self, token: str) -> Optional[RefreshToken]:
         result = await self.session.execute(select(RefreshToken).where(RefreshToken.token == token))
@@ -206,7 +215,7 @@ class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
     async def delete_refresh_token(self, token: str) -> None:
         refresh_token = await self.get_refresh_token(token)
         if refresh_token is None:
-            raise ValueError(f"Refresh token with token {token} not found")
+            return
         await self.session.delete(refresh_token)
         try:
             await self.session.commit()

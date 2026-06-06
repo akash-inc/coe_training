@@ -36,6 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 class UserCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
@@ -66,6 +68,7 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    refresh_token: str | None = None
 
 
 class TaskCounts(BaseModel):
@@ -142,7 +145,7 @@ def healthcheck():
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_repository: UserRepository = Depends(get_user_repository),
-    db: AsyncSession = Depends(get_db),
+    refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
 ):
     user = await user_repository.get_by_email(form_data.username)
     if user is None or not verify_password(form_data.password, user.password_hash):
@@ -155,25 +158,27 @@ async def login(
 
     refresh_token = create_refresh_token()
     expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    await SqlAlchemyRefreshTokenRepository(db).save_refresh_token(user.id, refresh_token, expires_at)
+    await refresh_token_repository.save_refresh_token(user.id, refresh_token, expires_at)
     return {
-        "access_token": access_token, 
-        "refresh_token": refresh_token, 
-        "token_type": "bearer"
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
     }
 
-@app.post("token/refresh", response_model=Token)
-async def refresh_token(
-    refresh_token: str,
+
+@app.post("/token/refresh", response_model=Token)
+async def refresh_access_token(
+    payload: RefreshTokenRequest,
     refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
-    user_repository: UserRepository = Depends(get_user_repository)):
-    record = await refresh_token_repository.get_refresh_token(refresh_token)
+    user_repository: UserRepository = Depends(get_user_repository),
+):
+    record = await refresh_token_repository.get_refresh_token(payload.refresh_token)
 
     if record is None:
         raise HTTPException(status_code=401, detail="Invalid refresh token", headers={"WWW-Authenticate": "Bearer"})
 
     if record.expires_at < datetime.now(timezone.utc):
-        await refresh_token_repository.delete_refresh_token(refresh_token)
+        await refresh_token_repository.delete_refresh_token(payload.refresh_token)
         raise HTTPException(status_code=401, detail="Expired refresh token", headers={"WWW-Authenticate": "Bearer"})
 
     user = await user_repository.get_by_id(record.user_id)
@@ -183,12 +188,13 @@ async def refresh_token(
     access_token = create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @app.post("/logout", status_code=204)
 async def logout(
-    refresh_token: str,
+    payload: RefreshTokenRequest,
     refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
 ):
-    await refresh_token_repository.delete_refresh_token(refresh_token)
+    await refresh_token_repository.delete_refresh_token(payload.refresh_token)
     return Response(status_code=204)
 
 

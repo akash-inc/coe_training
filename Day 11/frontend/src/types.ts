@@ -35,6 +35,7 @@ export interface UserCreatePayload {
 
 export interface TokenResponse {
   access_token: string
+  refresh_token: string
   token_type: string
 }
 
@@ -48,4 +49,13 @@ export interface TaskCounts {
 export interface Dashboard {
   user: User
   task_counts: TaskCounts
+}
+
+export interface RefreshTokenResponse {
+  access_token: string
+  token_type: string
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string
 }
