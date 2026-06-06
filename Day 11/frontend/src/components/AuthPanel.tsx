@@ -1,33 +1,48 @@
+import { useState } from 'react'
+import { createUser, login, setStoredTokens } from '../api'
 import { GithubSignInButton } from './GithubSignInButton'
 import './AuthPanel.css'
 
 interface AuthPanelProps {
-  authMode: 'login' | 'register'
   githubAuthEnabled: boolean
-  name: string
-  email: string
-  password: string
-  submitting: boolean
-  onAuthModeChange: (mode: 'login' | 'register') => void
-  onNameChange: (value: string) => void
-  onEmailChange: (value: string) => void
-  onPasswordChange: (value: string) => void
-  onSubmit: (event: React.FormEvent) => void
+  onLoginSuccess: () => Promise<void>
+  onSuccess: (message: string) => void
+  onError: (message: string) => void
 }
 
 export function AuthPanel({
-  authMode,
   githubAuthEnabled,
-  name,
-  email,
-  password,
-  submitting,
-  onAuthModeChange,
-  onNameChange,
-  onEmailChange,
-  onPasswordChange,
-  onSubmit,
+  onLoginSuccess,
+  onSuccess,
+  onError,
 }: AuthPanelProps) {
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    setSubmitting(true)
+
+    try {
+      if (authMode === 'register') {
+        await createUser({ name, email, password })
+      }
+      const tokens = await login(email, password)
+      setStoredTokens(tokens.access_token, tokens.refresh_token)
+      setName('')
+      setPassword('')
+      await onLoginSuccess()
+      onSuccess(authMode === 'register' ? 'Account created' : 'Logged in')
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Authentication failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const githubLabel = authMode === 'login' ? 'Sign in with GitHub' : 'Continue with GitHub'
 
   return (
@@ -45,13 +60,13 @@ export function AuthPanel({
         </>
       )}
 
-      <form className="form-grid" onSubmit={onSubmit}>
+      <form className="form-grid" onSubmit={handleSubmit}>
         {authMode === 'register' && (
           <label>
             Name
             <input
               value={name}
-              onChange={(e) => onNameChange(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               required
               minLength={1}
               maxLength={255}
@@ -63,7 +78,7 @@ export function AuthPanel({
           <input
             type="email"
             value={email}
-            onChange={(e) => onEmailChange(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             required
             minLength={3}
             maxLength={255}
@@ -74,7 +89,7 @@ export function AuthPanel({
           <input
             type="password"
             value={password}
-            onChange={(e) => onPasswordChange(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
             maxLength={128}
@@ -92,7 +107,7 @@ export function AuthPanel({
       <button
         type="button"
         className="btn btn-ghost"
-        onClick={() => onAuthModeChange(authMode === 'login' ? 'register' : 'login')}
+        onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
       >
         {authMode === 'login' ? 'Need an account? Register' : 'Already have an account? Log in'}
       </button>
