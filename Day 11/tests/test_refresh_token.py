@@ -1,6 +1,10 @@
-import pytest
+from datetime import datetime, timedelta, timezone
 
-from tests.conftest import login_user, register_user
+import pytest
+from sqlalchemy import select, text
+
+from models import RefreshToken
+from tests.conftest import register_user
 
 
 async def _login_tokens(client, user_payload_factory):
@@ -33,6 +37,30 @@ async def test_refresh_token_returns_new_access_token(client, user_payload_facto
     refreshed = response.json()
     assert refreshed["access_token"]
     assert refreshed["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_rejects_expired_token(client, user_payload_factory, db_session):
+    data = await _login_tokens(client, user_payload_factory)
+
+    expired_at = datetime.now(timezone.utc) - timedelta(days=1)
+    await db_session.execute(
+        text("UPDATE refresh_tokens SET expires_at = :expired_at WHERE token = :token"),
+        {"expired_at": expired_at, "token": data["refresh_token"]},
+    )
+    await db_session.commit()
+
+    response = await client.post(
+        "/token/refresh",
+        json={"refresh_token": data["refresh_token"]},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Expired refresh token"
+
+    result = await db_session.execute(
+        select(RefreshToken).where(RefreshToken.token == data["refresh_token"])
+    )
+    assert result.scalar_one_or_none() is None
 
 
 @pytest.mark.asyncio
