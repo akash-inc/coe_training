@@ -226,5 +226,12 @@ class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
     async def delete_all_refresh_tokens_for_user(self, user_id: int) -> None:
         result = await self.session.execute(select(RefreshToken).where(RefreshToken.user_id == user_id))
         refresh_tokens = result.scalars().all()
+        if not refresh_tokens:
+            return
         for refresh_token in refresh_tokens:
             await self.session.delete(refresh_token)
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise

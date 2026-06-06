@@ -156,6 +156,7 @@ async def login(
         )
     access_token = create_access_token({"sub": str(user.id)})
 
+    await refresh_token_repository.delete_all_refresh_tokens_for_user(user.id)
     refresh_token = create_refresh_token()
     expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     await refresh_token_repository.save_refresh_token(user.id, refresh_token, expires_at)
