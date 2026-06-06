@@ -53,10 +53,17 @@ def migrated_test_db():
     asyncio.run(_ensure_postgres_test_db_exists(TEST_DB_URL))
 
     alembic_cfg = Config(str(PROJECT_ROOT / "alembic.ini"))
-    alembic_cfg.set_main_option("sqlalchemy.url", TEST_DB_URL)
-    command.upgrade(alembic_cfg, "head")
-    yield
-    command.downgrade(alembic_cfg, "base")
+    saved_db_url = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = TEST_DB_URL
+    try:
+        command.upgrade(alembic_cfg, "head")
+        yield
+        command.downgrade(alembic_cfg, "base")
+    finally:
+        if saved_db_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = saved_db_url
 
 
 @pytest_asyncio.fixture(scope="session")
