@@ -22,7 +22,8 @@ export default defineConfig({
       '/health': apiTarget,
       '/logout': apiTarget,
       '/token/refresh': apiTarget,
-      '/auth': apiTarget,
+      // GitHub OAuth API routes only; /auth/callback is a frontend SPA route.
+      '/auth/github': apiTarget,
     },
   },
 })
