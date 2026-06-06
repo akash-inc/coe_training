@@ -79,7 +79,8 @@ function App() {
   }, [loadData, navigate, path, showToast])
 
   useEffect(() => {
-    bootstrap()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore session once on mount
+    void bootstrap()
   }, [bootstrap])
 
   async function handleAuthSubmit(event: React.FormEvent) {
