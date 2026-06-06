@@ -11,6 +11,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default="editor")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="owner")

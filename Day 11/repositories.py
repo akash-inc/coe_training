@@ -49,6 +49,11 @@ class UserRepository(ABC):
         """Create a new user"""
         pass
 
+    @abstractmethod
+    async def delete(self, user_id: int) -> None:
+        """Delete a user by id"""
+        pass
+
 class TaskRepository(ABC):
     @abstractmethod
     async def list_all(self) -> list[Task]:
@@ -117,6 +122,17 @@ class SqlAlchemyUserRepository(UserRepository):
         self.session.add(user)
         await self._commit_and_refresh(user)
         return user
+
+    async def delete(self, user_id: int) -> None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise ValueError(f"User with id {user_id} not found")
+        await self.session.delete(user)
+        try:
+            await self.session.commit()
+        except SQLAlchemyError:
+            await self.session.rollback()
+            raise
 
 
 class SqlAlchemyTaskRepository(TaskRepository):

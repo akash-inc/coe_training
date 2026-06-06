@@ -13,6 +13,7 @@ from models import User as UserModel
 
 from auth import REFRESH_TOKEN_EXPIRE_DAYS, create_access_token, create_refresh_token, get_current_user, hash_password, verify_password
 from database import get_db
+from permissions import DEFAULT_ROLE, require_permission
 from repositories import (
     RefreshTokenRepository,
     SqlAlchemyRefreshTokenRepository,
@@ -61,6 +62,7 @@ class UserOut(BaseModel):
     id: int
     name: str
     email: str
+    role: str
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
@@ -223,7 +225,7 @@ async def read_dashboard(
 
 @app.get("/users", response_model=list[UserOut])
 async def read_users(
-    _: UserModel = Depends(get_current_user),
+    _: UserModel = Depends(require_permission("users:read")),
     user_repository: UserRepository = Depends(get_user_repository),
 ):
     return await user_repository.list_all()
@@ -239,14 +241,37 @@ async def create_user(payload: UserCreate, user_repository: UserRepository = Dep
         name=payload.name,
         email=payload.email,
         password_hash=hash_password(payload.password),
+        role=DEFAULT_ROLE,
         created_at=datetime.now(timezone.utc),
     )
     return await user_repository.create(user)
 
 
+@app.delete("/users/{user_id}", status_code=204)
+async def delete_user(
+    user_id: int,
+    current_user: UserModel = Depends(require_permission("users:delete")),
+    user_repository: UserRepository = Depends(get_user_repository),
+    task_repository: TaskRepository = Depends(get_task_repository),
+    refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
+):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+
+    user = await user_repository.get_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    for task in await task_repository.list_by_user_id(user_id):
+        await task_repository.delete(task.id)
+    await refresh_token_repository.delete_all_refresh_tokens_for_user(user_id)
+    await user_repository.delete(user_id)
+    return Response(status_code=204)
+
+
 @app.get("/tasks", response_model=list[TaskOut])
 async def read_tasks(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_permission("tasks:read")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
     return await task_repository.list_by_user_id(current_user.id)
@@ -255,7 +280,7 @@ async def read_tasks(
 @app.post("/tasks", response_model=TaskOut, status_code=201)
 async def create_task(
     payload: TaskCreate,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
     now = datetime.now(timezone.utc)
@@ -273,7 +298,10 @@ async def create_task(
 
 
 @app.get("/tasks/{task_id}", response_model=TaskOut)
-async def read_task(task: TaskModel = Depends(get_owned_task)):
+async def read_task(
+    task: TaskModel = Depends(get_owned_task),
+    _: UserModel = Depends(require_permission("tasks:read")),
+):
     return task
 
 
@@ -281,6 +309,7 @@ async def read_task(task: TaskModel = Depends(get_owned_task)):
 async def replace_task(
     payload: TaskCreate,
     task: TaskModel = Depends(get_owned_task),
+    _: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
     replacement_data = payload.model_dump()
@@ -293,6 +322,7 @@ async def replace_task(
 async def patch_task(
     payload: TaskUpdate,
     task: TaskModel = Depends(get_owned_task),
+    _: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
     changes = payload.model_dump(exclude_unset=True)
@@ -303,6 +333,7 @@ async def patch_task(
 @app.delete("/tasks/{task_id}", status_code=204)
 async def delete_task(
     task: TaskModel = Depends(get_owned_task),
+    _: UserModel = Depends(require_permission("tasks:delete")),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
     await task_repository.delete(task.id)
