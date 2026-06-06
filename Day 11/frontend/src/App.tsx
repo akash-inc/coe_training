@@ -3,6 +3,7 @@ import {
   clearStoredTokens,
   createUser,
   fetchDashboard,
+  fetchGithubAuthEnabled,
   fetchTasks,
   fetchUsers,
   getStoredAccessToken,
@@ -11,6 +12,9 @@ import {
   logout,
   setStoredTokens,
 } from './api'
+import { githubAuthErrorMessage } from './authErrors'
+import { AuthCallbackScreen } from './components/AuthCallbackScreen'
+import { AuthPanel } from './components/AuthPanel'
 import { Dashboard } from './components/Dashboard'
 import { Toast } from './components/Toast'
 import { formatRole, hasPermission, isAdmin } from './permissions'
@@ -40,11 +44,13 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [githubCallback, setGithubCallback] = useState(path === '/auth/callback')
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [githubAuthEnabled, setGithubAuthEnabled] = useState(false)
   const [toast, setToast] = useState({ message: '', isError: false })
 
   const showToast = useCallback((message: string, isError = false) => {
@@ -82,17 +88,59 @@ function App() {
   )
 
   const bootstrap = useCallback(async () => {
+    if (path === '/auth/callback') {
+      setGithubCallback(true)
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error')
+      window.history.replaceState({}, '', '/auth/callback')
+
+      if (error) {
+        clearStoredTokens()
+        navigate('/')
+        showToast(githubAuthErrorMessage(error), true)
+        setGithubCallback(false)
+        setLoading(false)
+        return
+      }
+
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      if (!accessToken || !refreshToken) {
+        clearStoredTokens()
+        navigate('/')
+        showToast('GitHub sign-in failed', true)
+        setGithubCallback(false)
+        setLoading(false)
+        return
+      }
+
+      try {
+        setStoredTokens(accessToken, refreshToken)
+        await loadData()
+        navigate('/dashboard')
+        showToast('Logged in with GitHub')
+      } catch {
+        clearStoredTokens()
+        navigate('/')
+        showToast('GitHub sign-in failed', true)
+      } finally {
+        setGithubCallback(false)
+        setLoading(false)
+      }
+      return
+    }
+
     const hasRefresh = getStoredRefreshToken()
     const hasAccess = getStoredAccessToken()
-  
+
     if (!hasRefresh && !hasAccess) {
       if (path === '/dashboard') navigate('/')
       setLoading(false)
       return
     }
-  
+
     try {
-      await loadData()  // request() will auto-refresh on 401
+      await loadData()
       if (path !== '/dashboard') navigate('/dashboard')
     } catch {
       clearStoredTokens()
@@ -108,6 +156,11 @@ function App() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restore session once on mount
     void bootstrap()
   }, [bootstrap])
+
+  useEffect(() => {
+    if (path !== '/' && path !== '/auth/callback') return
+    void fetchGithubAuthEnabled().then((result) => setGithubAuthEnabled(result.enabled))
+  }, [path])
 
   async function handleAuthSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -141,6 +194,19 @@ function App() {
     navigate('/')
   }
 
+  if (loading && githubCallback) {
+    return (
+      <>
+        <header className="site-header">
+          <div className="header-inner">
+            <h1>Task Manager</h1>
+          </div>
+        </header>
+        <AuthCallbackScreen />
+      </>
+    )
+  }
+
   if (loading) {
     return <p className="loading">Loading…</p>
   }
@@ -156,65 +222,25 @@ function App() {
         </header>
         <Toast message={toast.message} isError={toast.isError} />
         <main className="auth-layout">
-          <section className="panel auth-panel">
-            <div className="panel-head">
-              <h2>{authMode === 'login' ? 'Log in' : 'Create account'}</h2>
-            </div>
-            <form className="form-grid" onSubmit={handleAuthSubmit}>
-              {authMode === 'register' && (
-                <label>
-                  Name
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    minLength={1}
-                    maxLength={255}
-                  />
-                </label>
-              )}
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  minLength={3}
-                  maxLength={255}
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  maxLength={128}
-                />
-              </label>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting
-                  ? 'Please wait…'
-                  : authMode === 'login'
-                    ? 'Log in'
-                    : 'Create account'}
-              </button>
-            </form>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-            >
-              {authMode === 'login' ? 'Need an account? Register' : 'Already have an account? Log in'}
-            </button>
-          </section>
+          <AuthPanel
+            authMode={authMode}
+            githubAuthEnabled={githubAuthEnabled}
+            name={name}
+            email={email}
+            password={password}
+            submitting={submitting}
+            onAuthModeChange={setAuthMode}
+            onNameChange={setName}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            onSubmit={handleAuthSubmit}
+          />
         </main>
       </>
     )
   }
+
+  const signedInViaGithub = Boolean(dashboard.user.github_id)
 
   return (
     <>
@@ -223,6 +249,7 @@ function App() {
           <h1>Task Manager</h1>
           <p className="tagline">
             Signed in as {dashboard.user.name} ({formatRole(dashboard.user.role)})
+            {signedInViaGithub && <span className="github-linked-badge">GitHub</span>}
           </p>
         </div>
         <nav className="header-nav">

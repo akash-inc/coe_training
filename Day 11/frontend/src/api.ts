@@ -171,3 +171,16 @@ export function deleteTask(taskId: number): Promise<void> {
 export function deleteUser(userId: number): Promise<void> {
   return request<void>(`/users/${userId}`, { method: 'DELETE' })
 }
+
+export function fetchGithubAuthEnabled(): Promise<{ enabled: boolean }> {
+  return fetch('/auth/github/enabled').then(async (response) => {
+    if (!response.ok) {
+      return { enabled: false }
+    }
+    return response.json() as Promise<{ enabled: boolean }>
+  })
+}
+
+export function getGithubLoginUrl(): string {
+  return '/auth/github/login'
+}

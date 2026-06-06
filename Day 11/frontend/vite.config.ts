@@ -22,6 +22,7 @@ export default defineConfig({
       '/health': apiTarget,
       '/logout': apiTarget,
       '/token/refresh': apiTarget,
+      '/auth': apiTarget,
     },
   },
 })

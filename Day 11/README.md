@@ -143,3 +143,17 @@ Tests use `TEST_DATABASE_URL` from `.env` (default: `tasks_test`).
 ## Further reading
 
 See [RESOURCES.md](RESOURCES.md) for documentation links and deeper topics.
+
+## GitHub OAuth (optional)
+
+Add to `.env`:
+
+```bash
+GITHUB_CLIENT_ID=your_github_app_client_id
+GITHUB_CLIENT_SECRET=your_github_app_client_secret
+GITHUB_REDIRECT_URI=http://127.0.0.1:8000/auth/github/callback
+FRONTEND_URL=http://127.0.0.1:5173
+```
+
+Create a GitHub OAuth App at https://github.com/settings/developers with callback URL
+`http://127.0.0.1:8000/auth/github/callback`. Restart the API after updating `.env`.
