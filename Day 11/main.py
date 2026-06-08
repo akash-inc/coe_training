@@ -5,9 +5,9 @@ from typing import Optional
 from urllib.parse import urlencode
 import os
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -29,6 +29,8 @@ from github_oauth import (
     verify_github_oauth_state,
 )
 from permissions import DEFAULT_ROLE, is_admin, require_permission
+from rate_limit import DEFAULT_RATE_LIMIT, LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT, limiter
+from slowapi.errors import RateLimitExceeded
 from repositories import (
     RefreshTokenRepository,
     SqlAlchemyRefreshTokenRepository,
@@ -39,6 +41,14 @@ from repositories import (
 )
 
 app = FastAPI(title="Task Management API")
+app.state.limiter = limiter
+
+
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 FRONTEND_DIST = Path(__file__).resolve().parent / "frontend" / "dist"
 logger = logging.getLogger(__name__)
 
@@ -172,12 +182,15 @@ async def _resolve_task_owner_id(
 
 
 @app.get("/health")
+@limiter.exempt
 def healthcheck():
     return {"Hello": "User"}
 
 
 @app.post("/token", response_model=Token)
+@limiter.limit(LOGIN_RATE_LIMIT)
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_repository: UserRepository = Depends(get_user_repository),
     refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
@@ -193,12 +206,14 @@ async def login(
 
 
 @app.get("/auth/github/enabled")
-def github_auth_enabled():
+@limiter.limit(DEFAULT_RATE_LIMIT)
+def github_auth_enabled(request: Request):
     return {"enabled": github_oauth_configured()}
 
 
 @app.get("/auth/github/login")
-async def github_login():
+@limiter.limit(DEFAULT_RATE_LIMIT)
+async def github_login(request: Request):
     if not github_oauth_configured():
         raise HTTPException(status_code=503, detail="GitHub OAuth is not configured")
     state = create_github_oauth_state()
@@ -206,7 +221,9 @@ async def github_login():
 
 
 @app.get("/auth/github/callback")
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def github_callback(
+    request: Request,
     code: str | None = None,
     state: str | None = None,
     error: str | None = None,
@@ -243,7 +260,9 @@ async def github_callback(
 
 
 @app.post("/token/refresh", response_model=Token)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def refresh_access_token(
+    request: Request,
     payload: RefreshTokenRequest,
     refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
     user_repository: UserRepository = Depends(get_user_repository),
@@ -266,7 +285,9 @@ async def refresh_access_token(
 
 
 @app.post("/logout", status_code=204)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def logout(
+    request: Request,
     payload: RefreshTokenRequest,
     refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
 ):
@@ -275,12 +296,18 @@ async def logout(
 
 
 @app.get("/me", response_model=UserOut)
-async def read_current_user(current_user: UserModel = Depends(get_current_user)):
+@limiter.limit(DEFAULT_RATE_LIMIT)
+async def read_current_user(
+    request: Request,
+    current_user: UserModel = Depends(get_current_user),
+):
     return current_user
 
 
 @app.get("/dashboard", response_model=DashboardOut)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def read_dashboard(
+    request: Request,
     current_user: UserModel = Depends(get_current_user),
     task_repository: TaskRepository = Depends(get_task_repository),
 ):
@@ -297,7 +324,9 @@ async def read_dashboard(
 
 
 @app.get("/users", response_model=list[UserOut])
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def read_users(
+    request: Request,
     _: UserModel = Depends(require_permission("users:read")),
     user_repository: UserRepository = Depends(get_user_repository),
 ):
@@ -305,7 +334,12 @@ async def read_users(
 
 
 @app.post("/users", response_model=UserOut, status_code=201)
-async def create_user(payload: UserCreate, user_repository: UserRepository = Depends(get_user_repository)):
+@limiter.limit(REGISTER_RATE_LIMIT)
+async def create_user(
+    request: Request,
+    payload: UserCreate,
+    user_repository: UserRepository = Depends(get_user_repository),
+):
     existing_user = await user_repository.get_by_email(payload.email)
     if existing_user is not None:
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -321,7 +355,9 @@ async def create_user(payload: UserCreate, user_repository: UserRepository = Dep
 
 
 @app.delete("/users/{user_id}", status_code=204)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def delete_user(
+    request: Request,
     user_id: int,
     current_user: UserModel = Depends(require_permission("users:delete")),
     user_repository: UserRepository = Depends(get_user_repository),
@@ -343,7 +379,9 @@ async def delete_user(
 
 
 @app.get("/tasks", response_model=list[TaskOut])
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def read_tasks(
+    request: Request,
     user_id: Optional[int] = None,
     current_user: UserModel = Depends(require_permission("tasks:read")),
     task_repository: TaskRepository = Depends(get_task_repository),
@@ -363,7 +401,9 @@ async def read_tasks(
 
 
 @app.post("/tasks", response_model=TaskOut, status_code=201)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def create_task(
+    request: Request,
     payload: TaskCreate,
     current_user: UserModel = Depends(require_permission("tasks:write")),
     task_repository: TaskRepository = Depends(get_task_repository),
@@ -385,7 +425,9 @@ async def create_task(
 
 
 @app.get("/tasks/{task_id}", response_model=TaskOut)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def read_task(
+    request: Request,
     task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:read")),
 ):
@@ -393,7 +435,9 @@ async def read_task(
 
 
 @app.put("/tasks/{task_id}", response_model=TaskOut)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def replace_task(
+    request: Request,
     payload: TaskCreate,
     task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:write")),
@@ -406,7 +450,9 @@ async def replace_task(
 
 
 @app.patch("/tasks/{task_id}", response_model=TaskOut)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def patch_task(
+    request: Request,
     payload: TaskUpdate,
     task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:write")),
@@ -418,7 +464,9 @@ async def patch_task(
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
+@limiter.limit(DEFAULT_RATE_LIMIT)
 async def delete_task(
+    request: Request,
     task: TaskModel = Depends(get_accessible_task),
     _: UserModel = Depends(require_permission("tasks:delete")),
     task_repository: TaskRepository = Depends(get_task_repository),

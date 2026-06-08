@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from database import get_db
 from main import app
+from rate_limit import limiter
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 TEST_DB_URL = os.getenv(
@@ -88,6 +89,16 @@ async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
             text("TRUNCATE TABLE refresh_tokens, tasks, users RESTART IDENTITY CASCADE")
         )
         await session.commit()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def disable_rate_limits():
+    was_enabled = limiter.enabled
+    limiter.enabled = False
+    limiter.reset()
+    yield
+    limiter.enabled = was_enabled
+    limiter.reset()
 
 
 @pytest_asyncio.fixture
