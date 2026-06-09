@@ -22,6 +22,12 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class Task(BaseModel):
+    id: int
+    title: str
+    description: str
+    completed: bool
+
 @app.get("/")
 async def read_root():
     return {"message": "Hello, World!"}
@@ -31,6 +37,17 @@ async def current_user(current_user: str = Depends(get_current_user)):
     return {
     "email": current_user,
     }
+
+@app.get("/tasks")
+async def get_tasks(current_user: str = Depends(get_current_user)):
+    return [
+        {
+            "id": 1,
+            "title": "Task 1",
+            "description": "Task 1 description",
+            "completed": False,
+        },
+    ]
 
 @app.post("/token")
 async def login(data:LoginRequest):
