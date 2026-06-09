@@ -21,7 +21,7 @@ function App() {
     queryClient.removeQueries({ queryKey: queryKeys.tasks })
   }
 
-  const { mutate } = useMutation({
+  const { mutate, isPending, error: loginError } = useMutation({
     mutationFn: ({ email, password }) => login(email, password),
     onSuccess: (data) => {
       setTokens(data.access_token, data.refresh_token)
@@ -31,7 +31,7 @@ function App() {
     },
   })
 
-  const { data: user, error: userError } = useQuery({
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: queryKeys.me,
     queryFn: fetchMe,
     enabled: isLoggedIn,
@@ -48,16 +48,39 @@ function App() {
     mutate({ email, password })
   }
 
+  const showDashboardLoading = isLoggedIn && userLoading
+
   return (
-    <>
-      <section id="center">
-        {!isLoggedIn && <LoginForm onSubmit={handleSubmit} />}
-        {isLoggedIn && user?.email && (
-          <UserProfile user={user} onLogout={handleSessionExpired} />
+    <div className="app">
+      <header className="app-header">
+        <div className="app-brand">
+          <span className="app-brand-icon" aria-hidden="true">
+            ✓
+          </span>
+          Task Manager
+        </div>
+      </header>
+
+      <main className="app-main">
+        {!isLoggedIn && (
+          <LoginForm onSubmit={handleSubmit} isPending={isPending} error={loginError} />
         )}
-        {isLoggedIn && <TaskList onSessionExpired={handleSessionExpired} />}
-      </section>
-    </>
+
+        {showDashboardLoading && (
+          <div className="app-loading">
+            <div className="spinner" aria-hidden="true" />
+            <p>Loading your workspace…</p>
+          </div>
+        )}
+
+        {isLoggedIn && user?.email && (
+          <>
+            <UserProfile user={user} onLogout={handleSessionExpired} />
+            <TaskList onSessionExpired={handleSessionExpired} />
+          </>
+        )}
+      </main>
+    </div>
   )
 }
 
