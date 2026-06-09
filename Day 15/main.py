@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from auth import create_access_token, get_current_user
 
 app = FastAPI()
 
@@ -16,6 +18,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 @app.get("/")
 async def read_root():
     return {"message": "Hello, World!"}
+
+@app.get("/me")
+async def current_user(current_user: str = Depends(get_current_user)):
+    return {
+    "email": current_user,
+    }
+
+@app.post("/token")
+async def login(data:LoginRequest):
+    if data.email != "test@example.com" or data.password != "password":
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    access_token = create_access_token({
+        "sub": data.email,
+    })
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+    }
