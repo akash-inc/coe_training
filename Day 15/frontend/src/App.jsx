@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { login } from './api/auth'
+import { login, logout } from './api/auth'
 import { queryKeys } from './api/queryKeys'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { UnauthorizedError } from './lib/apiClient'
-import { clearAccessToken, getAccessToken, setAccessToken } from './lib/tokenStorage'
+import { getAccessToken, setTokens } from './lib/tokenStorage'
 import { fetchMe } from './api/user'
 import LoginForm from './components/LoginForm'
 import UserProfile from './components/UserProfile'
@@ -14,8 +14,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!getAccessToken())
   const queryClient = useQueryClient()
 
-  function handleSessionExpired() {
-    clearAccessToken()
+  async function handleSessionExpired() {
+    await logout()
     setIsLoggedIn(false)
     queryClient.removeQueries({ queryKey: queryKeys.me })
     queryClient.removeQueries({ queryKey: queryKeys.tasks })
@@ -24,7 +24,7 @@ function App() {
   const { mutate } = useMutation({
     mutationFn: ({ email, password }) => login(email, password),
     onSuccess: (data) => {
-      setAccessToken(data.access_token)
+      setTokens(data.access_token, data.refresh_token)
       setIsLoggedIn(true)
       queryClient.invalidateQueries({ queryKey: queryKeys.me })
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
