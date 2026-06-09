@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getTasks } from '../api/task'
+import { queryKeys } from '../api/queryKeys'
 import { UnauthorizedError } from '../lib/apiClient'
 
 export default function TaskList({ onSessionExpired }) {
   const { data, isError, error } = useQuery({
-    queryKey: ['tasks'],
+    queryKey: queryKeys.tasks,
     queryFn: getTasks,
     retry: (_, err) => !(err instanceof UnauthorizedError),
   })

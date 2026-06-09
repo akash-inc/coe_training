@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { login } from './api/auth'
+import { queryKeys } from './api/queryKeys'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { UnauthorizedError } from './lib/apiClient'
 import { clearAccessToken, getAccessToken, setAccessToken } from './lib/tokenStorage'
@@ -16,8 +17,8 @@ function App() {
   function handleSessionExpired() {
     clearAccessToken()
     setIsLoggedIn(false)
-    queryClient.removeQueries({ queryKey: ['me'] })
-    queryClient.removeQueries({ queryKey: ['tasks'] })
+    queryClient.removeQueries({ queryKey: queryKeys.me })
+    queryClient.removeQueries({ queryKey: queryKeys.tasks })
   }
 
   const { mutate } = useMutation({
@@ -25,13 +26,13 @@ function App() {
     onSuccess: (data) => {
       setAccessToken(data.access_token)
       setIsLoggedIn(true)
-      queryClient.invalidateQueries({ queryKey: ['me'] })
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.me })
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
     },
   })
 
   const { data: user, error: userError } = useQuery({
-    queryKey: ['me'],
+    queryKey: queryKeys.me,
     queryFn: fetchMe,
     enabled: isLoggedIn,
     retry: (_, error) => !(error instanceof UnauthorizedError),
