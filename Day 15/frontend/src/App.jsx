@@ -3,12 +3,13 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import { apiFetch } from './lib/apiClient'
 
 function App() {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    fetch('http://localhost:8000/')
+    apiFetch('/me')
       .then(response => response.json())
       .then(data => console.log(data))
       .catch(error => console.error('Error:', error));
