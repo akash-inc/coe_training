@@ -1,8 +1,9 @@
-import { apiFetch } from "../lib/apiClient"
-
-async function login(email, password) {
-  const response = await apiFetch("/token", {
+export async function login(email, password) {
+  const response = await fetch("/token", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ email, password }),
   })
   if (!response.ok) {
@@ -11,5 +12,3 @@ async function login(email, password) {
   }
   return response.json()
 }
-
-export { login }
