@@ -96,10 +96,13 @@ async def logout(payload: RefreshTokenRequest):
 
 @app.websocket("/ws/echo")
 async def ws_echo(websocket: WebSocket):
-        await websocket.accept()
+    await websocket.accept()
+    try:
         while True:
             data = await websocket.receive_text()
-            await websocket.send_text(f"Echo: {data}")    
+            await websocket.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        pass
 
 @app.post("/tasks/{task_id}/comments", response_model=Comment)
 async def post_comment(
@@ -120,8 +123,14 @@ async def post_comment(
 
 
 @app.get("/tasks/{task_id}/comments", response_model=list[Comment])
-async def list_comments(task_id: int):
+async def list_comments(
+    task_id: int,
+    _: str = Depends(get_current_user),
+):
+    if not task_exists(task_id):
+        raise HTTPException(status_code=404, detail="Task not found")
     return get_comments(task_id)
+
 
 @app.websocket("/ws/tasks/{task_id}")
 async def task_comments_ws(websocket: WebSocket, task_id: int, token: str = Query(...)):

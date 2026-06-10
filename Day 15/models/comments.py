@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel
 
@@ -33,7 +33,7 @@ def create_comment(task_id: int, body: str, author_email: str) -> Comment:
         task_id=task_id,
         body=body,
         author_email=author_email,
-        created_at=datetime.now(),
+        created_at=datetime.now(timezone.utc),
     )
     _comments.append(comment)
     _next_id += 1
@@ -44,3 +44,9 @@ def get_all_comments() -> list[Comment]:
 
 def get_comments(task_id: int) -> list[Comment]:
     return [comment for comment in _comments if comment.task_id == task_id]
+
+
+def reset_comments() -> None:
+    global _next_id
+    _comments.clear()
+    _next_id = 1

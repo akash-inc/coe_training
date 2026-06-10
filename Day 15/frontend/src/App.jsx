@@ -12,19 +12,23 @@ import TaskList from './components/TaskList'
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!getAccessToken())
+  const [accessToken, setAccessToken] = useState(() => getAccessToken())
   const queryClient = useQueryClient()
 
   async function handleSessionExpired() {
     await logout()
+    setAccessToken(null)
     setIsLoggedIn(false)
     queryClient.removeQueries({ queryKey: queryKeys.me })
     queryClient.removeQueries({ queryKey: queryKeys.tasks })
+    queryClient.removeQueries({ queryKey: ['comments'] })
   }
 
   const { mutate, isPending, error: loginError } = useMutation({
     mutationFn: ({ email, password }) => login(email, password),
     onSuccess: (data) => {
       setTokens(data.access_token, data.refresh_token)
+      setAccessToken(data.access_token)
       setIsLoggedIn(true)
       queryClient.invalidateQueries({ queryKey: queryKeys.me })
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
@@ -76,7 +80,7 @@ function App() {
         {isLoggedIn && user?.email && (
           <>
             <UserProfile user={user} onLogout={handleSessionExpired} />
-            <TaskList onSessionExpired={handleSessionExpired} />
+            <TaskList onSessionExpired={handleSessionExpired} accessToken={accessToken} />
           </>
         )}
       </main>
