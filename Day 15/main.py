@@ -134,6 +134,8 @@ async def list_comments(
 
 @app.websocket("/ws/tasks/{task_id}")
 async def task_comments_ws(websocket: WebSocket, task_id: int, token: str = Query(...)):
+    await websocket.accept()
+
     if not task_exists(task_id):
         await websocket.close(code=1008, reason="Task not found")
         return
@@ -144,7 +146,7 @@ async def task_comments_ws(websocket: WebSocket, task_id: int, token: str = Quer
         await websocket.close(code=1008, reason="Invalid token")
         return
 
-    await manager.connect(websocket, task_id, user_email)
+    manager.register(websocket, task_id)
     await websocket.send_json(comments_snapshot_message(task_id))
 
     try:

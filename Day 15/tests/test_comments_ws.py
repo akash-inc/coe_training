@@ -54,9 +54,9 @@ def test_post_and_list_comments():
 
 
 def test_ws_rejects_invalid_token():
-    with pytest.raises(Exception):
-        with client.websocket_connect("/ws/tasks/1?token=invalid"):
-            pass
+    with client.websocket_connect("/ws/tasks/1?token=invalid") as websocket:
+        with pytest.raises(Exception):
+            websocket.receive_json()
 
 
 def test_ws_snapshot_and_create():

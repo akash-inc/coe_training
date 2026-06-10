@@ -2,6 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const MAX_RECONNECT_DELAY_MS = 30_000
 
+function getWebSocketUrl(taskId, token) {
+  const apiHost = import.meta.env.VITE_API_WS_HOST
+  if (apiHost) {
+    return `${apiHost}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+  }
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+}
+
 export function useTaskCommentsSocket(
   taskId,
   token,
@@ -57,6 +67,13 @@ export function useTaskCommentsSocket(
       }
     }
 
+    function detachSocket(ws) {
+      ws.onopen = null
+      ws.onmessage = null
+      ws.onclose = null
+      ws.onerror = null
+    }
+
     function scheduleReconnect() {
       if (cancelled) return
 
@@ -76,14 +93,15 @@ export function useTaskCommentsSocket(
 
       setStatus(reconnectAttemptRef.current > 0 ? 'reconnecting' : 'connecting')
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${protocol}//${window.location.host}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
-      const ws = new WebSocket(wsUrl)
+      const ws = new WebSocket(getWebSocketUrl(taskId, token))
       wsRef.current = ws
 
       ws.onopen = () => {
         if (cancelled) {
-          ws.close()
+          detachSocket(ws)
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close()
+          }
           return
         }
 
@@ -149,8 +167,12 @@ export function useTaskCommentsSocket(
       reconnectAttemptRef.current = 0
 
       const ws = wsRef.current
-      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-        ws.close()
+      if (ws) {
+        detachSocket(ws)
+        // Avoid closing while CONNECTING: React Strict Mode cleanup causes EPIPE on the Vite proxy.
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close()
+        }
       }
       wsRef.current = null
       setStatus('closed')

@@ -4,8 +4,7 @@ class ConnectionManager:
     def __init__(self) -> None:
         self.active: dict[int, set[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, task_id: int, user_email: str) -> None:
-        await websocket.accept()
+    def register(self, websocket: WebSocket, task_id: int) -> None:
         self.active.setdefault(task_id, set()).add(websocket)
 
     def disconnect(self, websocket: WebSocket, task_id: int) -> None:
