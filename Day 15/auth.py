@@ -70,3 +70,13 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return email
     except JWTError:
         raise credentials_exception
+
+def get_user_from_token(token: str) -> str:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str | None = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
+        return email
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
