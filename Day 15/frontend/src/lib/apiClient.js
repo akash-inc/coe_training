@@ -4,6 +4,7 @@ import {
   getRefreshToken,
   setAccessToken,
 } from './tokenStorage'
+import { apiUrl } from './apiBase'
 
 export class UnauthorizedError extends Error {
   constructor(message = 'Unauthorized') {
@@ -18,7 +19,7 @@ async function refreshAccessToken() {
   const refreshToken = getRefreshToken()
   if (!refreshToken) return false
 
-  const response = await fetch('/token/refresh', {
+  const response = await fetch(apiUrl('/token/refresh'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: refreshToken }),
@@ -39,7 +40,7 @@ async function refreshOnce() {
   return refreshPromise
 }
 
-async function sendRequest(url, options = {}) {
+async function sendRequest(path, options = {}) {
   const accessToken = getAccessToken()
   const headers = {
     'Content-Type': 'application/json',
@@ -48,7 +49,7 @@ async function sendRequest(url, options = {}) {
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`
   }
-  return fetch(url, { ...options, headers })
+  return fetch(apiUrl(path), { ...options, headers })
 }
 
 async function handleResponse(response) {
@@ -62,13 +63,13 @@ async function handleResponse(response) {
   return response.json()
 }
 
-export async function apiFetch(url, options = {}) {
-  const response = await sendRequest(url, options)
+export async function apiFetch(path, options = {}) {
+  const response = await sendRequest(path, options)
 
-  if (response.status === 401 && !url.startsWith('/token')) {
+  if (response.status === 401 && !path.startsWith('/token')) {
     const refreshed = await refreshOnce()
     if (refreshed) {
-      return handleResponse(await sendRequest(url, options))
+      return handleResponse(await sendRequest(path, options))
     }
     clearTokens()
     throw new UnauthorizedError()

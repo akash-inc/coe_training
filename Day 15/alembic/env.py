@@ -1,20 +1,14 @@
-import os
 from logging.config import fileConfig
-from pathlib import Path
 
 from alembic import context
-from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
+from config import get_database_url
 from database import Base
 import orm_models  # noqa: F401
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
-
 config = context.config
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+config.set_main_option("sqlalchemy.url", get_database_url())
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

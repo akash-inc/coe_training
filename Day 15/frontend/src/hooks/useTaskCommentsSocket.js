@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getApiBaseUrl } from '../lib/apiBase'
 
 const MAX_RECONNECT_DELAY_MS = 30_000
 
 function getWebSocketUrl(taskId, token) {
-  const apiHost = import.meta.env.VITE_API_WS_HOST
-  if (apiHost) {
-    return `${apiHost}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+  const wsHost = import.meta.env.VITE_API_WS_HOST
+  if (wsHost) {
+    return `${wsHost.replace(/\/$/, '')}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+  }
+
+  const apiBase = getApiBaseUrl()
+  if (apiBase) {
+    const wsBase = apiBase.replace(/^http/, 'ws')
+    return `${wsBase}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'

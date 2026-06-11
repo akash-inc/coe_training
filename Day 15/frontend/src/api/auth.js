@@ -1,7 +1,8 @@
+import { apiUrl } from '../lib/apiBase'
 import { clearTokens, getRefreshToken } from '../lib/tokenStorage'
 
 export async function login(email, password) {
-  const response = await fetch('/token', {
+  const response = await fetch(apiUrl('/token'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -18,7 +19,7 @@ export async function login(email, password) {
 export async function logout() {
   const refreshToken = getRefreshToken()
   if (refreshToken) {
-    await fetch('/logout', {
+    await fetch(apiUrl('/logout'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken }),

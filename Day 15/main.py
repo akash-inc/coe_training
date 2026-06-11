@@ -18,6 +18,7 @@ from comment_ws import (
     comments_snapshot_message,
     handle_incoming_message,
 )
+from config import DEMO_USER_EMAIL, DEMO_USER_PASSWORD, get_cors_origins
 from connection_manager import ConnectionManager
 from database import get_db
 from models.comments import Comment, CommentCreate, CommentUpdate
@@ -32,14 +33,9 @@ from repositories import (
 app = FastAPI()
 manager = ConnectionManager()
 
-origins = [
-    "http://127.0.0.1:5173",
-    "http://localhost:5173",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -130,7 +126,7 @@ def remove_task(
 
 @app.post("/token")
 def login(data: LoginRequest):
-    if data.email != "test@example.com" or data.password != "password":
+    if data.email != DEMO_USER_EMAIL or data.password != DEMO_USER_PASSWORD:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token({"sub": data.email})

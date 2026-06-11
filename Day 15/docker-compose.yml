@@ -19,8 +19,11 @@ services:
     build: .
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg://akash:password@db:5432/day15_tasks
+      PORT: 8000
     volumes:
       - .:/app
       - /app/.venv
@@ -30,9 +33,16 @@ services:
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # Use the Node build stage for local hot-reload dev. The default
+      # (production) stage serves the static build via nginx for Railway.
+      target: build
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
     ports:
       - "5173:5173"
+    env_file:
+      - frontend/.env
     environment:
       API_PROXY_TARGET: http://backend:8000
     volumes:
