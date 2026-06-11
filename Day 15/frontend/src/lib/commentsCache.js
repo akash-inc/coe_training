@@ -23,3 +23,15 @@ export function replaceOptimisticComment(existing = [], optimisticId, confirmedC
   const withoutOptimistic = existing.filter((comment) => comment.id !== optimisticId)
   return mergeComments(withoutOptimistic, [confirmedComment])
 }
+
+export function removeCommentById(existing = [], commentId) {
+  return existing.filter((comment) => comment.id !== commentId)
+}
+
+export function updateCommentInList(existing = [], updatedComment) {
+  return existing
+    .map((comment) => (comment.id === updatedComment.id ? updatedComment : comment))
+    .sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    )
+}

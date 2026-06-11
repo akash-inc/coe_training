@@ -15,12 +15,21 @@ function getWebSocketUrl(taskId, token) {
 export function useTaskCommentsSocket(
   taskId,
   token,
-  { onCommentCreated, onCommentsSnapshot, onSocketError, onAuthError } = {},
+  {
+    onCommentCreated,
+    onCommentUpdated,
+    onCommentDeleted,
+    onCommentsSnapshot,
+    onSocketError,
+    onAuthError,
+  } = {},
 ) {
   const wsRef = useRef(null)
   const reconnectAttemptRef = useRef(0)
   const reconnectTimerRef = useRef(null)
   const onCommentCreatedRef = useRef(onCommentCreated)
+  const onCommentUpdatedRef = useRef(onCommentUpdated)
+  const onCommentDeletedRef = useRef(onCommentDeleted)
   const onCommentsSnapshotRef = useRef(onCommentsSnapshot)
   const onSocketErrorRef = useRef(onSocketError)
   const onAuthErrorRef = useRef(onAuthError)
@@ -29,6 +38,14 @@ export function useTaskCommentsSocket(
   useEffect(() => {
     onCommentCreatedRef.current = onCommentCreated
   }, [onCommentCreated])
+
+  useEffect(() => {
+    onCommentUpdatedRef.current = onCommentUpdated
+  }, [onCommentUpdated])
+
+  useEffect(() => {
+    onCommentDeletedRef.current = onCommentDeleted
+  }, [onCommentDeleted])
 
   useEffect(() => {
     onCommentsSnapshotRef.current = onCommentsSnapshot
@@ -126,6 +143,16 @@ export function useTaskCommentsSocket(
 
         if (data.type === 'comment.created' && data.comment) {
           onCommentCreatedRef.current?.(data.comment)
+          return
+        }
+
+        if (data.type === 'comment.updated' && data.comment) {
+          onCommentUpdatedRef.current?.(data.comment)
+          return
+        }
+
+        if (data.type === 'comment.deleted' && data.comment_id != null) {
+          onCommentDeletedRef.current?.(data.comment_id)
           return
         }
 

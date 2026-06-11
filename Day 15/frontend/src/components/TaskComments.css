@@ -81,6 +81,43 @@
   font-style: italic;
 }
 
+.task-comment-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.task-comment-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.task-comment-action {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.task-comment-action--muted {
+  color: var(--text-muted);
+}
+
+.task-comment-action--danger {
+  border-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.task-comment-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .task-comments-empty,
 .task-comments-loading {
   margin: 0 0 1rem;

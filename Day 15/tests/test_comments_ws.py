@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from main import app
 from models.comments import reset_comments
+from models.tasks import reset_tasks
 
 client = TestClient(app)
 
@@ -12,8 +13,10 @@ DEMO_USER = {"email": "test@example.com", "password": "password"}
 @pytest.fixture(autouse=True)
 def clear_comments():
     reset_comments()
+    reset_tasks()
     yield
     reset_comments()
+    reset_tasks()
 
 
 def login_token() -> str:
@@ -51,6 +54,32 @@ def test_post_and_list_comments():
 
     listed = client.get("/tasks/1/comments", headers=headers)
     assert len(listed.json()) == 1
+
+
+def test_patch_and_delete_comment():
+    token = login_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    created = client.post(
+        "/tasks/1/comments",
+        json={"body": "Original"},
+        headers=headers,
+    )
+    comment_id = created.json()["id"]
+
+    updated = client.patch(
+        f"/tasks/1/comments/{comment_id}",
+        json={"body": "Updated"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["body"] == "Updated"
+
+    deleted = client.delete(f"/tasks/1/comments/{comment_id}", headers=headers)
+    assert deleted.status_code == 204
+
+    listed = client.get("/tasks/1/comments", headers=headers)
+    assert listed.json() == []
 
 
 def test_ws_rejects_invalid_token():
@@ -98,3 +127,49 @@ def test_ws_rejects_empty_comment():
         websocket.send_json({"type": "comment.create", "body": "   "})
         error = websocket.receive_json()
         assert error["type"] == "error"
+
+
+def test_comment_update_broadcasts_over_ws():
+    token = login_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    created = client.post(
+        "/tasks/1/comments",
+        json={"body": "Before"},
+        headers=headers,
+    )
+    comment_id = created.json()["id"]
+
+    with client.websocket_connect(f"/ws/tasks/1?token={token}") as websocket:
+        websocket.receive_json()
+
+        client.patch(
+            f"/tasks/1/comments/{comment_id}",
+            json={"body": "After"},
+            headers=headers,
+        )
+
+        message = websocket.receive_json()
+        assert message["type"] == "comment.updated"
+        assert message["comment"]["body"] == "After"
+
+
+def test_comment_delete_broadcasts_over_ws():
+    token = login_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    created = client.post(
+        "/tasks/1/comments",
+        json={"body": "To delete"},
+        headers=headers,
+    )
+    comment_id = created.json()["id"]
+
+    with client.websocket_connect(f"/ws/tasks/1?token={token}") as websocket:
+        websocket.receive_json()
+
+        client.delete(f"/tasks/1/comments/{comment_id}", headers=headers)
+
+        message = websocket.receive_json()
+        assert message["type"] == "comment.deleted"
+        assert message["comment_id"] == comment_id

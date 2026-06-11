@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createComment, getComments } from '../api/comments'
+import { createComment, deleteComment, getComments, updateComment } from '../api/comments'
 import { queryKeys } from '../api/queryKeys'
 import {
   createOptimisticComment,
   mergeComments,
+  removeCommentById,
   replaceOptimisticComment,
+  updateCommentInList,
 } from '../lib/commentsCache'
 import { useTaskCommentsSocket } from '../hooks/useTaskCommentsSocket'
 import './TaskComments.css'
@@ -19,6 +21,8 @@ function connectionLabel(status) {
 export default function TaskComments({ taskId, token, userEmail, onSessionExpired }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [editDraft, setEditDraft] = useState('')
 
   const commentsQueryKey = queryKeys.comments(taskId)
 
@@ -60,6 +64,30 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
     },
   })
 
+  const { mutate: patchComment, isPending: isUpdating } = useMutation({
+    mutationFn: ({ commentId, body }) => updateComment(taskId, commentId, body),
+    onSuccess: (updatedComment) => {
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
+        updateCommentInList(existing, updatedComment),
+      )
+      setEditingCommentId(null)
+      setEditDraft('')
+    },
+  })
+
+  const { mutate: removeComment, isPending: isDeleting } = useMutation({
+    mutationFn: (commentId) => deleteComment(taskId, commentId),
+    onSuccess: (_result, commentId) => {
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
+        removeCommentById(existing, commentId),
+      )
+      if (editingCommentId === commentId) {
+        setEditingCommentId(null)
+        setEditDraft('')
+      }
+    },
+  })
+
   const handleCommentCreated = useCallback(
     (comment) => {
       queryClient.setQueryData(commentsQueryKey, (existing = []) => {
@@ -88,6 +116,24 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
     [queryClient, commentsQueryKey],
   )
 
+  const handleCommentUpdated = useCallback(
+    (comment) => {
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
+        updateCommentInList(existing, comment),
+      )
+    },
+    [queryClient, commentsQueryKey],
+  )
+
+  const handleCommentDeleted = useCallback(
+    (commentId) => {
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
+        removeCommentById(existing, commentId),
+      )
+    },
+    [queryClient, commentsQueryKey],
+  )
+
   const handleCommentsSnapshot = useCallback(
     (snapshotComments) => {
       queryClient.setQueryData(commentsQueryKey, (existing = []) =>
@@ -107,6 +153,8 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
 
   const { status } = useTaskCommentsSocket(taskId, token, {
     onCommentCreated: handleCommentCreated,
+    onCommentUpdated: handleCommentUpdated,
+    onCommentDeleted: handleCommentDeleted,
     onCommentsSnapshot: handleCommentsSnapshot,
     onSocketError: handleSocketError,
     onAuthError: handleAuthError,
@@ -121,6 +169,24 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
     postComment(body, {
       onSuccess: () => setDraft(''),
     })
+  }
+
+  function startEditing(comment) {
+    setEditingCommentId(comment.id)
+    setEditDraft(comment.body)
+  }
+
+  function cancelEditing() {
+    setEditingCommentId(null)
+    setEditDraft('')
+  }
+
+  function handleEditSubmit(event) {
+    event.preventDefault()
+    const body = editDraft.trim()
+    if (!body || !editingCommentId || isUpdating) return
+
+    patchComment({ commentId: editingCommentId, body })
   }
 
   if (isLoading) {
@@ -149,12 +215,56 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
               key={comment.id}
               className={`task-comment ${comment.optimistic ? 'task-comment--optimistic' : ''}`}
             >
-              <p className="task-comment-body">{comment.body}</p>
-              <p className="task-comment-meta">
-                {comment.author_email}
-                {' · '}
-                {comment.optimistic ? 'Sending…' : new Date(comment.created_at).toLocaleString()}
-              </p>
+              {editingCommentId === comment.id ? (
+                <form className="task-comment-edit-form" onSubmit={handleEditSubmit}>
+                  <textarea
+                    className="task-comments-input"
+                    value={editDraft}
+                    onChange={(event) => setEditDraft(event.target.value)}
+                    rows={3}
+                    maxLength={1000}
+                    disabled={isUpdating}
+                  />
+                  <div className="task-comment-actions">
+                    <button type="submit" className="task-comment-action" disabled={!editDraft.trim() || isUpdating}>
+                      Save
+                    </button>
+                    <button type="button" className="task-comment-action task-comment-action--muted" onClick={cancelEditing}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <p className="task-comment-body">{comment.body}</p>
+                  <div className="task-comment-footer">
+                    <p className="task-comment-meta">
+                      {comment.author_email}
+                      {' · '}
+                      {comment.optimistic ? 'Sending…' : new Date(comment.created_at).toLocaleString()}
+                    </p>
+                    {!comment.optimistic && comment.author_email === userEmail && (
+                      <div className="task-comment-actions">
+                        <button
+                          type="button"
+                          className="task-comment-action"
+                          onClick={() => startEditing(comment)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="task-comment-action task-comment-action--danger"
+                          onClick={() => removeComment(comment.id)}
+                          disabled={isDeleting}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </li>
           ))}
         </ul>

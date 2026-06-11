@@ -2,18 +2,28 @@ from fastapi import WebSocket
 
 from connection_manager import ConnectionManager
 from models.comments import Comment, create_comment, get_comments
-
-VALID_TASK_IDS = {1}
-
-
-def task_exists(task_id: int) -> bool:
-    return task_id in VALID_TASK_IDS
+from models.tasks import task_exists
 
 
 def comment_created_message(comment: Comment) -> dict:
     return {
         "type": "comment.created",
         "comment": comment.model_dump(mode="json"),
+    }
+
+
+def comment_updated_message(comment: Comment) -> dict:
+    return {
+        "type": "comment.updated",
+        "comment": comment.model_dump(mode="json"),
+    }
+
+
+def comment_deleted_message(comment_id: int, task_id: int) -> dict:
+    return {
+        "type": "comment.deleted",
+        "comment_id": comment_id,
+        "task_id": task_id,
     }
 
 
