@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from auth import (
     create_access_token,
@@ -18,17 +19,15 @@ from comment_ws import (
     handle_incoming_message,
 )
 from connection_manager import ConnectionManager
-from models.comments import (
-    Comment,
-    CommentCreate,
-    CommentUpdate,
-    create_comment,
-    delete_comment,
-    delete_comments_for_task,
-    get_comments,
-    update_comment,
+from database import get_db
+from models.comments import Comment, CommentCreate, CommentUpdate
+from models.tasks import Task, TaskCreate, TaskUpdate
+from repositories import (
+    CommentRepository,
+    SqlAlchemyCommentRepository,
+    SqlAlchemyTaskRepository,
+    TaskRepository,
 )
-from models.tasks import Task, TaskCreate, TaskUpdate, create_task, delete_task, get_task, list_tasks, task_exists, update_task
 
 app = FastAPI()
 manager = ConnectionManager()
@@ -47,6 +46,14 @@ app.add_middleware(
 )
 
 
+def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
+    return SqlAlchemyTaskRepository(db)
+
+
+def get_comment_repository(db: Session = Depends(get_db)) -> CommentRepository:
+    return SqlAlchemyCommentRepository(db)
+
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -57,53 +64,72 @@ class RefreshTokenRequest(BaseModel):
 
 
 @app.get("/")
-async def read_root():
+def read_root():
     return {"message": "Hello, World!"}
 
 
 @app.get("/me")
-async def current_user(current_user: str = Depends(get_current_user)):
+def current_user(current_user: str = Depends(get_current_user)):
     return {"email": current_user}
 
 
 @app.get("/tasks", response_model=list[Task])
-async def read_tasks(_: str = Depends(get_current_user)):
-    return list_tasks()
+def read_tasks(
+    _: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+):
+    return task_repository.list_all()
 
 
 @app.post("/tasks", response_model=Task, status_code=201)
-async def create_task_route(payload: TaskCreate, _: str = Depends(get_current_user)):
-    return create_task(payload)
+def create_task_route(
+    payload: TaskCreate,
+    _: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+):
+    return task_repository.create(payload)
 
 
 @app.get("/tasks/{task_id}", response_model=Task)
-async def read_task(task_id: int, _: str = Depends(get_current_user)):
-    task = get_task(task_id)
+def read_task(
+    task_id: int,
+    _: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+):
+    task = task_repository.get_by_id(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
 
 @app.patch("/tasks/{task_id}", response_model=Task)
-async def patch_task(task_id: int, payload: TaskUpdate, _: str = Depends(get_current_user)):
+def patch_task(
+    task_id: int,
+    payload: TaskUpdate,
+    _: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+):
     try:
-        return update_task(task_id, payload)
+        return task_repository.update_partial(task_id, payload)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
-async def remove_task(task_id: int, _: str = Depends(get_current_user)):
+def remove_task(
+    task_id: int,
+    _: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+):
     try:
-        delete_task(task_id)
-        delete_comments_for_task(task_id)
+        task_repository.delete(task_id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return Response(status_code=204)
 
 
 @app.post("/token")
-async def login(data: LoginRequest):
+def login(data: LoginRequest):
     if data.email != "test@example.com" or data.password != "password":
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -118,14 +144,14 @@ async def login(data: LoginRequest):
 
 
 @app.post("/token/refresh")
-async def refresh_access_token(payload: RefreshTokenRequest):
+def refresh_access_token(payload: RefreshTokenRequest):
     email = validate_refresh_token(payload.refresh_token)
     access_token = create_access_token({"sub": email})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.post("/logout", status_code=204)
-async def logout(payload: RefreshTokenRequest):
+def logout(payload: RefreshTokenRequest):
     revoke_refresh_token(payload.refresh_token)
     return Response(status_code=204)
 
@@ -146,12 +172,14 @@ async def post_comment(
     task_id: int,
     payload: CommentCreate,
     current_user: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+    comment_repository: CommentRepository = Depends(get_comment_repository),
 ):
-    if not task_exists(task_id):
+    if not task_repository.exists(task_id):
         raise HTTPException(status_code=404, detail="Task not found")
 
     try:
-        comment = create_comment(task_id, payload.body, current_user)
+        comment = comment_repository.create(task_id, payload.body, current_user)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -160,10 +188,15 @@ async def post_comment(
 
 
 @app.get("/tasks/{task_id}/comments", response_model=list[Comment])
-async def list_comments(task_id: int, _: str = Depends(get_current_user)):
-    if not task_exists(task_id):
+def list_comments(
+    task_id: int,
+    _: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+    comment_repository: CommentRepository = Depends(get_comment_repository),
+):
+    if not task_repository.exists(task_id):
         raise HTTPException(status_code=404, detail="Task not found")
-    return get_comments(task_id)
+    return comment_repository.list_by_task_id(task_id)
 
 
 @app.patch("/tasks/{task_id}/comments/{comment_id}", response_model=Comment)
@@ -172,12 +205,14 @@ async def patch_comment(
     comment_id: int,
     payload: CommentUpdate,
     current_user: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+    comment_repository: CommentRepository = Depends(get_comment_repository),
 ):
-    if not task_exists(task_id):
+    if not task_repository.exists(task_id):
         raise HTTPException(status_code=404, detail="Task not found")
 
     try:
-        comment = update_comment(comment_id, payload.body, current_user)
+        comment = comment_repository.update(comment_id, payload.body, current_user)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except PermissionError as exc:
@@ -197,12 +232,14 @@ async def remove_comment(
     task_id: int,
     comment_id: int,
     current_user: str = Depends(get_current_user),
+    task_repository: TaskRepository = Depends(get_task_repository),
+    comment_repository: CommentRepository = Depends(get_comment_repository),
 ):
-    if not task_exists(task_id):
+    if not task_repository.exists(task_id):
         raise HTTPException(status_code=404, detail="Task not found")
 
     try:
-        comment = delete_comment(comment_id, current_user)
+        comment = comment_repository.delete(comment_id, current_user)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except PermissionError as exc:
@@ -216,10 +253,16 @@ async def remove_comment(
 
 
 @app.websocket("/ws/tasks/{task_id}")
-async def task_comments_ws(websocket: WebSocket, task_id: int, token: str = Query(...)):
+async def task_comments_ws(
+    websocket: WebSocket,
+    task_id: int,
+    token: str = Query(...),
+    task_repository: TaskRepository = Depends(get_task_repository),
+    comment_repository: CommentRepository = Depends(get_comment_repository),
+):
     await websocket.accept()
 
-    if not task_exists(task_id):
+    if not task_repository.exists(task_id):
         await websocket.close(code=1008, reason="Task not found")
         return
 
@@ -230,12 +273,20 @@ async def task_comments_ws(websocket: WebSocket, task_id: int, token: str = Quer
         return
 
     manager.register(websocket, task_id)
-    await websocket.send_json(comments_snapshot_message(task_id))
+    comments = comment_repository.list_by_task_id(task_id)
+    await websocket.send_json(comments_snapshot_message(comments))
 
     try:
         while True:
             data = await websocket.receive_json()
-            await handle_incoming_message(websocket, manager, task_id, user_email, data)
+            await handle_incoming_message(
+                websocket,
+                manager,
+                task_id,
+                user_email,
+                data,
+                comment_repository,
+            )
     except WebSocketDisconnect:
         pass
     finally:

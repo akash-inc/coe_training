@@ -1,37 +1,19 @@
-import pytest
-from fastapi.testclient import TestClient
-
-from main import app
-from models.comments import reset_comments
-from models.tasks import reset_tasks
-
-client = TestClient(app)
-
 DEMO_USER = {"email": "test@example.com", "password": "password"}
 
 
-@pytest.fixture(autouse=True)
-def reset_store():
-    reset_tasks()
-    reset_comments()
-    yield
-    reset_tasks()
-    reset_comments()
-
-
-def login_token() -> str:
+def login_token(client) -> str:
     response = client.post("/token", json=DEMO_USER)
     assert response.status_code == 200
     return response.json()["access_token"]
 
 
-def test_list_tasks_requires_auth():
+def test_list_tasks_requires_auth(client):
     response = client.get("/tasks")
     assert response.status_code == 401
 
 
-def test_list_tasks_returns_seed_task():
-    token = login_token()
+def test_list_tasks_returns_seed_task(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     response = client.get("/tasks", headers=headers)
@@ -42,8 +24,8 @@ def test_list_tasks_returns_seed_task():
     assert tasks[0]["title"] == "Task 1"
 
 
-def test_create_update_delete_task():
-    token = login_token()
+def test_create_update_delete_task(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     created = client.post(
@@ -72,8 +54,8 @@ def test_create_update_delete_task():
     assert all(item["id"] != task["id"] for item in listed.json())
 
 
-def test_delete_task_removes_comments():
-    token = login_token()
+def test_delete_task_removes_comments(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     created = client.post(
@@ -105,8 +87,8 @@ def test_delete_task_removes_comments():
     assert comments.json() == []
 
 
-def test_get_task_not_found():
-    token = login_token()
+def test_get_task_not_found(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     response = client.get("/tasks/999", headers=headers)

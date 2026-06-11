@@ -3,3 +3,7 @@ uvicorn[standard]
 python-jose[cryptography]
 pydantic
 httpx
+sqlalchemy
+psycopg[binary]
+alembic
+python-dotenv

@@ -1,43 +1,27 @@
 import pytest
-from fastapi.testclient import TestClient
-
-from main import app
-from models.comments import reset_comments
-from models.tasks import reset_tasks
-
-client = TestClient(app)
 
 DEMO_USER = {"email": "test@example.com", "password": "password"}
 
 
-@pytest.fixture(autouse=True)
-def clear_comments():
-    reset_comments()
-    reset_tasks()
-    yield
-    reset_comments()
-    reset_tasks()
-
-
-def login_token() -> str:
+def login_token(client) -> str:
     response = client.post("/token", json=DEMO_USER)
     assert response.status_code == 200
     return response.json()["access_token"]
 
 
-def test_ws_echo():
+def test_ws_echo(client):
     with client.websocket_connect("/ws/echo") as websocket:
         websocket.send_text("hello")
         assert websocket.receive_text() == "Echo: hello"
 
 
-def test_list_comments_requires_auth():
+def test_list_comments_requires_auth(client):
     response = client.get("/tasks/1/comments")
     assert response.status_code == 401
 
 
-def test_post_and_list_comments():
-    token = login_token()
+def test_post_and_list_comments(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     empty = client.get("/tasks/1/comments", headers=headers)
@@ -56,8 +40,8 @@ def test_post_and_list_comments():
     assert len(listed.json()) == 1
 
 
-def test_patch_and_delete_comment():
-    token = login_token()
+def test_patch_and_delete_comment(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     created = client.post(
@@ -82,14 +66,14 @@ def test_patch_and_delete_comment():
     assert listed.json() == []
 
 
-def test_ws_rejects_invalid_token():
+def test_ws_rejects_invalid_token(client):
     with client.websocket_connect("/ws/tasks/1?token=invalid") as websocket:
         with pytest.raises(Exception):
             websocket.receive_json()
 
 
-def test_ws_snapshot_and_create():
-    token = login_token()
+def test_ws_snapshot_and_create(client):
+    token = login_token(client)
 
     with client.websocket_connect(f"/ws/tasks/1?token={token}") as websocket:
         snapshot = websocket.receive_json()
@@ -102,8 +86,8 @@ def test_ws_snapshot_and_create():
         assert created["comment"]["body"] == "Live comment"
 
 
-def test_ws_broadcasts_to_second_client():
-    token = login_token()
+def test_ws_broadcasts_to_second_client(client):
+    token = login_token(client)
 
     with client.websocket_connect(f"/ws/tasks/1?token={token}") as first:
         first.receive_json()
@@ -119,8 +103,8 @@ def test_ws_broadcasts_to_second_client():
     assert first_message["comment"]["id"] == second_message["comment"]["id"]
 
 
-def test_ws_rejects_empty_comment():
-    token = login_token()
+def test_ws_rejects_empty_comment(client):
+    token = login_token(client)
 
     with client.websocket_connect(f"/ws/tasks/1?token={token}") as websocket:
         websocket.receive_json()
@@ -129,8 +113,8 @@ def test_ws_rejects_empty_comment():
         assert error["type"] == "error"
 
 
-def test_comment_update_broadcasts_over_ws():
-    token = login_token()
+def test_comment_update_broadcasts_over_ws(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     created = client.post(
@@ -154,8 +138,8 @@ def test_comment_update_broadcasts_over_ws():
         assert message["comment"]["body"] == "After"
 
 
-def test_comment_delete_broadcasts_over_ws():
-    token = login_token()
+def test_comment_delete_broadcasts_over_ws(client):
+    token = login_token(client)
     headers = {"Authorization": f"Bearer {token}"}
 
     created = client.post(

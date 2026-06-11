@@ -1,8 +1,8 @@
 from fastapi import WebSocket
 
 from connection_manager import ConnectionManager
-from models.comments import Comment, create_comment, get_comments
-from models.tasks import task_exists
+from models.comments import Comment
+from repositories import CommentRepository
 
 
 def comment_created_message(comment: Comment) -> dict:
@@ -27,10 +27,10 @@ def comment_deleted_message(comment_id: int, task_id: int) -> dict:
     }
 
 
-def comments_snapshot_message(task_id: int) -> dict:
+def comments_snapshot_message(comments: list[Comment]) -> dict:
     return {
         "type": "comments.snapshot",
-        "comments": [comment.model_dump(mode="json") for comment in get_comments(task_id)],
+        "comments": [comment.model_dump(mode="json") for comment in comments],
     }
 
 
@@ -48,6 +48,7 @@ async def handle_incoming_message(
     task_id: int,
     user_email: str,
     data: object,
+    comment_repository: CommentRepository,
 ) -> None:
     if not isinstance(data, dict):
         await send_error(websocket, "Message must be a JSON object")
@@ -64,7 +65,7 @@ async def handle_incoming_message(
         return
 
     try:
-        comment = create_comment(task_id, body, user_email)
+        comment = comment_repository.create(task_id, body, user_email)
     except ValueError as exc:
         await send_error(websocket, str(exc))
         return
