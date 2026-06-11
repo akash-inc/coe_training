@@ -74,10 +74,14 @@ export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
     })
   }
 
+  function toggleTaskComments(taskId) {
+    setSelectedTaskId((current) => (current === taskId ? null : taskId))
+  }
+
   function startEditing(task) {
     setEditingTaskId(task.id)
     setEditForm({ title: task.title, description: task.description })
-    setSelectedTaskId(task.id)
+    setSelectedTaskId(null)
   }
 
   function cancelEditing() {
@@ -197,63 +201,75 @@ export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
                   </div>
                 </form>
               ) : (
-                <div
-                  className={`task-card ${selectedTaskId === task.id ? 'task-card--selected' : ''}`}
-                >
-                  <button
-                    type="button"
-                    className="task-card-select"
-                    onClick={() => setSelectedTaskId(task.id)}
+                <>
+                  <div
+                    className={`task-card ${selectedTaskId === task.id ? 'task-card--selected' : ''}`}
                   >
-                    <div className="task-card-body">
-                      <h3 className="task-title">{task.title}</h3>
-                      <p className="task-description">{task.description || 'No description'}</p>
+                    <button
+                      type="button"
+                      className="task-card-select"
+                      onClick={() => toggleTaskComments(task.id)}
+                      aria-expanded={selectedTaskId === task.id}
+                    >
+                      <div className="task-card-body">
+                        <h3 className="task-title">{task.title}</h3>
+                        <p className="task-description">{task.description || 'No description'}</p>
+                      </div>
+                      <span
+                        className={`task-badge ${task.completed ? 'task-badge--done' : 'task-badge--open'}`}
+                      >
+                        {task.completed ? 'Done' : 'Open'}
+                      </span>
+                    </button>
+                    <div className="task-card-actions">
+                      <button
+                        type="button"
+                        className={`task-action-btn ${selectedTaskId === task.id ? 'task-action-btn--active' : ''}`}
+                        onClick={() => toggleTaskComments(task.id)}
+                      >
+                        {selectedTaskId === task.id ? 'Hide comments' : 'Comments'}
+                      </button>
+                      <button
+                        type="button"
+                        className="task-action-btn"
+                        onClick={(event) => handleToggleComplete(task, event)}
+                        disabled={isUpdating}
+                      >
+                        {task.completed ? 'Reopen' : 'Complete'}
+                      </button>
+                      <button
+                        type="button"
+                        className="task-action-btn task-action-btn--muted"
+                        onClick={() => startEditing(task)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="task-action-btn task-action-btn--danger"
+                        onClick={(event) => handleDelete(task, event)}
+                        disabled={isDeleting}
+                      >
+                        Delete
+                      </button>
                     </div>
-                    <span
-                      className={`task-badge ${task.completed ? 'task-badge--done' : 'task-badge--open'}`}
-                    >
-                      {task.completed ? 'Done' : 'Open'}
-                    </span>
-                  </button>
-                  <div className="task-card-actions">
-                    <button
-                      type="button"
-                      className="task-action-btn"
-                      onClick={(event) => handleToggleComplete(task, event)}
-                      disabled={isUpdating}
-                    >
-                      {task.completed ? 'Reopen' : 'Complete'}
-                    </button>
-                    <button
-                      type="button"
-                      className="task-action-btn task-action-btn--muted"
-                      onClick={() => startEditing(task)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="task-action-btn task-action-btn--danger"
-                      onClick={(event) => handleDelete(task, event)}
-                      disabled={isDeleting}
-                    >
-                      Delete
-                    </button>
                   </div>
-                </div>
+
+                  {selectedTaskId === task.id && accessToken && (
+                    <TaskComments
+                      key={task.id}
+                      taskId={task.id}
+                      token={accessToken}
+                      userEmail={userEmail}
+                      onSessionExpired={onSessionExpired}
+                      onClose={() => setSelectedTaskId(null)}
+                    />
+                  )}
+                </>
               )}
             </li>
           ))}
         </ul>
-      )}
-
-      {selectedTaskId && accessToken && (
-        <TaskComments
-          taskId={selectedTaskId}
-          token={accessToken}
-          userEmail={userEmail}
-          onSessionExpired={onSessionExpired}
-        />
       )}
     </section>
   )

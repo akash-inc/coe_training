@@ -7,12 +7,32 @@
   text-align: left;
 }
 
+.task-comments--inline {
+  margin-top: 0;
+}
+
 .task-comments-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.task-comments-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.task-comments-close {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 
 .task-comments-title {

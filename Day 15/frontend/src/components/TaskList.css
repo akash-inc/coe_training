@@ -32,6 +32,12 @@
   gap: 0.75rem;
 }
 
+.task-list > li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .task-card {
   display: flex;
   flex-direction: column;
@@ -222,6 +228,12 @@
 .task-action-btn--danger {
   border-color: var(--danger-soft);
   color: var(--danger);
+}
+
+.task-action-btn--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .task-action-btn:disabled {

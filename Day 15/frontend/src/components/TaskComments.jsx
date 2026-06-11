@@ -18,7 +18,7 @@ function connectionLabel(status) {
   return 'Offline'
 }
 
-export default function TaskComments({ taskId, token, userEmail, onSessionExpired }) {
+export default function TaskComments({ taskId, token, userEmail, onSessionExpired, onClose }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [editingCommentId, setEditingCommentId] = useState(null)
@@ -136,9 +136,7 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
 
   const handleCommentsSnapshot = useCallback(
     (snapshotComments) => {
-      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
-        mergeComments(existing, snapshotComments),
-      )
+      queryClient.setQueryData(commentsQueryKey, snapshotComments)
     },
     [queryClient, commentsQueryKey],
   )
@@ -190,20 +188,27 @@ export default function TaskComments({ taskId, token, userEmail, onSessionExpire
   }
 
   if (isLoading) {
-    return <p className="task-comments-loading">Loading comments…</p>
+    return <p className="task-comments-loading task-comments--inline">Loading comments…</p>
   }
 
   if (error) {
-    return <p className="task-comments-error">{error.message}</p>
+    return <p className="task-comments-error task-comments--inline">{error.message}</p>
   }
 
   return (
-    <section className="task-comments" aria-label="Task comments">
+    <section className="task-comments task-comments--inline" aria-label="Task comments">
       <div className="task-comments-header">
         <h3 className="task-comments-title">Comments</h3>
-        <span className={`task-comments-status task-comments-status--${status}`}>
-          {connectionLabel(status)}
-        </span>
+        <div className="task-comments-header-actions">
+          <span className={`task-comments-status task-comments-status--${status}`}>
+            {connectionLabel(status)}
+          </span>
+          {onClose && (
+            <button type="button" className="task-comments-close" onClick={onClose}>
+              Close
+            </button>
+          )}
+        </div>
       </div>
 
       {comments.length === 0 ? (
