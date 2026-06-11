@@ -6,7 +6,7 @@ import { UnauthorizedError } from '../lib/apiClient'
 import TaskComments from './TaskComments'
 import './TaskList.css'
 
-export default function TaskList({ onSessionExpired, accessToken }) {
+export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
   const [selectedTaskId, setSelectedTaskId] = useState(null)
   const { data, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.tasks,
@@ -71,6 +71,7 @@ export default function TaskList({ onSessionExpired, accessToken }) {
         <TaskComments
           taskId={selectedTaskId}
           token={accessToken}
+          userEmail={userEmail}
           onSessionExpired={onSessionExpired}
         />
       )}

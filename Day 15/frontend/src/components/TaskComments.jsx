@@ -1,7 +1,12 @@
 import { useCallback, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getComments } from '../api/comments'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createComment, getComments } from '../api/comments'
 import { queryKeys } from '../api/queryKeys'
+import {
+  createOptimisticComment,
+  mergeComments,
+  replaceOptimisticComment,
+} from '../lib/commentsCache'
 import { useTaskCommentsSocket } from '../hooks/useTaskCommentsSocket'
 import './TaskComments.css'
 
@@ -11,55 +16,96 @@ function connectionLabel(status) {
   return 'Offline'
 }
 
-function mergeComments(existing = [], incoming = []) {
-  const byId = new Map(existing.map((comment) => [comment.id, comment]))
-  for (const comment of incoming) {
-    byId.set(comment.id, comment)
-  }
-  return [...byId.values()].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  )
-}
-
-export default function TaskComments({ taskId, token, onSessionExpired }) {
+export default function TaskComments({ taskId, token, userEmail, onSessionExpired }) {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
-  const [sendError, setSendError] = useState(null)
-  const [socketError, setSocketError] = useState(null)
+
+  const commentsQueryKey = queryKeys.comments(taskId)
 
   const { data: comments = [], isLoading, error } = useQuery({
-    queryKey: queryKeys.comments(taskId),
+    queryKey: commentsQueryKey,
     queryFn: () => getComments(taskId),
     enabled: !!taskId && !!token,
   })
 
-  const handleCommentCreated = useCallback(
-    (comment) => {
-      queryClient.setQueryData(queryKeys.comments(taskId), (existing = []) =>
-        mergeComments(existing, [comment]),
+  const { mutate: postComment, isPending, error: postError } = useMutation({
+    mutationFn: (body) => createComment(taskId, body),
+    onMutate: async (body) => {
+      await queryClient.cancelQueries({ queryKey: commentsQueryKey })
+
+      const previousComments = queryClient.getQueryData(commentsQueryKey) ?? []
+      const optimisticComment = createOptimisticComment({
+        taskId,
+        body,
+        authorEmail: userEmail ?? 'you',
+      })
+
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
+        mergeComments(existing, [optimisticComment]),
+      )
+
+      return { previousComments, optimisticId: optimisticComment.id }
+    },
+    onError: (_error, _body, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData(commentsQueryKey, context.previousComments)
+      }
+    },
+    onSuccess: (confirmedComment, _body, context) => {
+      if (!context?.optimisticId) return
+
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
+        replaceOptimisticComment(existing, context.optimisticId, confirmedComment),
       )
     },
-    [queryClient, taskId],
+  })
+
+  const handleCommentCreated = useCallback(
+    (comment) => {
+      queryClient.setQueryData(commentsQueryKey, (existing = []) => {
+        const hasOptimisticMatch = existing.some(
+          (item) =>
+            item.optimistic &&
+            item.body === comment.body &&
+            item.author_email === comment.author_email,
+        )
+
+        if (hasOptimisticMatch) {
+          const withoutMatchingOptimistic = existing.filter(
+            (item) =>
+              !(
+                item.optimistic &&
+                item.body === comment.body &&
+                item.author_email === comment.author_email
+              ),
+          )
+          return mergeComments(withoutMatchingOptimistic, [comment])
+        }
+
+        return mergeComments(existing, [comment])
+      })
+    },
+    [queryClient, commentsQueryKey],
   )
 
   const handleCommentsSnapshot = useCallback(
     (snapshotComments) => {
-      queryClient.setQueryData(queryKeys.comments(taskId), (existing = []) =>
+      queryClient.setQueryData(commentsQueryKey, (existing = []) =>
         mergeComments(existing, snapshotComments),
       )
     },
-    [queryClient, taskId],
+    [queryClient, commentsQueryKey],
   )
 
   const handleSocketError = useCallback((message) => {
-    setSocketError(message)
+    console.error('WebSocket error:', message)
   }, [])
 
   const handleAuthError = useCallback(() => {
     onSessionExpired()
   }, [onSessionExpired])
 
-  const { sendComment, status } = useTaskCommentsSocket(taskId, token, {
+  const { status } = useTaskCommentsSocket(taskId, token, {
     onCommentCreated: handleCommentCreated,
     onCommentsSnapshot: handleCommentsSnapshot,
     onSocketError: handleSocketError,
@@ -68,19 +114,13 @@ export default function TaskComments({ taskId, token, onSessionExpired }) {
 
   function handleSubmit(event) {
     event.preventDefault()
-    setSendError(null)
-    setSocketError(null)
 
     const body = draft.trim()
-    if (!body) return
+    if (!body || isPending) return
 
-    const sent = sendComment(body)
-    if (!sent) {
-      setSendError('Not connected. Wait for live updates to resume.')
-      return
-    }
-
-    setDraft('')
+    postComment(body, {
+      onSuccess: () => setDraft(''),
+    })
   }
 
   if (isLoading) {
@@ -105,12 +145,15 @@ export default function TaskComments({ taskId, token, onSessionExpired }) {
       ) : (
         <ul className="task-comments-list">
           {comments.map((comment) => (
-            <li key={comment.id} className="task-comment">
+            <li
+              key={comment.id}
+              className={`task-comment ${comment.optimistic ? 'task-comment--optimistic' : ''}`}
+            >
               <p className="task-comment-body">{comment.body}</p>
               <p className="task-comment-meta">
                 {comment.author_email}
                 {' · '}
-                {new Date(comment.created_at).toLocaleString()}
+                {comment.optimistic ? 'Sending…' : new Date(comment.created_at).toLocaleString()}
               </p>
             </li>
           ))}
@@ -129,15 +172,15 @@ export default function TaskComments({ taskId, token, onSessionExpired }) {
           rows={3}
           maxLength={1000}
           placeholder="Write a comment…"
+          disabled={isPending}
         />
-        {sendError && <p className="task-comments-error">{sendError}</p>}
-        {socketError && <p className="task-comments-error">{socketError}</p>}
+        {postError && <p className="task-comments-error">{postError.message}</p>}
         <button
           type="submit"
           className="task-comments-submit"
-          disabled={!draft.trim() || status !== 'open'}
+          disabled={!draft.trim() || isPending}
         >
-          Post comment
+          {isPending ? 'Posting…' : 'Post comment'}
         </button>
       </form>
     </section>

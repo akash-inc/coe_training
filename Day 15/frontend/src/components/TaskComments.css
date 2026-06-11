@@ -72,6 +72,15 @@
   color: var(--text-muted);
 }
 
+.task-comment--optimistic {
+  opacity: 0.7;
+}
+
+.task-comment--optimistic .task-comment-meta {
+  color: var(--accent);
+  font-style: italic;
+}
+
 .task-comments-empty,
 .task-comments-loading {
   margin: 0 0 1rem;

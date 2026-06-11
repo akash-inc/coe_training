@@ -80,7 +80,11 @@ function App() {
         {isLoggedIn && user?.email && (
           <>
             <UserProfile user={user} onLogout={handleSessionExpired} />
-            <TaskList onSessionExpired={handleSessionExpired} accessToken={accessToken} />
+            <TaskList
+              onSessionExpired={handleSessionExpired}
+              accessToken={accessToken}
+              userEmail={user.email}
+            />
           </>
         )}
       </main>
