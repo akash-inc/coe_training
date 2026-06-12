@@ -5,6 +5,7 @@ import {
   setAccessToken,
 } from './tokenStorage'
 import { apiUrl } from './apiBase'
+import { tracingHeaders } from './requestTracing'
 
 export class UnauthorizedError extends Error {
   constructor(message = 'Unauthorized') {
@@ -21,7 +22,7 @@ async function refreshAccessToken() {
 
   const response = await fetch(apiUrl('/token/refresh'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: tracingHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ refresh_token: refreshToken }),
   })
   if (!response.ok) return false
@@ -42,10 +43,10 @@ async function refreshOnce() {
 
 async function sendRequest(path, options = {}) {
   const accessToken = getAccessToken()
-  const headers = {
+  const headers = tracingHeaders({
     'Content-Type': 'application/json',
     ...options.headers,
-  }
+  })
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`
   }

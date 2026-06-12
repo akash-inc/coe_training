@@ -57,11 +57,12 @@ Day 15/
 ├── comment_ws.py           # WebSocket message builders and handlers
 ├── connection_manager.py   # Per-task WebSocket registry and broadcast
 ├── logging_config.py       # JSON formatter, request logging middleware
+├── tracing.py              # Request/trace ID context and header propagation
 ├── models/
 │   ├── tasks.py            # Pydantic Task / TaskCreate / TaskUpdate
 │   └── comments.py         # Pydantic Comment / CommentCreate / CommentUpdate
 ├── alembic/                # Schema migrations
-├── tests/                  # pytest suite (21 tests)
+├── tests/                  # pytest suite (26 tests)
 ├── docker-compose.yml
 ├── Dockerfile              # Backend image
 ├── docker-entrypoint.sh    # alembic upgrade head, then uvicorn
@@ -204,7 +205,32 @@ Every log line carries stable index keys:
 - `service` from `LOG_SERVICE` (default `day15-api`)
 - `environment` from `LOG_ENVIRONMENT` (default `development`)
 - `request_id` propagated from `X-Request-ID` or generated per request
+- `trace_id` propagated from `X-Trace-ID` for cross-service correlation (browser tab session)
 - `event` for filtering (`http.response`, `auth.login_failed`, `ws.connect`, etc.)
+
+#### Request ID tracing across services
+
+`tracing.py` centralizes trace context in `ContextVar`s so every log line within a request shares the same IDs.
+
+| ID | Header / param | Scope | Set by |
+|----|----------------|-------|--------|
+| `trace_id` | `X-Trace-ID` | Browser tab session | Frontend (`sessionStorage`, reused across calls) |
+| `request_id` | `X-Request-ID` | Single HTTP call or WebSocket connection | Frontend (new UUID per request) |
+
+**Frontend** (`frontend/src/lib/requestTracing.js`):
+
+- `getTraceId()` stores a tab-level ID in `sessionStorage`.
+- `createRequestId()` generates a fresh UUID per API call.
+- `tracingHeaders()` adds both headers to every `fetch` (`apiClient.js`, `auth.js`).
+- `tracingQueryParams()` adds `trace_id` and `request_id` to WebSocket URLs (browsers cannot set custom WS headers).
+
+**Backend**:
+
+- HTTP middleware reads incoming headers, binds context for the request, echoes both IDs on the response.
+- WebSocket handler reads `trace_id` / `request_id` from query params or connection headers, binds context for the connection lifetime.
+- Invalid IDs are replaced with generated UUIDs (max 128 chars, alphanumeric plus `._:-`).
+
+In Railway or Datadog, filter frontend and backend logs with the same `trace_id` to follow a user action end to end.
 
 Sensitive data is never logged: `Authorization` and `Cookie` headers are omitted; query params `token`, `password`, and `refresh_token` are redacted to `[REDACTED]`. Request and response bodies are not logged, only `Content-Length` and `Content-Type` metadata.
 
@@ -334,13 +360,14 @@ npm run dev
 
 ## Testing
 
-21 pytest tests in `tests/`:
+26 pytest tests in `tests/`:
 
 | File | Coverage |
 |------|----------|
 | `test_tasks_crud.py` | Auth gate, list seed task, create/update/delete, cascade delete comments, 404 |
 | `test_comments_ws.py` | REST comments, WebSocket snapshot/create/broadcast, auth errors, update/delete broadcasts |
 | `test_logging.py` | Aggregation fields, status-based levels, request/response metadata, query redaction |
+| `test_tracing.py` | Header propagation, WebSocket trace context, ID validation |
 
 `conftest.py` provisions a dedicated test database (`TEST_DATABASE_URL`), runs Alembic migrate up/down per session, truncates and re-seeds task id 1 before each test, and overrides `get_db` with the test session factory.
 
@@ -429,7 +456,7 @@ Copy `.env.example` to `.env` for local backend settings. Frontend local env liv
 3. Tasks persist across backend restarts (PostgreSQL).
 4. Open one task in two tabs; post a comment in one tab and see it appear in the other (WebSocket + CORS + `wss://` correct).
 5. Backend logs emit parseable JSON lines with `event` and `request_id` fields.
-6. `python -m pytest -q` passes all 21 tests.
+6. `python -m pytest -q` passes all 26 tests.
 
 ## Related docs
 

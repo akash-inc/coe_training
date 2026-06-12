@@ -1,12 +1,13 @@
 import { apiUrl } from '../lib/apiBase'
+import { tracingHeaders } from '../lib/requestTracing'
 import { clearTokens, getRefreshToken } from '../lib/tokenStorage'
 
 export async function login(email, password) {
   const response = await fetch(apiUrl('/token'), {
     method: 'POST',
-    headers: {
+    headers: tracingHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({ email, password }),
   })
   if (!response.ok) {
@@ -21,7 +22,7 @@ export async function logout() {
   if (refreshToken) {
     await fetch(apiUrl('/logout'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: tracingHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ refresh_token: refreshToken }),
     }).catch(() => {})
   }

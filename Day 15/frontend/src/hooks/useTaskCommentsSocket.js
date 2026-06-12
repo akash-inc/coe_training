@@ -1,22 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getApiBaseUrl } from '../lib/apiBase'
+import { tracingQueryParams } from '../lib/requestTracing'
 
 const MAX_RECONNECT_DELAY_MS = 30_000
 
 function getWebSocketUrl(taskId, token) {
+  const params = new URLSearchParams(
+    tracingQueryParams({ token }),
+  )
+
   const wsHost = import.meta.env.VITE_API_WS_HOST
   if (wsHost) {
-    return `${wsHost.replace(/\/$/, '')}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+    return `${wsHost.replace(/\/$/, '')}/ws/tasks/${taskId}?${params}`
   }
 
   const apiBase = getApiBaseUrl()
   if (apiBase) {
     const wsBase = apiBase.replace(/^http/, 'ws')
-    return `${wsBase}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+    return `${wsBase}/ws/tasks/${taskId}?${params}`
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`
+  return `${protocol}//${window.location.host}/ws/tasks/${taskId}?${params}`
 }
 
 export function useTaskCommentsSocket(

@@ -27,6 +27,13 @@ from database import get_db
 from models.comments import Comment, CommentCreate, CommentUpdate
 from models.tasks import Task, TaskCreate, TaskUpdate
 from logging_config import RequestLoggingMiddleware, setup_logging
+from tracing import (
+    REQUEST_ID_HEADER,
+    TRACE_ID_HEADER,
+    bind_trace_context,
+    resolve_request_id,
+    resolve_trace_id,
+)
 from repositories import (
     CommentRepository,
     SqlAlchemyCommentRepository,
@@ -273,52 +280,63 @@ async def task_comments_ws(
     websocket: WebSocket,
     task_id: int,
     token: str = Query(...),
+    request_id: str | None = Query(None),
+    trace_id: str | None = Query(None),
     task_repository: TaskRepository = Depends(get_task_repository),
     comment_repository: CommentRepository = Depends(get_comment_repository),
 ):
-    await websocket.accept()
-
-    if not task_repository.exists(task_id):
-        await websocket.close(code=1008, reason="Task not found")
-        return
-
-    try:
-        user_email = get_user_from_token(token)
-    except HTTPException:
-        await websocket.close(code=1008, reason="Invalid token")
-        return
-
-    manager.register(websocket, task_id)
-    logger.info(
-        "websocket connected",
-        extra={
-            "event": "ws.connect",
-            "task_id": task_id,
-            "user_email": user_email,
-        },
+    resolved_request_id = resolve_request_id(
+        request_id or websocket.headers.get(REQUEST_ID_HEADER)
     )
-    comments = comment_repository.list_by_task_id(task_id)
-    await websocket.send_json(comments_snapshot_message(comments))
+    resolved_trace_id = resolve_trace_id(
+        trace_id or websocket.headers.get(TRACE_ID_HEADER),
+        fallback=resolved_request_id,
+    )
 
-    try:
-        while True:
-            data = await websocket.receive_json()
-            await handle_incoming_message(
-                websocket,
-                manager,
-                task_id,
-                user_email,
-                data,
-                comment_repository,
-            )
-    except WebSocketDisconnect:
+    with bind_trace_context(resolved_request_id, resolved_trace_id):
+        await websocket.accept()
+
+        if not task_repository.exists(task_id):
+            await websocket.close(code=1008, reason="Task not found")
+            return
+
+        try:
+            user_email = get_user_from_token(token)
+        except HTTPException:
+            await websocket.close(code=1008, reason="Invalid token")
+            return
+
+        manager.register(websocket, task_id)
         logger.info(
-            "websocket disconnected",
+            "websocket connected",
             extra={
-                "event": "ws.disconnect",
+                "event": "ws.connect",
                 "task_id": task_id,
                 "user_email": user_email,
             },
         )
-    finally:
-        manager.disconnect(websocket, task_id)
+        comments = comment_repository.list_by_task_id(task_id)
+        await websocket.send_json(comments_snapshot_message(comments))
+
+        try:
+            while True:
+                data = await websocket.receive_json()
+                await handle_incoming_message(
+                    websocket,
+                    manager,
+                    task_id,
+                    user_email,
+                    data,
+                    comment_repository,
+                )
+        except WebSocketDisconnect:
+            logger.info(
+                "websocket disconnected",
+                extra={
+                    "event": "ws.disconnect",
+                    "task_id": task_id,
+                    "user_email": user_email,
+                },
+            )
+        finally:
+            manager.disconnect(websocket, task_id)

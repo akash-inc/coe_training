@@ -2,8 +2,6 @@ import json
 import logging
 import sys
 import time
-import uuid
-from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import parse_qsl, urlencode
@@ -15,8 +13,13 @@ from config import (
     get_log_service,
     get_slow_request_ms,
 )
-
-request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
+from tracing import (
+    bind_trace_context,
+    get_request_id,
+    get_trace_id,
+    merge_response_headers,
+    resolve_http_trace_context,
+)
 
 STRUCTURED_LOG_FIELDS = (
     "event",
@@ -67,9 +70,13 @@ class JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
 
-        request_id = request_id_ctx.get()
+        request_id = get_request_id()
         if request_id:
             payload["request_id"] = request_id
+
+        trace_id = get_trace_id()
+        if trace_id:
+            payload["trace_id"] = trace_id
 
         for field in STRUCTURED_LOG_FIELDS:
             if field in ("service", "environment", "severity"):
@@ -86,8 +93,14 @@ class JsonFormatter(logging.Formatter):
 
 class HumanFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        request_id = request_id_ctx.get()
-        prefix = f"[{request_id}] " if request_id else ""
+        request_id = get_request_id()
+        trace_id = get_trace_id()
+        prefix_parts = []
+        if trace_id:
+            prefix_parts.append(f"trace={trace_id}")
+        if request_id:
+            prefix_parts.append(f"req={request_id}")
+        prefix = f"[{', '.join(prefix_parts)}] " if prefix_parts else ""
         return super().format(record).replace(record.getMessage(), f"{prefix}{record.getMessage()}", 1)
 
 
@@ -213,8 +226,7 @@ class RequestLoggingMiddleware:
             await self.app(scope, receive, send)
             return
 
-        request_id = _header_value(scope, b"x-request-id") or str(uuid.uuid4())
-        token = request_id_ctx.set(request_id)
+        request_id, trace_id = resolve_http_trace_context(scope)
         start = time.perf_counter()
         status_code = 500
         response_content_length: int | None = None
@@ -236,40 +248,42 @@ class RequestLoggingMiddleware:
                 }
                 response_content_length = _parse_content_length(headers.get("content-length"))
                 response_content_type = headers.get("content-type")
-                outgoing_headers = list(message.get("headers", []))
-                outgoing_headers.append((b"x-request-id", request_id.encode()))
+                outgoing_headers = merge_response_headers(
+                    list(message.get("headers", [])),
+                    request_id,
+                    trace_id,
+                )
                 message = {**message, "headers": outgoing_headers}
             await send(message)
 
-        try:
-            await self.app(scope, receive, send_wrapper)
-            duration_ms = round((time.perf_counter() - start) * 1000, 2)
-            log_level = resolve_http_log_level(status_code, duration_ms)
-            self.logger.log(
-                log_level,
-                "request completed",
-                extra=_http_request_extra(
-                    scope,
-                    event="http.response",
-                    status_code=status_code,
-                    duration_ms=duration_ms,
-                    response_content_length=response_content_length,
-                    response_content_type=response_content_type,
-                ),
-            )
-        except Exception:
-            duration_ms = round((time.perf_counter() - start) * 1000, 2)
-            self.logger.exception(
-                "request failed",
-                extra=_http_request_extra(
-                    scope,
-                    event="http.response",
-                    status_code=status_code,
-                    duration_ms=duration_ms,
-                    response_content_length=response_content_length,
-                    response_content_type=response_content_type,
-                ),
-            )
-            raise
-        finally:
-            request_id_ctx.reset(token)
+        with bind_trace_context(request_id, trace_id):
+            try:
+                await self.app(scope, receive, send_wrapper)
+                duration_ms = round((time.perf_counter() - start) * 1000, 2)
+                log_level = resolve_http_log_level(status_code, duration_ms)
+                self.logger.log(
+                    log_level,
+                    "request completed",
+                    extra=_http_request_extra(
+                        scope,
+                        event="http.response",
+                        status_code=status_code,
+                        duration_ms=duration_ms,
+                        response_content_length=response_content_length,
+                        response_content_type=response_content_type,
+                    ),
+                )
+            except Exception:
+                duration_ms = round((time.perf_counter() - start) * 1000, 2)
+                self.logger.exception(
+                    "request failed",
+                    extra=_http_request_extra(
+                        scope,
+                        event="http.response",
+                        status_code=status_code,
+                        duration_ms=duration_ms,
+                        response_content_length=response_content_length,
+                        response_content_type=response_content_type,
+                    ),
+                )
+                raise
