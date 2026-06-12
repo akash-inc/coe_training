@@ -37,3 +37,14 @@ DEMO_USER_EMAIL = os.getenv("DEMO_USER_EMAIL", "test@example.com")
 DEMO_USER_PASSWORD = os.getenv("DEMO_USER_PASSWORD", "password")
 
 PORT = int(os.getenv("PORT", "8000"))
+
+DEFAULT_LOG_LEVEL = "INFO"
+DEFAULT_LOG_FORMAT = "json"
+
+
+def get_log_level() -> str:
+    return os.getenv("LOG_LEVEL", DEFAULT_LOG_LEVEL).upper()
+
+
+def get_log_format() -> str:
+    return os.getenv("LOG_FORMAT", DEFAULT_LOG_FORMAT).lower()

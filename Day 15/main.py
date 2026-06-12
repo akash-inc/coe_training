@@ -1,3 +1,6 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -23,6 +26,7 @@ from connection_manager import ConnectionManager
 from database import get_db
 from models.comments import Comment, CommentCreate, CommentUpdate
 from models.tasks import Task, TaskCreate, TaskUpdate
+from logging_config import RequestLoggingMiddleware, setup_logging
 from repositories import (
     CommentRepository,
     SqlAlchemyCommentRepository,
@@ -30,7 +34,18 @@ from repositories import (
     TaskRepository,
 )
 
-app = FastAPI()
+setup_logging()
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    logger.info("application started", extra={"event": "app.startup"})
+    yield
+    logger.info("application stopped", extra={"event": "app.shutdown"})
+
+
+app = FastAPI(lifespan=lifespan)
 manager = ConnectionManager()
 
 app.add_middleware(
@@ -40,6 +55,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
 
 
 def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
@@ -127,6 +143,10 @@ def remove_task(
 @app.post("/token")
 def login(data: LoginRequest):
     if data.email != DEMO_USER_EMAIL or data.password != DEMO_USER_PASSWORD:
+        logger.warning(
+            "login failed",
+            extra={"event": "auth.login_failed", "user_email": data.email},
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token({"sub": data.email})
@@ -269,6 +289,14 @@ async def task_comments_ws(
         return
 
     manager.register(websocket, task_id)
+    logger.info(
+        "websocket connected",
+        extra={
+            "event": "ws.connect",
+            "task_id": task_id,
+            "user_email": user_email,
+        },
+    )
     comments = comment_repository.list_by_task_id(task_id)
     await websocket.send_json(comments_snapshot_message(comments))
 
@@ -284,6 +312,13 @@ async def task_comments_ws(
                 comment_repository,
             )
     except WebSocketDisconnect:
-        pass
+        logger.info(
+            "websocket disconnected",
+            extra={
+                "event": "ws.disconnect",
+                "task_id": task_id,
+                "user_email": user_email,
+            },
+        )
     finally:
         manager.disconnect(websocket, task_id)
