@@ -61,7 +61,7 @@ Day 15/
 │   ├── tasks.py            # Pydantic Task / TaskCreate / TaskUpdate
 │   └── comments.py         # Pydantic Comment / CommentCreate / CommentUpdate
 ├── alembic/                # Schema migrations
-├── tests/                  # pytest suite (17 tests)
+├── tests/                  # pytest suite (21 tests)
 ├── docker-compose.yml
 ├── Dockerfile              # Backend image
 ├── docker-entrypoint.sh    # alembic upgrade head, then uvicorn
@@ -183,21 +183,46 @@ REST comment mutations also broadcast the same shapes so clients stay in sync wh
 
 ### Structured JSON logging (`logging_config.py`)
 
-Configured at import via `setup_logging()` in `main.py`.
+Configured at import via `setup_logging()` in `main.py`. Output is one JSON object per line on stdout, which log aggregators (Railway logs, Datadog, CloudWatch, ELK) can index by field.
 
-- **`JsonFormatter`**: one JSON object per line to stdout with `timestamp`, `level`, `logger`, `message`, optional `request_id`, and structured fields (`event`, `http_method`, `path`, `status_code`, `duration_ms`, `client_ip`, `task_id`, `user_email`).
-- **`RequestLoggingMiddleware`**: pure ASGI middleware for HTTP only (does not break WebSocket upgrades). Logs each request with duration and status; propagates or generates `X-Request-ID` via a `ContextVar`.
-- Uvicorn access logs are disabled (`--no-access-log`) to avoid duplicate unstructured lines.
-- Application lifespan logs `app.startup` / `app.shutdown`.
-- Failed logins log `auth.login_failed` with email only (password is never logged).
-- WebSocket connect/disconnect log `ws.connect` / `ws.disconnect`.
+#### Log levels
+
+| Source | Level | When |
+|--------|-------|------|
+| `LOG_LEVEL` | Root + uvicorn | Default `INFO`; set `DEBUG` to also emit `http.request.received` |
+| HTTP 2xx/3xx | `INFO` | Successful responses |
+| HTTP 4xx | `WARNING` | Client errors (e.g. 401, 404) |
+| HTTP 5xx / unhandled exception | `ERROR` | Server errors |
+| Slow requests | `WARNING` | Duration exceeds `LOG_SLOW_REQUEST_MS` (default 1000 ms; set `0` to disable) |
+
+Each JSON line includes a numeric `severity` field (syslog-style: INFO=6, WARNING=4, ERROR=3) for aggregator level mapping.
+
+#### Log aggregation fields
+
+Every log line carries stable index keys:
+
+- `service` from `LOG_SERVICE` (default `day15-api`)
+- `environment` from `LOG_ENVIRONMENT` (default `development`)
+- `request_id` propagated from `X-Request-ID` or generated per request
+- `event` for filtering (`http.response`, `auth.login_failed`, `ws.connect`, etc.)
+
+Sensitive data is never logged: `Authorization` and `Cookie` headers are omitted; query params `token`, `password`, and `refresh_token` are redacted to `[REDACTED]`. Request and response bodies are not logged, only `Content-Length` and `Content-Type` metadata.
+
+#### FastAPI request/response logging
+
+`RequestLoggingMiddleware` is pure ASGI (HTTP only; WebSocket upgrades are unaffected):
+
+1. **`http.request.received`** (`DEBUG`): method, path, sanitized query string, client IP, user agent, request content metadata.
+2. **`http.response`** (`INFO` / `WARNING` / `ERROR`): same request fields plus status code, duration, response content length and type.
+
+Uvicorn access logs are disabled (`--no-access-log`) to avoid duplicate unstructured lines. Application lifespan logs `app.startup` / `app.shutdown`. Failed logins log `auth.login_failed` with email only. WebSocket connect/disconnect log `ws.connect` / `ws.disconnect`.
 
 Set `LOG_FORMAT=text` for human-readable local output.
 
-Example log line:
+Example response log line:
 
 ```json
-{"timestamp": "2026-06-11T12:00:00.123456+00:00", "level": "INFO", "logger": "day15.http", "message": "request completed", "request_id": "...", "event": "http.request", "http_method": "GET", "path": "/tasks", "status_code": 200, "duration_ms": 4.12, "client_ip": "127.0.0.1"}
+{"timestamp": "2026-06-11T12:00:00.123456+00:00", "level": "INFO", "severity": 6, "service": "day15-api", "environment": "production", "logger": "day15.http", "message": "request completed", "request_id": "...", "event": "http.response", "http_method": "GET", "path": "/tasks", "status_code": 200, "duration_ms": 4.12, "client_ip": "127.0.0.1", "user_agent": "...", "response_content_length": 128, "response_content_type": "application/json"}
 ```
 
 ### Startup (`docker-entrypoint.sh`)
@@ -309,13 +334,13 @@ npm run dev
 
 ## Testing
 
-17 pytest tests in `tests/`:
+21 pytest tests in `tests/`:
 
 | File | Coverage |
 |------|----------|
 | `test_tasks_crud.py` | Auth gate, list seed task, create/update/delete, cascade delete comments, 404 |
 | `test_comments_ws.py` | REST comments, WebSocket snapshot/create/broadcast, auth errors, update/delete broadcasts |
-| `test_logging.py` | JSON formatter output, `X-Request-ID` response header |
+| `test_logging.py` | Aggregation fields, status-based levels, request/response metadata, query redaction |
 
 `conftest.py` provisions a dedicated test database (`TEST_DATABASE_URL`), runs Alembic migrate up/down per session, truncates and re-seeds task id 1 before each test, and overrides `get_db` with the test session factory.
 
@@ -374,8 +399,11 @@ Deploy order: Postgres, backend (generate domain), frontend (set API URLs, rebui
 | `DEMO_USER_EMAIL` | Backend | `test@example.com` | Demo login email |
 | `DEMO_USER_PASSWORD` | Backend | `password` | Demo login password |
 | `CORS_ORIGINS` | Backend | localhost Vite URLs | Comma-separated allowed origins |
-| `LOG_LEVEL` | Backend | `INFO` | Root log level |
+| `LOG_LEVEL` | Backend | `INFO` | Root log level (`DEBUG` enables request-received logs) |
 | `LOG_FORMAT` | Backend | `json` | `json` or `text` |
+| `LOG_SERVICE` | Backend | `day15-api` | Service name for log aggregation |
+| `LOG_ENVIRONMENT` | Backend | `development` | Deployment environment label |
+| `LOG_SLOW_REQUEST_MS` | Backend | `1000` | Log slow responses as `WARNING` (`0` disables) |
 | `VITE_API_BASE_URL` | Frontend build | empty | API origin for split deploy |
 | `VITE_API_WS_HOST` | Frontend build | empty | WebSocket origin override |
 | `API_PROXY_TARGET` | Frontend dev | `http://127.0.0.1:8000` | Vite proxy target in Compose |
@@ -401,7 +429,7 @@ Copy `.env.example` to `.env` for local backend settings. Frontend local env liv
 3. Tasks persist across backend restarts (PostgreSQL).
 4. Open one task in two tabs; post a comment in one tab and see it appear in the other (WebSocket + CORS + `wss://` correct).
 5. Backend logs emit parseable JSON lines with `event` and `request_id` fields.
-6. `python -m pytest -q` passes all 17 tests.
+6. `python -m pytest -q` passes all 21 tests.
 
 ## Related docs
 

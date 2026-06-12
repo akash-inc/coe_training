@@ -40,6 +40,8 @@ PORT = int(os.getenv("PORT", "8000"))
 
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_LOG_FORMAT = "json"
+DEFAULT_LOG_SERVICE = "day15-api"
+DEFAULT_LOG_ENVIRONMENT = "development"
 
 
 def get_log_level() -> str:
@@ -48,3 +50,18 @@ def get_log_level() -> str:
 
 def get_log_format() -> str:
     return os.getenv("LOG_FORMAT", DEFAULT_LOG_FORMAT).lower()
+
+
+def get_log_service() -> str:
+    return os.getenv("LOG_SERVICE", DEFAULT_LOG_SERVICE)
+
+
+def get_log_environment() -> str:
+    return os.getenv("LOG_ENVIRONMENT", DEFAULT_LOG_ENVIRONMENT)
+
+
+def get_slow_request_ms() -> int | None:
+    raw = os.getenv("LOG_SLOW_REQUEST_MS", "1000").strip()
+    if not raw or raw == "0":
+        return None
+    return int(raw)
