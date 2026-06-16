@@ -37,6 +37,11 @@ def make_apm_client() -> Any | None:
         "SERVER_URL": server_url,
         "ENVIRONMENT": get_elastic_apm_environment(),
         "TRANSACTION_SAMPLE_RATE": get_elastic_apm_transaction_sample_rate(),
+        "TRANSACTIONS_IGNORE_PATTERNS": [
+            "^GET /health",
+            "^GET /live",
+            "^GET /ready",
+        ],
     }
 
     secret_token = get_elastic_apm_secret_token()

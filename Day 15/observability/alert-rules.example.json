@@ -1,0 +1,40 @@
+{
+  "sentry_alert_rules": [
+    {
+      "name": "Critical tagged errors",
+      "description": "Create in Sentry: Alerts > Create Alert > Issues. Filter: tags[alert] equals critical. Action: notify email or Slack.",
+      "conditions": {
+        "filter": "tags.alert:critical",
+        "threshold": "event.count > 0 in 5 minutes"
+      }
+    },
+    {
+      "name": "Fatal level events",
+      "description": "Create in Sentry: filter level:fatal for report_critical_error() events.",
+      "conditions": {
+        "filter": "level:fatal",
+        "threshold": "event.count > 0 in 5 minutes"
+      }
+    },
+    {
+      "name": "High server error rate",
+      "description": "Create in Sentry: filter transaction.status_code:500 and service:day15-api.",
+      "conditions": {
+        "filter": "http.status_code:500",
+        "threshold": "event.count > 10 in 15 minutes"
+      }
+    }
+  ],
+  "kibana_alert_rules": [
+    {
+      "name": "Critical log severity",
+      "description": "In Kibana: Stack Management > Rules. Query logs where severity <= 3 OR level is ERROR.",
+      "query": "service: \"day15-api\" AND (severity:<=3 OR level: \"ERROR\")"
+    },
+    {
+      "name": "Readiness probe failures",
+      "description": "Alert when health checks report database down.",
+      "query": "event: \"health.database.failed\" OR path: \"/ready\""
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from config import (
@@ -52,6 +54,7 @@ def init_sentry() -> bool:
         send_default_pii=False,
         before_send=_scrub_sensitive_request_data,
         integrations=[
+            LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
         ],

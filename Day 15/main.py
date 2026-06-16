@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from alerting import report_critical_error
 from auth import (
     create_access_token,
     get_current_user,
@@ -24,7 +25,8 @@ from comment_ws import (
 )
 from config import DEMO_USER_EMAIL, DEMO_USER_PASSWORD, get_cors_origins
 from connection_manager import ConnectionManager
-from database import get_db
+from database import SessionLocal, get_db
+from health import HealthResponse, LiveResponse, build_health_response
 from models.comments import Comment, CommentCreate, CommentUpdate
 from models.tasks import Task, TaskCreate, TaskUpdate
 from logging_config import RequestLoggingMiddleware, setup_logging
@@ -52,6 +54,16 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     logger.info("application started", extra={"event": "app.startup"})
+    with SessionLocal() as session:
+        startup_health = build_health_response(session)
+        if startup_health.status != "healthy":
+            database = startup_health.checks["database"]
+            report_critical_error(
+                "database unavailable at startup",
+                event="app.startup.database_unavailable",
+                database_status=database.status,
+                database_detail=database.detail,
+            )
     yield
     logger.info("application stopped", extra={"event": "app.shutdown"})
 
@@ -93,6 +105,27 @@ class RefreshTokenRequest(BaseModel):
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
+
+
+@app.get("/live", response_model=LiveResponse)
+def liveness():
+    return LiveResponse(status="ok")
+
+
+@app.get("/ready", response_model=HealthResponse)
+def readiness(db: Session = Depends(get_db)):
+    health = build_health_response(db)
+    if health.status != "healthy":
+        raise HTTPException(status_code=503, detail=health.model_dump())
+    return health
+
+
+@app.get("/health", response_model=HealthResponse)
+def health(db: Session = Depends(get_db)):
+    health_response = build_health_response(db)
+    if health_response.status != "healthy":
+        raise HTTPException(status_code=503, detail=health_response.model_dump())
+    return health_response
 
 
 @app.get("/me")
