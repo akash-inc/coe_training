@@ -13,6 +13,7 @@ from config import (
     get_log_service,
     get_slow_request_ms,
 )
+from elastic_apm_config import get_elastic_trace_id
 from tracing import (
     bind_trace_context,
     get_request_id,
@@ -37,6 +38,8 @@ STRUCTURED_LOG_FIELDS = (
     "request_content_type",
     "response_content_length",
     "response_content_type",
+    "route_template",
+    "elastic_trace_id",
     "task_id",
     "user_email",
 )
@@ -182,6 +185,13 @@ def _parse_content_length(value: str | None) -> int | None:
         return None
 
 
+def _route_template(scope: dict[str, Any]) -> str | None:
+    route = scope.get("route")
+    if route is None:
+        return None
+    return getattr(route, "path", None)
+
+
 def _http_request_extra(
     scope: dict[str, Any],
     *,
@@ -205,6 +215,12 @@ def _http_request_extra(
         ),
         "request_content_type": _header_value(scope, b"content-type"),
     }
+    route_template = _route_template(scope)
+    if route_template is not None:
+        extra["route_template"] = route_template
+    elastic_trace_id = get_elastic_trace_id()
+    if elastic_trace_id is not None:
+        extra["elastic_trace_id"] = elastic_trace_id
     if status_code is not None:
         extra["status_code"] = status_code
     if duration_ms is not None:

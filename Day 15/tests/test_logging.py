@@ -126,3 +126,23 @@ def test_sanitize_query_string_redacts_sensitive_params(monkeypatch, capsys):
     assert "token=" in response_log["query_string"]
     assert "REDACTED" in response_log["query_string"]
     assert "page=2" in response_log["query_string"]
+
+
+def test_http_response_includes_route_template(monkeypatch, capsys, client):
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    monkeypatch.setenv("LOG_LEVEL", "INFO")
+    setup_logging()
+
+    token = client.post(
+        "/token",
+        json={"email": "test@example.com", "password": "password"},
+    ).json()["access_token"]
+
+    response = client.get("/tasks/1", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    response_log = next(
+        item for item in _parse_json_log_lines(capsys.readouterr().out)
+        if item["event"] == "http.response" and item.get("path") == "/tasks/1"
+    )
+    assert response_log["route_template"] == "/tasks/{task_id}"

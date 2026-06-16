@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from elastic_apm_config import repository_span
 from models.comments import Comment
 from models.tasks import Task, TaskCreate, TaskUpdate
 from orm_models import CommentModel, TaskModel
@@ -95,15 +96,18 @@ class SqlAlchemyTaskRepository(TaskRepository):
         self.session.refresh(entity)
 
     def list_all(self) -> list[Task]:
-        rows = self.session.scalars(select(TaskModel).order_by(TaskModel.id)).all()
-        return [_to_task(row) for row in rows]
+        with repository_span("task.list_all"):
+            rows = self.session.scalars(select(TaskModel).order_by(TaskModel.id)).all()
+            return [_to_task(row) for row in rows]
 
     def get_by_id(self, task_id: int) -> Task | None:
-        row = self.session.scalar(select(TaskModel).where(TaskModel.id == task_id))
-        return _to_task(row) if row else None
+        with repository_span("task.get_by_id"):
+            row = self.session.scalar(select(TaskModel).where(TaskModel.id == task_id))
+            return _to_task(row) if row else None
 
     def exists(self, task_id: int) -> bool:
-        return self.get_by_id(task_id) is not None
+        with repository_span("task.exists"):
+            return self.get_by_id(task_id) is not None
 
     def _get_row_or_raise(self, task_id: int) -> TaskModel:
         row = self.session.scalar(select(TaskModel).where(TaskModel.id == task_id))
@@ -112,37 +116,40 @@ class SqlAlchemyTaskRepository(TaskRepository):
         return row
 
     def create(self, payload: TaskCreate) -> Task:
-        row = TaskModel(
-            title=payload.title.strip(),
-            description=payload.description.strip(),
-            completed=payload.completed,
-        )
-        self.session.add(row)
-        self._commit_and_refresh(row)
-        return _to_task(row)
+        with repository_span("task.create"):
+            row = TaskModel(
+                title=payload.title.strip(),
+                description=payload.description.strip(),
+                completed=payload.completed,
+            )
+            self.session.add(row)
+            self._commit_and_refresh(row)
+            return _to_task(row)
 
     def update_partial(self, task_id: int, payload: TaskUpdate) -> Task:
-        row = self._get_row_or_raise(task_id)
-        changes = payload.model_dump(exclude_unset=True)
-        if "title" in changes and changes["title"] is not None:
-            changes["title"] = changes["title"].strip()
-        if "description" in changes and changes["description"] is not None:
-            changes["description"] = changes["description"].strip()
+        with repository_span("task.update_partial"):
+            row = self._get_row_or_raise(task_id)
+            changes = payload.model_dump(exclude_unset=True)
+            if "title" in changes and changes["title"] is not None:
+                changes["title"] = changes["title"].strip()
+            if "description" in changes and changes["description"] is not None:
+                changes["description"] = changes["description"].strip()
 
-        for field, value in changes.items():
-            setattr(row, field, value)
+            for field, value in changes.items():
+                setattr(row, field, value)
 
-        self._commit_and_refresh(row)
-        return _to_task(row)
+            self._commit_and_refresh(row)
+            return _to_task(row)
 
     def delete(self, task_id: int) -> None:
-        row = self._get_row_or_raise(task_id)
-        self.session.delete(row)
-        try:
-            self.session.commit()
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
+        with repository_span("task.delete"):
+            row = self._get_row_or_raise(task_id)
+            self.session.delete(row)
+            try:
+                self.session.commit()
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
 
 
 class SqlAlchemyCommentRepository(CommentRepository):
@@ -164,46 +171,50 @@ class SqlAlchemyCommentRepository(CommentRepository):
         return row
 
     def list_by_task_id(self, task_id: int) -> list[Comment]:
-        rows = self.session.scalars(
-            select(CommentModel)
-            .where(CommentModel.task_id == task_id)
-            .order_by(CommentModel.created_at)
-        ).all()
-        return [_to_comment(row) for row in rows]
+        with repository_span("comment.list_by_task_id"):
+            rows = self.session.scalars(
+                select(CommentModel)
+                .where(CommentModel.task_id == task_id)
+                .order_by(CommentModel.created_at)
+            ).all()
+            return [_to_comment(row) for row in rows]
 
     def create(self, task_id: int, body: str, author_email: str) -> Comment:
-        if not author_email:
-            raise ValueError("Author email is required")
+        with repository_span("comment.create"):
+            if not author_email:
+                raise ValueError("Author email is required")
 
-        row = CommentModel(
-            task_id=task_id,
-            body=_validate_comment_body(body),
-            author_email=author_email,
-            created_at=datetime.now(timezone.utc),
-        )
-        self.session.add(row)
-        self._commit_and_refresh(row)
-        return _to_comment(row)
+            row = CommentModel(
+                task_id=task_id,
+                body=_validate_comment_body(body),
+                author_email=author_email,
+                created_at=datetime.now(timezone.utc),
+            )
+            self.session.add(row)
+            self._commit_and_refresh(row)
+            return _to_comment(row)
 
     def update(self, comment_id: int, body: str, author_email: str) -> Comment:
-        row = self._get_row_or_raise(comment_id)
-        if row.author_email != author_email:
-            raise PermissionError("Not authorized to update this comment")
+        with repository_span("comment.update"):
+            row = self._get_row_or_raise(comment_id)
+            if row.author_email != author_email:
+                raise PermissionError("Not authorized to update this comment")
 
-        row.body = _validate_comment_body(body)
-        self._commit_and_refresh(row)
-        return _to_comment(row)
+            row.body = _validate_comment_body(body)
+            self._commit_and_refresh(row)
+            return _to_comment(row)
 
     def delete(self, comment_id: int, author_email: str) -> Comment:
-        row = self._get_row_or_raise(comment_id)
-        if row.author_email != author_email:
-            raise PermissionError("Not authorized to delete this comment")
+        with repository_span("comment.delete"):
+            row = self._get_row_or_raise(comment_id)
+            if row.author_email != author_email:
+                raise PermissionError("Not authorized to delete this comment")
 
-        comment = _to_comment(row)
-        self.session.delete(row)
-        try:
-            self.session.commit()
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
-        return comment
+            comment = _to_comment(row)
+            self.session.delete(row)
+            try:
+                self.session.commit()
+            except SQLAlchemyError:
+                self.session.rollback()
+                raise
+            return comment

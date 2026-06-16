@@ -66,9 +66,11 @@ def bind_trace_context(request_id: str, trace_id: str) -> Iterator[None]:
     request_token = request_id_ctx.set(request_id)
     trace_token = trace_id_ctx.set(trace_id)
     try:
+        from elastic_apm_config import bind_elastic_trace_context
         from sentry_config import bind_sentry_trace_context
 
         bind_sentry_trace_context(request_id, trace_id)
+        bind_elastic_trace_context(request_id, trace_id)
         yield
     finally:
         request_id_ctx.reset(request_token)

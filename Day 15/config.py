@@ -79,3 +79,30 @@ def get_sentry_traces_sample_rate() -> float:
     except ValueError:
         return 0.0
     return max(0.0, min(1.0, rate))
+
+
+def get_elastic_apm_server_url() -> str | None:
+    raw = os.getenv("ELASTIC_APM_SERVER_URL", "").strip()
+    return raw or None
+
+
+def get_elastic_apm_secret_token() -> str | None:
+    raw = os.getenv("ELASTIC_APM_SECRET_TOKEN", "").strip()
+    return raw or None
+
+
+def get_elastic_apm_service_name() -> str:
+    return os.getenv("ELASTIC_APM_SERVICE_NAME", DEFAULT_LOG_SERVICE)
+
+
+def get_elastic_apm_environment() -> str:
+    return os.getenv("ELASTIC_APM_ENVIRONMENT", get_log_environment())
+
+
+def get_elastic_apm_transaction_sample_rate() -> float:
+    raw = os.getenv("ELASTIC_APM_TRANSACTION_SAMPLE_RATE", "1.0").strip()
+    try:
+        rate = float(raw)
+    except ValueError:
+        return 1.0
+    return max(0.0, min(1.0, rate))

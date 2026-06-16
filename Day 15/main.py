@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
+from elasticapm.contrib.starlette import ElasticAPM
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -27,6 +28,7 @@ from database import get_db
 from models.comments import Comment, CommentCreate, CommentUpdate
 from models.tasks import Task, TaskCreate, TaskUpdate
 from logging_config import RequestLoggingMiddleware, setup_logging
+from elastic_apm_config import make_apm_client
 from sentry_config import init_sentry
 from tracing import (
     REQUEST_ID_HEADER,
@@ -65,6 +67,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(RequestLoggingMiddleware)
+
+apm_client = make_apm_client()
+if apm_client:
+    app.add_middleware(ElasticAPM, client=apm_client)
 
 
 def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
