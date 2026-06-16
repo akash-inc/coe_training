@@ -1,4 +1,9 @@
 import os
+
+# Prevent pytest from sending events to Sentry/Elastic (init runs at main import).
+os.environ["SENTRY_DSN"] = ""
+os.environ["ELASTIC_APM_SERVER_URL"] = ""
+
 from collections.abc import Generator
 from pathlib import Path
 
@@ -96,6 +101,13 @@ def engine(migrated_test_db):
 @pytest.fixture(scope="session")
 def session_factory(engine):
     return sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+@pytest.fixture(autouse=True)
+def disable_external_telemetry(monkeypatch):
+    monkeypatch.setenv("SENTRY_DSN", "")
+    monkeypatch.setenv("ELASTIC_APM_SERVER_URL", "")
+    monkeypatch.setenv("LOG_ENVIRONMENT", "test")
 
 
 @pytest.fixture(autouse=True)
