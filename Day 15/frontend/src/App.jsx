@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { login, logout } from './api/auth'
 import { queryKeys } from './api/queryKeys'
@@ -15,14 +15,14 @@ function App() {
   const [accessToken, setAccessToken] = useState(() => getAccessToken())
   const queryClient = useQueryClient()
 
-  async function handleSessionExpired() {
+  const handleSessionExpired = useCallback(async () => {
     await logout()
     setAccessToken(null)
     setIsLoggedIn(false)
     queryClient.removeQueries({ queryKey: queryKeys.me })
     queryClient.removeQueries({ queryKey: queryKeys.tasks })
     queryClient.removeQueries({ queryKey: ['comments'] })
-  }
+  }, [queryClient])
 
   const { mutate, isPending, error: loginError } = useMutation({
     mutationFn: ({ email, password }) => login(email, password),
@@ -44,9 +44,11 @@ function App() {
 
   useEffect(() => {
     if (userError instanceof UnauthorizedError) {
-      handleSessionExpired()
+      queueMicrotask(() => {
+        void handleSessionExpired()
+      })
     }
-  }, [userError])
+  }, [userError, handleSessionExpired])
 
   function handleSubmit({ email, password }) {
     mutate({ email, password })

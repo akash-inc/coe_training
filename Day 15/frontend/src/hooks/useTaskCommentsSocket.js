@@ -45,7 +45,9 @@ export function useTaskCommentsSocket(
   const onCommentsSnapshotRef = useRef(onCommentsSnapshot)
   const onSocketErrorRef = useRef(onSocketError)
   const onAuthErrorRef = useRef(onAuthError)
-  const [status, setStatus] = useState('closed')
+  const canConnect = Boolean(taskId && token)
+  const [connectionStatus, setConnectionStatus] = useState('closed')
+  const status = canConnect ? connectionStatus : 'closed'
 
   useEffect(() => {
     onCommentCreatedRef.current = onCommentCreated
@@ -82,8 +84,7 @@ export function useTaskCommentsSocket(
   }, [])
 
   useEffect(() => {
-    if (!taskId || !token) {
-      setStatus('closed')
+    if (!canConnect) {
       return
     }
 
@@ -108,7 +109,7 @@ export function useTaskCommentsSocket(
 
       const delay = Math.min(1000 * 2 ** reconnectAttemptRef.current, MAX_RECONNECT_DELAY_MS)
       reconnectAttemptRef.current += 1
-      setStatus('reconnecting')
+      setConnectionStatus('reconnecting')
 
       reconnectTimerRef.current = setTimeout(() => {
         if (!cancelled) {
@@ -120,7 +121,7 @@ export function useTaskCommentsSocket(
     function connect() {
       if (cancelled) return
 
-      setStatus(reconnectAttemptRef.current > 0 ? 'reconnecting' : 'connecting')
+      setConnectionStatus(reconnectAttemptRef.current > 0 ? 'reconnecting' : 'connecting')
 
       const ws = new WebSocket(getWebSocketUrl(taskId, token))
       wsRef.current = ws
@@ -135,7 +136,7 @@ export function useTaskCommentsSocket(
         }
 
         reconnectAttemptRef.current = 0
-        setStatus('open')
+        setConnectionStatus('open')
       }
 
       ws.onmessage = (event) => {
@@ -181,18 +182,18 @@ export function useTaskCommentsSocket(
         if (cancelled) return
 
         if (event.code === 1008) {
-          setStatus('closed')
+          setConnectionStatus('closed')
           onAuthErrorRef.current?.()
           return
         }
 
-        setStatus('closed')
+        setConnectionStatus('closed')
         scheduleReconnect()
       }
 
       ws.onerror = () => {
         if (!cancelled) {
-          setStatus('closed')
+          setConnectionStatus('closed')
         }
       }
     }
@@ -214,9 +215,9 @@ export function useTaskCommentsSocket(
         }
       }
       wsRef.current = null
-      setStatus('closed')
+      setConnectionStatus('closed')
     }
-  }, [taskId, token])
+  }, [canConnect, taskId, token])
 
   return { sendComment, status }
 }
