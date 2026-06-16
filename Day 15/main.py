@@ -27,6 +27,7 @@ from database import get_db
 from models.comments import Comment, CommentCreate, CommentUpdate
 from models.tasks import Task, TaskCreate, TaskUpdate
 from logging_config import RequestLoggingMiddleware, setup_logging
+from sentry_config import init_sentry
 from tracing import (
     REQUEST_ID_HEADER,
     TRACE_ID_HEADER,
@@ -41,6 +42,7 @@ from repositories import (
     TaskRepository,
 )
 
+init_sentry()
 setup_logging()
 logger = logging.getLogger(__name__)
 

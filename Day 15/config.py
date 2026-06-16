@@ -65,3 +65,17 @@ def get_slow_request_ms() -> int | None:
     if not raw or raw == "0":
         return None
     return int(raw)
+
+
+def get_sentry_dsn() -> str | None:
+    raw = os.getenv("SENTRY_DSN", "").strip()
+    return raw or None
+
+
+def get_sentry_traces_sample_rate() -> float:
+    raw = os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0").strip()
+    try:
+        rate = float(raw)
+    except ValueError:
+        return 0.0
+    return max(0.0, min(1.0, rate))
