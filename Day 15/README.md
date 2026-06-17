@@ -62,7 +62,13 @@ Day 15/
 │   ├── tasks.py            # Pydantic Task / TaskCreate / TaskUpdate
 │   └── comments.py         # Pydantic Comment / CommentCreate / CommentUpdate
 ├── alembic/                # Schema migrations
-├── tests/                  # pytest suite (26 tests)
+├── tests/                  # pytest suite (49 tests)
+├── health.py               # Liveness/readiness health checks
+├── sentry_config.py        # Optional Sentry integration
+├── elastic_apm_config.py   # Optional Elastic APM integration
+├── alerting.py             # Critical error reporting hooks
+├── docs/                   # Capstone audits, runbook, architecture (see below)
+├── loadtest/               # k6 load test script
 ├── docker-compose.yml
 ├── Dockerfile              # Backend image
 ├── docker-entrypoint.sh    # alembic upgrade head, then uvicorn
@@ -139,6 +145,9 @@ Protected REST routes use `Depends(get_current_user)` with `OAuth2PasswordBearer
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/` | No | Health-style greeting |
+| `GET` | `/live` | No | Liveness probe |
+| `GET` | `/ready` | No | Readiness probe (DB check) |
+| `GET` | `/health` | No | Full health check (same as ready) |
 | `GET` | `/me` | Yes | Current user email |
 | `GET` | `/tasks` | Yes | List all tasks |
 | `POST` | `/tasks` | Yes | Create task |
@@ -360,7 +369,7 @@ npm run dev
 
 ## Testing
 
-26 pytest tests in `tests/`:
+49 pytest tests in `tests/`:
 
 | File | Coverage |
 |------|----------|
@@ -368,6 +377,10 @@ npm run dev
 | `test_comments_ws.py` | REST comments, WebSocket snapshot/create/broadcast, auth errors, update/delete broadcasts |
 | `test_logging.py` | Aggregation fields, status-based levels, request/response metadata, query redaction |
 | `test_tracing.py` | Header propagation, WebSocket trace context, ID validation |
+| `test_health.py` | `/live`, `/ready`, `/health` endpoints |
+| `test_sentry.py` | Sentry initialization and error capture hooks |
+| `test_elastic_apm.py` | Elastic APM client and repository spans |
+| `test_alerting.py` | Critical error alerting fields |
 
 `conftest.py` provisions a dedicated test database (`TEST_DATABASE_URL`), runs Alembic migrate up/down per session, truncates and re-seeds task id 1 before each test, and overrides `get_db` with the test session factory.
 
@@ -456,9 +469,27 @@ Copy `.env.example` to `.env` for local backend settings. Frontend local env liv
 3. Tasks persist across backend restarts (PostgreSQL).
 4. Open one task in two tabs; post a comment in one tab and see it appear in the other (WebSocket + CORS + `wss://` correct).
 5. Backend logs emit parseable JSON lines with `event` and `request_id` fields.
-6. `python -m pytest -q` passes all 26 tests.
+6. `python -m pytest -q` passes all 49 tests.
+
+## Capstone documentation
+
+Audits and operator docs from the Day 15 final review:
+
+| Document | Purpose |
+|----------|---------|
+| [docs/CODE_REVIEW.md](./docs/CODE_REVIEW.md) | Comprehensive code review findings |
+| [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md) | OWASP-style security audit |
+| [docs/A11Y_AUDIT.md](./docs/A11Y_AUDIT.md) | WCAG accessibility audit |
+| [docs/PERFORMANCE.md](./docs/PERFORMANCE.md) | k6 load testing guide |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Architecture diagrams (auth, WS, deploy) |
+| [docs/RUNBOOK.md](./docs/RUNBOOK.md) | Deployment and incident runbook |
+| [docs/DEMO_SCRIPT.md](./docs/DEMO_SCRIPT.md) | Demo presentation script |
+| [docs/TRADE_OFFS.md](./docs/TRADE_OFFS.md) | Technical decisions discussion guide |
+| [docs/KNOWLEDGE_TRANSFER.md](./docs/KNOWLEDGE_TRANSFER.md) | Onboarding and handoff for the team |
+| [docs/NEXT_STEPS.md](./docs/NEXT_STEPS.md) | Prioritized backlog and completion checklist |
 
 ## Related docs
 
 - [DEPLOYMENT.md](./DEPLOYMENT.md): Railway steps, mixed-content fixes, Vite build-time vars, and other pitfalls encountered during deploy.
-- [frontend/README.md](./frontend/README.md): default Vite + React template notes.
+- [docs/RUNBOOK.md](./docs/RUNBOOK.md): Operator checklist (deploy, verify, rollback, troubleshoot).
+- [frontend/README.md](./frontend/README.md): Vite defaults and WebSocket sequence diagram.

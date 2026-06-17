@@ -1,3 +1,11 @@
+# Day 15 Frontend
+
+React 19 + Vite SPA for the Full-Stack Task App. See [../README.md](../README.md) for full stack docs.
+
+**Accessibility:** See [../docs/A11Y_AUDIT.md](../docs/A11Y_AUDIT.md) for WCAG audit and manual verification checklist.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -18,8 +26,9 @@ Note: This will impact Vite dev & build performances.
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 
 
-Websocket flow:
+## WebSocket flow
 
+```mermaid
 sequenceDiagram
     participant Client
     participant API as FastAPI
@@ -32,4 +41,4 @@ sequenceDiagram
     API->>API: create_comment()
     API->>Room: broadcast comment.created
     Room-->>Client: comment.created
-
+```

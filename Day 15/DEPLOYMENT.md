@@ -207,10 +207,13 @@ build configs.
 ## 4. Verification checklist
 
 1. Backend root URL returns `{"message": "Hello, World!"}`.
-2. Login works with the demo credentials.
-3. Task create, edit, complete, and delete persist (REST to PostgreSQL).
-4. Open one task in two browser tabs and post a comment: it appears live in both
+2. Health probes: `GET /live` returns ok; `GET /ready` returns healthy when DB is up.
+3. Login works with the demo credentials.
+4. Task create, edit, complete, and delete persist (REST to PostgreSQL).
+5. Open one task in two browser tabs and post a comment: it appears live in both
    (confirms `wss://` WebSockets and CORS are correct).
+
+For deploy, rollback, and incident steps, see [docs/RUNBOOK.md](./docs/RUNBOOK.md).
 
 ## 5. Quick reference: where variables live
 
