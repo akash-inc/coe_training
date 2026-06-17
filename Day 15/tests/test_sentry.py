@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from config import get_sentry_dsn, get_sentry_traces_sample_rate
@@ -29,4 +31,7 @@ def test_init_sentry_is_noop_without_dsn(monkeypatch):
 
 def test_bind_sentry_trace_context_is_noop_without_dsn(monkeypatch):
     monkeypatch.delenv("SENTRY_DSN", raising=False)
-    bind_sentry_trace_context("req-1", "trace-1")
+    mock_scope = MagicMock()
+    with patch("sentry_sdk.get_isolation_scope", return_value=mock_scope):
+        bind_sentry_trace_context("req-1", "trace-1")
+    mock_scope.set_tag.assert_not_called()

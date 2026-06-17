@@ -4,24 +4,31 @@ from connection_manager import ConnectionManager
 from models.comments import Comment
 from repositories import CommentRepository
 
+MSG_COMMENT_CREATE = "comment.create"
+MSG_COMMENT_CREATED = "comment.created"
+MSG_COMMENT_UPDATED = "comment.updated"
+MSG_COMMENT_DELETED = "comment.deleted"
+MSG_COMMENTS_SNAPSHOT = "comments.snapshot"
+MSG_ERROR = "error"
+
 
 def comment_created_message(comment: Comment) -> dict:
     return {
-        "type": "comment.created",
+        "type": MSG_COMMENT_CREATED,
         "comment": comment.model_dump(mode="json"),
     }
 
 
 def comment_updated_message(comment: Comment) -> dict:
     return {
-        "type": "comment.updated",
+        "type": MSG_COMMENT_UPDATED,
         "comment": comment.model_dump(mode="json"),
     }
 
 
 def comment_deleted_message(comment_id: int, task_id: int) -> dict:
     return {
-        "type": "comment.deleted",
+        "type": MSG_COMMENT_DELETED,
         "comment_id": comment_id,
         "task_id": task_id,
     }
@@ -29,13 +36,13 @@ def comment_deleted_message(comment_id: int, task_id: int) -> dict:
 
 def comments_snapshot_message(comments: list[Comment]) -> dict:
     return {
-        "type": "comments.snapshot",
+        "type": MSG_COMMENTS_SNAPSHOT,
         "comments": [comment.model_dump(mode="json") for comment in comments],
     }
 
 
 def error_message(message: str) -> dict:
-    return {"type": "error", "message": message}
+    return {"type": MSG_ERROR, "message": message}
 
 
 async def send_error(websocket: WebSocket, message: str) -> None:
@@ -55,7 +62,7 @@ async def handle_incoming_message(
         return
 
     msg_type = data.get("type")
-    if msg_type != "comment.create":
+    if msg_type != MSG_COMMENT_CREATE:
         await send_error(websocket, f"Unknown message type: {msg_type}")
         return
 

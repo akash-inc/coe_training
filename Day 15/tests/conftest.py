@@ -121,6 +121,16 @@ def reset_db(session_factory):
         session.commit()
 
 
+DEMO_USER = {"email": "test@example.com", "password": "password"}
+
+
+@pytest.fixture
+def login_token(client) -> str:
+    response = client.post("/token", json=DEMO_USER)
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
 @pytest.fixture
 def client(session_factory) -> Generator[TestClient, None, None]:
     def override_get_db():

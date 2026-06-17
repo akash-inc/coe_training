@@ -30,7 +30,7 @@ export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
     },
   })
 
-  const { mutate: patchTask, isPending: isUpdating } = useMutation({
+  const { mutate: patchTask, isPending: isUpdating, variables: patchVariables } = useMutation({
     mutationFn: ({ taskId, payload }) => updateTask(taskId, payload),
     onSuccess: (updatedTask) => {
       queryClient.setQueryData(queryKeys.tasks, (existing = []) =>
@@ -233,7 +233,7 @@ export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
                         type="button"
                         className="task-action-btn"
                         onClick={(event) => handleToggleComplete(task, event)}
-                        disabled={isUpdating}
+                        disabled={isUpdating && patchVariables?.taskId === task.id}
                       >
                         {task.completed ? 'Reopen' : 'Complete'}
                       </button>

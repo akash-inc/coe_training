@@ -1,0 +1,6 @@
+#!/bin/sh
+if ! grep -qE '^\[(IMP|ADD|REF|FIX|DOC|TEST)\] Day [0-9]+: .{1,}' "$1"; then
+  echo "Commit message must match: [TAG] Day N: description"
+  echo "Valid tags: IMP, ADD, REF, FIX, DOC, TEST"
+  exit 1
+fi

@@ -108,7 +108,8 @@ class SqlAlchemyTaskRepository(TaskRepository):
 
     def exists(self, task_id: int) -> bool:
         with repository_span("task.exists"):
-            return self.get_by_id(task_id) is not None
+            subq = select(TaskModel.id).where(TaskModel.id == task_id).exists()
+            return bool(self.session.scalar(select(subq)))
 
     def _get_row_or_raise(self, task_id: int) -> TaskModel:
         row = self.session.scalar(select(TaskModel).where(TaskModel.id == task_id))

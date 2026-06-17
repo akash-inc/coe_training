@@ -1,7 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
 
-from elasticapm.contrib.starlette import ElasticAPM
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -31,9 +30,7 @@ from database import SessionLocal, get_db
 from health import HealthResponse, LiveResponse, build_health_response
 from models.comments import Comment, CommentCreate, CommentUpdate
 from models.tasks import Task, TaskCreate, TaskUpdate
-from logging_config import RequestLoggingMiddleware, setup_logging
-from elastic_apm_config import make_apm_client
-from sentry_config import init_sentry
+from observability import configure_observability
 from tracing import (
     REQUEST_ID_HEADER,
     TRACE_ID_HEADER,
@@ -48,8 +45,6 @@ from repositories import (
     TaskRepository,
 )
 
-init_sentry()
-setup_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -80,11 +75,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RequestLoggingMiddleware)
-
-apm_client = make_apm_client()
-if apm_client:
-    app.add_middleware(ElasticAPM, client=apm_client)
+configure_observability(app)
 
 
 def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
@@ -113,12 +104,9 @@ def readiness(db: Session = Depends(get_db)):
     return health
 
 
-@app.get("/health", response_model=HealthResponse)
-def health(db: Session = Depends(get_db)):
-    health_response = build_health_response(db)
-    if health_response.status != "healthy":
-        raise HTTPException(status_code=503, detail=health_response.model_dump())
-    return health_response
+@app.get("/health", response_model=LiveResponse)
+def health():
+    return LiveResponse(status="ok")
 
 
 @app.get("/me")

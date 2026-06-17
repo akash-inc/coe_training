@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getApiBaseUrl } from '../lib/apiBase'
 import { tracingQueryParams } from '../lib/requestTracing'
+import { WS_MESSAGE_TYPES } from '../lib/wsMessageTypes'
 
 const MAX_RECONNECT_DELAY_MS = 30_000
 
@@ -79,7 +80,7 @@ export function useTaskCommentsSocket(
       return false
     }
 
-    ws.send(JSON.stringify({ type: 'comment.create', body }))
+    ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.COMMENT_CREATE, body }))
     return true
   }, [])
 
@@ -149,27 +150,27 @@ export function useTaskCommentsSocket(
           return
         }
 
-        if (data.type === 'comments.snapshot' && Array.isArray(data.comments)) {
+        if (data.type === WS_MESSAGE_TYPES.COMMENTS_SNAPSHOT && Array.isArray(data.comments)) {
           onCommentsSnapshotRef.current?.(data.comments)
           return
         }
 
-        if (data.type === 'comment.created' && data.comment) {
+        if (data.type === WS_MESSAGE_TYPES.COMMENT_CREATED && data.comment) {
           onCommentCreatedRef.current?.(data.comment)
           return
         }
 
-        if (data.type === 'comment.updated' && data.comment) {
+        if (data.type === WS_MESSAGE_TYPES.COMMENT_UPDATED && data.comment) {
           onCommentUpdatedRef.current?.(data.comment)
           return
         }
 
-        if (data.type === 'comment.deleted' && data.comment_id != null) {
+        if (data.type === WS_MESSAGE_TYPES.COMMENT_DELETED && data.comment_id != null) {
           onCommentDeletedRef.current?.(data.comment_id)
           return
         }
 
-        if (data.type === 'error' && data.message) {
+        if (data.type === WS_MESSAGE_TYPES.ERROR && data.message) {
           onSocketErrorRef.current?.(data.message)
         }
       }

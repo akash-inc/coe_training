@@ -12,22 +12,20 @@ def test_live_returns_ok(client):
     assert response.json() == {"status": "ok"}
 
 
-def test_health_returns_healthy_when_database_is_up(client):
+def test_health_returns_ok(client):
     response = client.get("/health")
     assert response.status_code == 200
-    payload = response.json()
-    assert payload["status"] == "healthy"
-    assert payload["checks"]["database"]["status"] == "up"
-    assert payload["checks"]["database"]["latency_ms"] is not None
+    assert response.json() == {"status": "ok"}
 
 
 def test_ready_returns_healthy_when_database_is_up(client):
     response = client.get("/ready")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
+    assert response.json()["checks"]["database"]["status"] == "up"
 
 
-def test_health_returns_503_when_database_is_down(client, monkeypatch):
+def test_ready_returns_503_when_database_is_down(client, monkeypatch):
     from health import DependencyCheck
 
     monkeypatch.setattr(
@@ -35,7 +33,7 @@ def test_health_returns_503_when_database_is_down(client, monkeypatch):
         lambda _session: DependencyCheck(status="down", detail="connection failed"),
     )
 
-    response = client.get("/health")
+    response = client.get("/ready")
     assert response.status_code == 503
     assert response.json()["detail"]["status"] == "unhealthy"
 

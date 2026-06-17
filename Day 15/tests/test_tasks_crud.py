@@ -1,20 +1,10 @@
-DEMO_USER = {"email": "test@example.com", "password": "password"}
-
-
-def login_token(client) -> str:
-    response = client.post("/token", json=DEMO_USER)
-    assert response.status_code == 200
-    return response.json()["access_token"]
-
-
 def test_list_tasks_requires_auth(client):
     response = client.get("/tasks")
     assert response.status_code == 401
 
 
-def test_list_tasks_returns_seed_task(client):
-    token = login_token(client)
-    headers = {"Authorization": f"Bearer {token}"}
+def test_list_tasks_returns_seed_task(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
 
     response = client.get("/tasks", headers=headers)
     assert response.status_code == 200
@@ -24,22 +14,32 @@ def test_list_tasks_returns_seed_task(client):
     assert tasks[0]["title"] == "Task 1"
 
 
-def test_create_update_delete_task(client):
-    token = login_token(client)
-    headers = {"Authorization": f"Bearer {token}"}
+def test_create_task(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
 
-    created = client.post(
+    response = client.post(
         "/tasks",
         json={"title": "New task", "description": "Details"},
         headers=headers,
     )
-    assert created.status_code == 201
-    task = created.json()
+    assert response.status_code == 201
+    task = response.json()
     assert task["title"] == "New task"
     assert task["completed"] is False
 
+
+def test_update_task(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
+
+    created = client.post(
+        "/tasks",
+        json={"title": "To update", "description": ""},
+        headers=headers,
+    )
+    task_id = created.json()["id"]
+
     updated = client.patch(
-        f"/tasks/{task['id']}",
+        f"/tasks/{task_id}",
         json={"completed": True, "title": "Renamed"},
         headers=headers,
     )
@@ -47,16 +47,26 @@ def test_create_update_delete_task(client):
     assert updated.json()["completed"] is True
     assert updated.json()["title"] == "Renamed"
 
-    deleted = client.delete(f"/tasks/{task['id']}", headers=headers)
+
+def test_delete_task(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
+
+    created = client.post(
+        "/tasks",
+        json={"title": "To delete", "description": ""},
+        headers=headers,
+    )
+    task_id = created.json()["id"]
+
+    deleted = client.delete(f"/tasks/{task_id}", headers=headers)
     assert deleted.status_code == 204
 
     listed = client.get("/tasks", headers=headers)
-    assert all(item["id"] != task["id"] for item in listed.json())
+    assert all(item["id"] != task_id for item in listed.json())
 
 
-def test_delete_task_removes_comments(client):
-    token = login_token(client)
-    headers = {"Authorization": f"Bearer {token}"}
+def test_delete_task_removes_comments(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
 
     created = client.post(
         "/tasks",
@@ -80,9 +90,22 @@ def test_delete_task_removes_comments(client):
     assert comments_after.status_code == 404
 
 
-def test_get_task_not_found(client):
-    token = login_token(client)
-    headers = {"Authorization": f"Bearer {token}"}
+def test_get_task_not_found(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
 
     response = client.get("/tasks/999", headers=headers)
+    assert response.status_code == 404
+
+
+def test_patch_task_not_found(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
+
+    response = client.patch("/tasks/999", json={"title": "Ghost"}, headers=headers)
+    assert response.status_code == 404
+
+
+def test_delete_task_not_found(client, login_token):
+    headers = {"Authorization": f"Bearer {login_token}"}
+
+    response = client.delete("/tasks/999", headers=headers)
     assert response.status_code == 404
