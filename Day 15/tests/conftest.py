@@ -1,8 +1,9 @@
 import os
 
-# Prevent pytest from sending events to Sentry/Elastic (init runs at main import).
+# These must be set before any project module is imported.
 os.environ["SENTRY_DSN"] = ""
 os.environ["ELASTIC_APM_SERVER_URL"] = ""
+os.environ.setdefault("JWT_SECRET", "test-only-insecure-secret-do-not-use-in-production")
 
 from collections.abc import Generator
 from pathlib import Path

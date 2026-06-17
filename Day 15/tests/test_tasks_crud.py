@@ -76,15 +76,8 @@ def test_delete_task_removes_comments(client):
 
     client.delete(f"/tasks/{task_id}", headers=headers)
 
-    new_task = client.post(
-        "/tasks",
-        json={"title": "Replacement", "description": ""},
-        headers=headers,
-    )
-    new_task_id = new_task.json()["id"]
-
-    comments = client.get(f"/tasks/{new_task_id}/comments", headers=headers)
-    assert comments.json() == []
+    comments_after = client.get(f"/tasks/{task_id}/comments", headers=headers)
+    assert comments_after.status_code == 404
 
 
 def test_get_task_not_found(client):

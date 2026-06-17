@@ -5,8 +5,11 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-DEFAULT_DATABASE_URL = "postgresql+psycopg://akash:password@localhost/day15_tasks"
 DEFAULT_CORS_ORIGINS = "http://127.0.0.1:5173,http://localhost:5173"
+
+SENSITIVE_HEADER_NAMES = frozenset(
+    {"authorization", "cookie", "set-cookie", "x-api-key"}
+)
 
 
 def normalize_database_url(url: str) -> str:
@@ -19,7 +22,9 @@ def normalize_database_url(url: str) -> str:
 
 
 def get_database_url() -> str:
-    raw = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
+    raw = os.getenv("DATABASE_URL", "").strip()
+    if not raw:
+        raise RuntimeError("DATABASE_URL environment variable is required")
     return normalize_database_url(raw)
 
 
@@ -28,7 +33,13 @@ def get_cors_origins() -> list[str]:
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
-JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key")
+_JWT_SECRET_SENTINEL = "your-secret-key"
+JWT_SECRET = os.getenv("JWT_SECRET", _JWT_SECRET_SENTINEL)
+if JWT_SECRET == _JWT_SECRET_SENTINEL:
+    raise RuntimeError(
+        "JWT_SECRET is not set or is using the insecure default. "
+        "Set a strong random value in your .env file."
+    )
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))

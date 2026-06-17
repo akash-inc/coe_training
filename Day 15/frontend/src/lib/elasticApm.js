@@ -1,12 +1,5 @@
 import { init as initApm } from '@elastic/apm-rum'
-
-function parseSampleRate(value, fallback = 1.0) {
-  const parsed = Number.parseFloat(value)
-  if (Number.isNaN(parsed)) {
-    return fallback
-  }
-  return Math.min(1, Math.max(0, parsed))
-}
+import { parseSampleRate } from './observability-utils'
 
 function buildDistributedTracingOrigins() {
   const origins = ['http://localhost:5173', 'http://127.0.0.1:5173']

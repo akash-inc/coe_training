@@ -304,21 +304,21 @@ The test name promises a noop but there is no assertion that `set_tag` was never
 
 ### Do First — Quick Wins, High Impact
 
-- [ ] **Fix `JWT_SECRET` default in `config.py:31`** — Raise `RuntimeError` at startup if the secret is unset or default. Live security vulnerability if deployed without env var. *(XS)*
-- [ ] **Remove `DEFAULT_DATABASE_URL` credentials from `config.py:8`** — Replace with empty string or remove the default entirely. Developer credentials committed to source. *(XS)*
-- [ ] **Add `Field(min_length=1, max_length=1000)` to `CommentCreate.body` in `models/comments.py:6`** — Match the constraints already on `CommentUpdate`; closes a DoS vector. *(XS)*
-- [ ] **Centralize `SENSITIVE_HEADER_NAMES` in `config.py` or `security_constants.py`** — Single source of truth for both logging scrubber and Sentry scrubber. *(XS)*
-- [ ] **Fix `test_elastic_apm.py:41` — remove `assert True`** — The `with` block completing without exception is the correct assertion. *(XS)*
-- [ ] **Fix `test_delete_task_removes_comments` — assert `GET /tasks/N/comments` returns 404 after deletion** — Current test proves only that new tasks start empty, not that cascade works. *(S)*
-- [ ] **Create `CLAUDE.md`** — Extract test invocation, env var conventions, and "no direct `os.environ` reads" rule from the README. 30-minute effort with high AI assist payoff. *(XS)*
-- [ ] **Extract `_commit_and_refresh` to a shared helper in `repositories.py`** — Remove verbatim duplication between the two repository classes. *(XS)*
-- [ ] **Extract `_decode_token` helper in `auth.py`** — Remove duplicated JWT decode logic between `get_current_user` and `get_user_from_token`. *(XS)*
-- [ ] **Extract `parseSampleRate` and URL-builder logic to `frontend/src/lib/observability-utils.js`** — Remove duplication between `elasticApm.js` and `sentry.js`. *(XS)*
-- [ ] **Move `LoginRequest`/`RefreshTokenRequest` models out of `main.py` to `auth.py`** — Auth request schemas belong with auth logic. *(XS)*
-- [ ] **Move credential comparison to `auth.verify_credentials()` in `auth.py`** — Route handler should not contain authentication policy. *(XS)*
-- [ ] **Define `COMMENT_BODY_MAX_LENGTH = 1000` constant in `models/comments.py`, import in `repositories.py`** — Single source of truth for the body length business rule. *(XS)*
-- [ ] **Fix `frontend/src/App.jsx:24` hardcoded `['comments']` key** — Use `queryKeys.comments()` for consistency with every other site in the file. *(XS)*
-- [ ] **Fix `frontend/src/lib/sentry.js:36` hardcoded `release: 'day15-frontend'`** — Use `import.meta.env.VITE_APP_VERSION` or a build-injected constant. *(XS)*
+- [x] **Fix `JWT_SECRET` default in `config.py:31`** — Raise `RuntimeError` at startup if the secret is unset or default. Live security vulnerability if deployed without env var. *(XS)*
+- [x] **Remove `DEFAULT_DATABASE_URL` credentials from `config.py:8`** — Replace with empty string or remove the default entirely. Developer credentials committed to source. *(XS)*
+- [x] **Add `Field(min_length=1, max_length=1000)` to `CommentCreate.body` in `models/comments.py:6`** — Match the constraints already on `CommentUpdate`; closes a DoS vector. *(XS)*
+- [x] **Centralize `SENSITIVE_HEADER_NAMES` in `config.py` or `security_constants.py`** — Single source of truth for both logging scrubber and Sentry scrubber. *(XS)*
+- [x] **Fix `test_elastic_apm.py:41` — remove `assert True`** — The `with` block completing without exception is the correct assertion. *(XS)*
+- [x] **Fix `test_delete_task_removes_comments` — assert `GET /tasks/N/comments` returns 404 after deletion** — Current test proves only that new tasks start empty, not that cascade works. *(S)*
+- [x] **Create `CLAUDE.md`** — Extract test invocation, env var conventions, and "no direct `os.environ` reads" rule from the README. 30-minute effort with high AI assist payoff. *(XS)*
+- [x] **Extract `_commit_and_refresh` to a shared helper in `repositories.py`** — Remove verbatim duplication between the two repository classes. *(XS)*
+- [x] **Extract `_decode_token` helper in `auth.py`** — Remove duplicated JWT decode logic between `get_current_user` and `get_user_from_token`. *(XS)*
+- [x] **Extract `parseSampleRate` and URL-builder logic to `frontend/src/lib/observability-utils.js`** — Remove duplication between `elasticApm.js` and `sentry.js`. *(XS)*
+- [x] **Move `LoginRequest`/`RefreshTokenRequest` models out of `main.py` to `auth.py`** — Auth request schemas belong with auth logic. *(XS)*
+- [x] **Move credential comparison to `auth.verify_credentials()` in `auth.py`** — Route handler should not contain authentication policy. *(XS)*
+- [x] **Define `COMMENT_BODY_MAX_LENGTH = 1000` constant in `models/comments.py`, import in `repositories.py`** — Single source of truth for the body length business rule. *(XS)*
+- [x] **Fix `frontend/src/App.jsx:24` hardcoded `['comments']` key** — Use `queryKeys.commentsAll` for consistency with every other site in the file. *(XS)*
+- [x] **Fix `frontend/src/lib/sentry.js:36` hardcoded `release: 'day15-frontend'`** — Use `import.meta.env.VITE_APP_VERSION` or a build-injected constant. *(XS)*
 
 ---
 

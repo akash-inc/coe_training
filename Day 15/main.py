@@ -4,17 +4,19 @@ from contextlib import asynccontextmanager
 from elasticapm.contrib.starlette import ElasticAPM
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from alerting import report_critical_error
 from auth import (
+    LoginRequest,
+    RefreshTokenRequest,
     create_access_token,
     get_current_user,
     get_user_from_token,
     issue_refresh_token,
     revoke_refresh_token,
     validate_refresh_token,
+    verify_credentials,
 )
 from comment_ws import (
     comment_created_message,
@@ -23,7 +25,7 @@ from comment_ws import (
     comments_snapshot_message,
     handle_incoming_message,
 )
-from config import DEMO_USER_EMAIL, DEMO_USER_PASSWORD, get_cors_origins
+from config import get_cors_origins
 from connection_manager import ConnectionManager
 from database import SessionLocal, get_db
 from health import HealthResponse, LiveResponse, build_health_response
@@ -91,15 +93,6 @@ def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
 
 def get_comment_repository(db: Session = Depends(get_db)) -> CommentRepository:
     return SqlAlchemyCommentRepository(db)
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
 
 
 @app.get("/")
@@ -190,15 +183,16 @@ def remove_task(
 
 @app.post("/token")
 def login(data: LoginRequest):
-    if data.email != DEMO_USER_EMAIL or data.password != DEMO_USER_PASSWORD:
+    try:
+        email = verify_credentials(data.email, data.password)
+    except HTTPException:
         logger.warning(
             "login failed",
             extra={"event": "auth.login_failed", "user_email": data.email},
         )
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    access_token = create_access_token({"sub": data.email})
-    refresh_token = issue_refresh_token(data.email)
+        raise
+    access_token = create_access_token({"sub": email})
+    refresh_token = issue_refresh_token(email)
 
     return {
         "access_token": access_token,

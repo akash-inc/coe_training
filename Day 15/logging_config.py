@@ -7,6 +7,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
 from config import (
+    SENSITIVE_HEADER_NAMES,
     get_log_environment,
     get_log_format,
     get_log_level,
@@ -54,10 +55,6 @@ SEVERITY_BY_LEVEL = {
 
 SENSITIVE_QUERY_PARAMS = frozenset(
     {"token", "password", "refresh_token", "access_token", "authorization"}
-)
-
-SENSITIVE_HEADER_NAMES = frozenset(
-    {"authorization", "cookie", "set-cookie", "x-api-key"}
 )
 
 

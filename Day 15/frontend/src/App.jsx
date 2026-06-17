@@ -21,7 +21,7 @@ function App() {
     setIsLoggedIn(false)
     queryClient.removeQueries({ queryKey: queryKeys.me })
     queryClient.removeQueries({ queryKey: queryKeys.tasks })
-    queryClient.removeQueries({ queryKey: ['comments'] })
+    queryClient.removeQueries({ queryKey: queryKeys.commentsAll })
   }, [queryClient])
 
   const { mutate, isPending, error: loginError } = useMutation({

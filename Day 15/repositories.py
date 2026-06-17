@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from elastic_apm_config import repository_span
-from models.comments import Comment
+from models.comments import COMMENT_BODY_MAX_LENGTH, Comment
 from models.tasks import Task, TaskCreate, TaskUpdate
 from orm_models import CommentModel, TaskModel
 
@@ -30,11 +30,20 @@ def _to_comment(row: CommentModel) -> Comment:
     )
 
 
+def _commit_and_refresh(session: Session, entity: object) -> None:
+    try:
+        session.commit()
+    except SQLAlchemyError:
+        session.rollback()
+        raise
+    session.refresh(entity)
+
+
 def _validate_comment_body(body: str) -> str:
     body = body.strip()
     if not body:
         raise ValueError("Body is required")
-    if len(body) > 1000:
+    if len(body) > COMMENT_BODY_MAX_LENGTH:
         raise ValueError("Body is too long")
     return body
 
@@ -87,14 +96,6 @@ class SqlAlchemyTaskRepository(TaskRepository):
     def __init__(self, session: Session):
         self.session = session
 
-    def _commit_and_refresh(self, entity: TaskModel) -> None:
-        try:
-            self.session.commit()
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
-        self.session.refresh(entity)
-
     def list_all(self) -> list[Task]:
         with repository_span("task.list_all"):
             rows = self.session.scalars(select(TaskModel).order_by(TaskModel.id)).all()
@@ -123,7 +124,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
                 completed=payload.completed,
             )
             self.session.add(row)
-            self._commit_and_refresh(row)
+            _commit_and_refresh(self.session, row)
             return _to_task(row)
 
     def update_partial(self, task_id: int, payload: TaskUpdate) -> Task:
@@ -138,7 +139,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
             for field, value in changes.items():
                 setattr(row, field, value)
 
-            self._commit_and_refresh(row)
+            _commit_and_refresh(self.session, row)
             return _to_task(row)
 
     def delete(self, task_id: int) -> None:
@@ -155,14 +156,6 @@ class SqlAlchemyTaskRepository(TaskRepository):
 class SqlAlchemyCommentRepository(CommentRepository):
     def __init__(self, session: Session):
         self.session = session
-
-    def _commit_and_refresh(self, entity: CommentModel) -> None:
-        try:
-            self.session.commit()
-        except SQLAlchemyError:
-            self.session.rollback()
-            raise
-        self.session.refresh(entity)
 
     def _get_row_or_raise(self, comment_id: int) -> CommentModel:
         row = self.session.scalar(select(CommentModel).where(CommentModel.id == comment_id))
@@ -191,7 +184,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
                 created_at=datetime.now(timezone.utc),
             )
             self.session.add(row)
-            self._commit_and_refresh(row)
+            _commit_and_refresh(self.session, row)
             return _to_comment(row)
 
     def update(self, comment_id: int, body: str, author_email: str) -> Comment:
@@ -201,7 +194,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
                 raise PermissionError("Not authorized to update this comment")
 
             row.body = _validate_comment_body(body)
-            self._commit_and_refresh(row)
+            _commit_and_refresh(self.session, row)
             return _to_comment(row)
 
     def delete(self, comment_id: int, author_email: str) -> Comment:

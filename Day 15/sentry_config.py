@@ -9,14 +9,11 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from config import (
+    SENSITIVE_HEADER_NAMES,
     get_log_environment,
     get_log_service,
     get_sentry_dsn,
     get_sentry_traces_sample_rate,
-)
-
-SENSITIVE_HEADER_NAMES = frozenset(
-    {"authorization", "cookie", "set-cookie", "x-api-key"}
 )
 
 

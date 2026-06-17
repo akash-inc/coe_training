@@ -2,13 +2,15 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+COMMENT_BODY_MAX_LENGTH = 1000
+
 
 class CommentCreate(BaseModel):
-    body: str
+    body: str = Field(min_length=1, max_length=COMMENT_BODY_MAX_LENGTH)
 
 
 class CommentUpdate(BaseModel):
-    body: str = Field(min_length=1, max_length=1000)
+    body: str = Field(min_length=1, max_length=COMMENT_BODY_MAX_LENGTH)
 
 
 class Comment(BaseModel):

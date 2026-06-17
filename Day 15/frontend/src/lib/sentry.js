@@ -1,13 +1,6 @@
 import * as Sentry from '@sentry/react'
 import { getTraceId } from './requestTracing'
-
-function parseSampleRate(value, fallback = 0) {
-  const parsed = Number.parseFloat(value)
-  if (Number.isNaN(parsed)) {
-    return fallback
-  }
-  return Math.min(1, Math.max(0, parsed))
-}
+import { parseSampleRate } from './observability-utils'
 
 function buildTracePropagationTargets() {
   const targets = ['localhost', /^\//]
@@ -33,7 +26,7 @@ export function initSentry() {
   Sentry.init({
     dsn,
     environment: import.meta.env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'development',
-    release: 'day15-frontend',
+    release: import.meta.env.VITE_APP_VERSION || 'day15-frontend',
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),

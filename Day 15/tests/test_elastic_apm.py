@@ -39,7 +39,7 @@ def test_make_apm_client_returns_none_when_disabled(monkeypatch):
 
 def test_repository_span_is_noop_when_disabled():
     with repository_span("task.list_all"):
-        assert True
+        pass
 
 
 def test_app_serves_root_when_apm_disabled(monkeypatch):
