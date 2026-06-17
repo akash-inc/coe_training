@@ -189,7 +189,7 @@ WebSocket and TestClient tests hit event loop conflicts
 (`attached to a different loop`, `another operation is in progress`).
 
 **Fix**: switched to the sync engine with `psycopg` and a session per request.
-All 15 tests then passed reliably.
+All 15 tests then passed reliably. (The suite is now 49 tests across 8 files.)
 
 ### 3.11 Local secrets and env files in Git
 

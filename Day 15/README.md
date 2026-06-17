@@ -338,6 +338,14 @@ docker compose up --build
 
 Default login: `test@example.com` / `password` (from `.env.example`).
 
+**Optional observability stack:** Elasticsearch, Kibana, and APM Server are available on the `observability` Compose profile (ports 9200, 5601, 8200):
+
+```bash
+docker compose --profile observability up --build
+```
+
+Set `ELASTIC_APM_SERVER_URL=http://apm-server:8200` in `.env` when using this profile. See optional observability env vars in the table below.
+
 ### Option B: Run services directly
 
 **Database**
@@ -444,8 +452,22 @@ Deploy order: Postgres, backend (generate domain), frontend (set API URLs, rebui
 | `LOG_SERVICE` | Backend | `day15-api` | Service name for log aggregation |
 | `LOG_ENVIRONMENT` | Backend | `development` | Deployment environment label |
 | `LOG_SLOW_REQUEST_MS` | Backend | `1000` | Log slow responses as `WARNING` (`0` disables) |
+| `SENTRY_DSN` | Backend | empty | Optional Sentry error tracking |
+| `SENTRY_TRACES_SAMPLE_RATE` | Backend | `0` | Sentry performance trace sampling (0.0 to 1.0) |
+| `ELASTIC_APM_SERVER_URL` | Backend | empty | Optional Elastic APM server URL |
+| `ELASTIC_APM_SECRET_TOKEN` | Backend | empty | APM server auth token |
+| `ELASTIC_APM_SERVICE_NAME` | Backend | `day15-api` | APM service name |
+| `ELASTIC_APM_ENVIRONMENT` | Backend | from `LOG_ENVIRONMENT` | APM environment label |
+| `ELASTIC_APM_TRANSACTION_SAMPLE_RATE` | Backend | `1.0` | APM transaction sampling (0.0 to 1.0) |
 | `VITE_API_BASE_URL` | Frontend build | empty | API origin for split deploy |
 | `VITE_API_WS_HOST` | Frontend build | empty | WebSocket origin override |
+| `VITE_SENTRY_DSN` | Frontend build | empty | Optional browser Sentry DSN |
+| `VITE_SENTRY_ENVIRONMENT` | Frontend build | from `MODE` | Sentry environment label |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE` | Frontend build | `0` | Browser Sentry trace sampling |
+| `VITE_ELASTIC_APM_SERVER_URL` | Frontend build | empty | Optional browser APM server URL |
+| `VITE_ELASTIC_APM_SERVICE_NAME` | Frontend build | `day15-frontend` | Browser APM service name |
+| `VITE_ELASTIC_APM_ENVIRONMENT` | Frontend build | from `MODE` | Browser APM environment label |
+| `VITE_ELASTIC_APM_TRANSACTION_SAMPLE_RATE` | Frontend build | `1.0` | Browser APM transaction sampling |
 | `API_PROXY_TARGET` | Frontend dev | `http://127.0.0.1:8000` | Vite proxy target in Compose |
 
 Copy `.env.example` to `.env` for local backend settings. Frontend local env lives in `frontend/.env` when needed.

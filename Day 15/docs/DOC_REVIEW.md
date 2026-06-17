@@ -23,7 +23,7 @@ Core technical content in `README.md` and `DEPLOYMENT.md` is accurate and detail
 | Test file table | **Incomplete** | Missing health, Sentry, APM, alerting tests | Updated |
 | API routes | Accurate | Matches `main.py` | Keep |
 | Health endpoints | **Missing** | `/live`, `/ready`, `/health` not listed | Added |
-| Observability | **Partial** | Logging/tracing documented; Sentry/APM/alerting not | Added summary + env vars |
+| Observability | **Partial** | Logging/tracing documented; Sentry/APM/alerting not | Added logging/tracing summary; optional Sentry/APM env vars in README env table |
 | Capstone docs index | **Missing** | No link to `docs/` folder | Added |
 | Verification checklist | Accurate | Still valid | Keep |
 

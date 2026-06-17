@@ -18,11 +18,15 @@ flowchart TB
     PG[(PostgreSQL)]
   end
 
-  SPA -->|HTTPS REST| FE
+  SPA -->|HTTPS static assets| FE
+  FE -->|JS/CSS bundle| SPA
   SPA -->|HTTPS REST / WSS| API
-  FE -->|static assets| SPA
   API --> PG
 ```
+
+On Railway split deploy, the browser loads static assets from the frontend nginx service and calls the backend API domain directly (`VITE_API_BASE_URL` / `VITE_API_WS_HOST`). REST and WebSocket traffic do not pass through the frontend container.
+
+Local dev differs: with an empty `VITE_API_BASE_URL`, the Vite dev server on `:5173` proxies `/token`, `/tasks`, and `/ws` to the backend (same-origin through the frontend dev server).
 
 | Component | Technology | Responsibility |
 |-----------|------------|----------------|
@@ -77,7 +81,7 @@ flowchart TB
 sequenceDiagram
   participant UI as React App
   participant API as FastAPI
-  participant Store as RefreshTokenStore
+  participant Store as InMemoryRefreshStore
 
   UI->>API: POST /token email password
   alt valid demo credentials
@@ -100,7 +104,9 @@ sequenceDiagram
   end
 ```
 
-**WebSocket auth:** Browsers cannot set custom headers on WebSocket handshake. The client passes `token` as a query parameter plus `trace_id` / `request_id` from [requestTracing.js](../frontend/src/lib/requestTracing.js). Server validates via `get_user_from_token()` in [main.py](../main.py).
+**WebSocket auth:** Browsers cannot set custom headers on WebSocket handshake. The client passes `token` as a query parameter plus `trace_id` / `request_id` from [requestTracing.js](../frontend/src/lib/requestTracing.js). Server validates via `get_user_from_token()` in [auth.py](../auth.py) (called from the WS handler in [main.py](../main.py)).
+
+**Refresh store:** `InMemoryRefreshStore` in the diagram maps to the `_refresh_tokens` dict in [auth.py](../auth.py).
 
 ---
 
@@ -163,6 +169,8 @@ flowchart LR
   MW --> APM
 ```
 
+WebSocket connections bind trace context in the WS handler ([main.py](../main.py)) and emit structured JSON logs (`ws.connect`, `ws.disconnect`), but they do not pass through `RequestLoggingMiddleware`. Optional Sentry/APM integration shown above applies to HTTP requests only.
+
 | Field | Scope | Purpose |
 |-------|-------|---------|
 | `trace_id` | Browser tab session | Correlate all actions in one tab |
@@ -193,15 +201,20 @@ flowchart TB
     NPM --> DIST
   end
 
+  subgraph user [User Browser]
+    Browser[Browser SPA]
+  end
+
   subgraph runtime [Runtime - Railway]
-  PG[(Postgres plugin)]
-  BE[Backend container]
-  FE[Frontend nginx container]
+    PG[(Postgres plugin)]
+    BE[Backend container]
+    FE[Frontend nginx container]
   end
 
   DIST --> FE
+  Browser -->|loads JS/CSS| FE
+  Browser -->|REST and WSS via VITE_API_*| BE
   BE -->|DATABASE_URL| PG
-  FE -->|user browser calls API URL| BE
 ```
 
 | Variable | When read | Service |

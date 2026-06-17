@@ -33,11 +33,11 @@ The Day 15 app is well-structured for a learning capstone: clear separation betw
 
 ### H1: README test count and module list are stale
 
-**Evidence:** `README.md` states "26 pytest tests" and omits observability modules (`health.py`, `sentry_config.py`, `elastic_apm_config.py`, `alerting.py`). Actual count is 49 tests across 8 files.
+**Status:** Resolved (2026-06-17 doc audit).
 
-**Impact:** New contributors run tests expecting 26; observability setup is undocumented in the main README.
+**Original issue:** README stated "26 pytest tests" and omitted observability modules.
 
-**Recommendation:** Update README (see `DOC_REVIEW.md`). No application code change.
+**Resolution:** [README.md](../README.md) now lists 49 tests, includes `health.py`, `sentry_config.py`, `elastic_apm_config.py`, `alerting.py`, and `tracing.py` in the project structure, and documents optional Sentry/APM env vars.
 
 **Demo acceptable:** Yes (docs only).
 
