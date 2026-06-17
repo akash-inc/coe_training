@@ -324,30 +324,30 @@ The test name promises a noop but there is no assertion that `set_tag` was never
 
 ### Schedule Soon — Moderate Effort, High Impact
 
-- [ ] **Fix `isUpdating` UX bug in `TaskList.jsx:236`** — Track `updatingTaskId` to scope `disabled` to the specific task row, not all tasks. *(S — Hotspot file)*
-- [ ] **Add `configure_observability(app)` function** — Move middleware registration out of `main.py` into a single setup function; breaks the most frequent temporal coupling. *(S)*
-- [ ] **Add tests for auth refresh/logout flows** — Cover `/token/refresh` happy path, expired token 401, re-issue revokes previous token, logout invalidates token. *(M)*
-- [ ] **Add cross-user comment permission test** — Create comment as user A, attempt PATCH/DELETE as user B, assert 403. *(M)*
-- [ ] **Split `test_create_update_delete_task` into 3 independent tests** — One behavior per test; targeted failure messages. *(S)*
-- [ ] **Fix `test_comments_ws.py:69-72` — use `pytest.raises(WebSocketDisconnect)` with close code `1008`** — Current `pytest.raises(Exception)` would pass on any crash. *(S)*
-- [ ] **Fix `test_sentry.py:30-32` — assert `set_tag` was never called** — Mock `get_isolation_scope()` and verify the noop claim. *(S)*
-- [ ] **Add tests for `PATCH /tasks/{id}` and `DELETE /tasks/{id}` with non-existent task_id** — 404 paths for these methods are not covered. *(XS)*
-- [ ] **Add test for comment on non-existent task** — `POST /tasks/{id}/comments` 404 path is not covered. *(XS)*
-- [ ] **Extract WS message type strings to named constants** — `MSG_COMMENT_CREATED` etc. in `comment_ws.py`; `WS_MESSAGE_TYPES` object in `frontend/src/lib/wsMessageTypes.js`. *(S)*
-- [ ] **Extract `login_token` helper to a `conftest.py` fixture** — Remove duplication from `test_tasks_crud.py` and `test_comments_ws.py`. *(XS)*
-- [ ] **Replace `repositories.py:exists()` with `SELECT EXISTS(...)` query** — Currently fetches and maps a full row just to return a boolean. *(S)*
-- [ ] **Differentiate `/health` and `/ready` endpoints** — Make liveness and readiness checks genuinely distinct, or remove the alias. *(S)*
-- [ ] **Document commit message convention in `CONTRIBUTING.md`** — Casing rule, `[DOC]` vs `[IMP]` for docs, one-sentence "why" expectation. Add commit-msg hook. *(S)*
+- [x] **Fix `isUpdating` UX bug in `TaskList.jsx:236`** — Track `updatingTaskId` to scope `disabled` to the specific task row, not all tasks. *(S — Hotspot file)*
+- [x] **Add `configure_observability(app)` function** — Move middleware registration out of `main.py` into a single setup function; breaks the most frequent temporal coupling. *(S)*
+- [x] **Add tests for auth refresh/logout flows** — Cover `/token/refresh` happy path, expired token 401, re-issue revokes previous token, logout invalidates token. *(M)*
+- [x] **Add cross-user comment permission test** — Create comment as user A, attempt PATCH/DELETE as user B, assert 403. *(M)*
+- [x] **Split `test_create_update_delete_task` into 3 independent tests** — One behavior per test; targeted failure messages. *(S)*
+- [x] **Fix `test_comments_ws.py:69-72` — use `pytest.raises(WebSocketDisconnect)` with close code `1008`** — Current `pytest.raises(Exception)` would pass on any crash. *(S)*
+- [x] **Fix `test_sentry.py:30-32` — assert `set_tag` was never called** — Mock `get_isolation_scope()` and verify the noop claim. *(S)*
+- [x] **Add tests for `PATCH /tasks/{id}` and `DELETE /tasks/{id}` with non-existent task_id** — 404 paths for these methods are not covered. *(XS)*
+- [x] **Add test for comment on non-existent task** — `POST /tasks/{id}/comments` 404 path is not covered. *(XS)*
+- [x] **Extract WS message type strings to named constants** — `MSG_COMMENT_CREATED` etc. in `comment_ws.py`; `WS_MESSAGE_TYPES` object in `frontend/src/lib/wsMessageTypes.js`. *(S)*
+- [x] **Extract `login_token` helper to a `conftest.py` fixture** — Remove duplication from `test_tasks_crud.py` and `test_comments_ws.py`. *(XS)*
+- [x] **Replace `repositories.py:exists()` with `SELECT EXISTS(...)` query** — Currently fetches and maps a full row just to return a boolean. *(S)*
+- [x] **Differentiate `/health` and `/ready` endpoints** — Make liveness and readiness checks genuinely distinct, or remove the alias. *(S)*
+- [x] **Document commit message convention in `CONTRIBUTING.md`** — Casing rule, `[DOC]` vs `[IMP]` for docs, one-sentence "why" expectation. Add commit-msg hook. *(S)*
 
 ---
 
 ### Plan as Stories — Significant Effort
 
-- [ ] **Split `main.py` into `routes/tasks.py`, `routes/comments.py`, `routes/auth.py`** — The highest-churn file (15 commits). Every future feature currently touches it. Reduces per-task diff surface and enables parallel work. *(M)*
-- [ ] **Decouple `repositories.py` from `elastic_apm_config` via injected `span_factory`** — Restore the correct boundary between persistence and observability. Define a `SpanContext` protocol in `ports.py`; `main.py` injects the implementation. *(M)*
-- [ ] **Extract auth state machine from `App.jsx` into a `useAuth` hook** — 11 commits on 97 lines signals repeated in-place rewriting; isolation would improve testability and reuse. *(M)*
-- [ ] **Refactor `tracing.py` to accept a list of `ObservabilityBackend` callables** — Currently knows about every concrete backend; adding OpenTelemetry requires modifying `tracing.py`. Introduce registration pattern. *(M)*
-- [ ] **Lift `onSessionExpired` to a React context** — Breaks the `TaskList.jsx` → `TaskComments.jsx` temporal coupling; session management belongs above the task domain. *(M)*
+- [x] **Split `main.py` into `routes/tasks.py`, `routes/comments.py`, `routes/auth.py`** — The highest-churn file (15 commits). Every future feature currently touches it. Reduces per-task diff surface and enables parallel work. *(M)*
+- [x] **Decouple `repositories.py` from `elastic_apm_config` via injected `span_factory`** — Restore the correct boundary between persistence and observability. Define a `SpanContext` protocol in `ports.py`; `main.py` injects the implementation. *(M)*
+- [x] **Extract auth state machine from `App.jsx` into a `useAuth` hook** — 11 commits on 97 lines signals repeated in-place rewriting; isolation would improve testability and reuse. *(M)*
+- [x] **Refactor `tracing.py` to accept a list of `ObservabilityBackend` callables** — Currently knows about every concrete backend; adding OpenTelemetry requires modifying `tracing.py`. Introduce registration pattern. *(M)*
+- [x] **Lift `onSessionExpired` to a React context** — Breaks the `TaskList.jsx` → `TaskComments.jsx` temporal coupling; session management belongs above the task domain. *(M)*
 
 ---
 
