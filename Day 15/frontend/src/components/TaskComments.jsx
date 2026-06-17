@@ -10,6 +10,7 @@ import {
   updateCommentInList,
 } from '../lib/commentsCache'
 import { useTaskCommentsSocket } from '../hooks/useTaskCommentsSocket'
+import { useOnSessionExpired } from '../contexts/SessionContext'
 import './TaskComments.css'
 
 function connectionLabel(status) {
@@ -18,7 +19,8 @@ function connectionLabel(status) {
   return 'Offline'
 }
 
-export default function TaskComments({ taskId, token, userEmail, onSessionExpired, onClose }) {
+export default function TaskComments({ taskId, token, userEmail, onClose }) {
+  const onSessionExpired = useOnSessionExpired()
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState('')
   const [editingCommentId, setEditingCommentId] = useState(null)

@@ -2,7 +2,7 @@ import re
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 
 REQUEST_ID_HEADER = "x-request-id"
 TRACE_ID_HEADER = "x-trace-id"
@@ -11,6 +11,14 @@ _ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 trace_id_ctx: ContextVar[str | None] = ContextVar("trace_id", default=None)
+
+TraceContextBinder = Callable[[str, str], None]
+_trace_backends: list[TraceContextBinder] = []
+
+
+def register_trace_backend(backend: TraceContextBinder) -> None:
+    if backend not in _trace_backends:
+        _trace_backends.append(backend)
 
 
 def normalize_trace_id(value: str | None, *, generate: bool = True) -> str | None:
@@ -66,11 +74,8 @@ def bind_trace_context(request_id: str, trace_id: str) -> Iterator[None]:
     request_token = request_id_ctx.set(request_id)
     trace_token = trace_id_ctx.set(trace_id)
     try:
-        from elastic_apm_config import bind_elastic_trace_context
-        from sentry_config import bind_sentry_trace_context
-
-        bind_sentry_trace_context(request_id, trace_id)
-        bind_elastic_trace_context(request_id, trace_id)
+        for backend in _trace_backends:
+            backend(request_id, trace_id)
         yield
     finally:
         request_id_ctx.reset(request_token)

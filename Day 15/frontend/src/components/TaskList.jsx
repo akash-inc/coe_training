@@ -3,12 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createTask, deleteTask, getTasks, updateTask } from '../api/task'
 import { queryKeys } from '../api/queryKeys'
 import { UnauthorizedError } from '../lib/apiClient'
+import { useOnSessionExpired } from '../contexts/SessionContext'
 import TaskComments from './TaskComments'
 import './TaskList.css'
 
 const EMPTY_FORM = { title: '', description: '' }
 
-export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
+export default function TaskList({ accessToken, userEmail }) {
+  const onSessionExpired = useOnSessionExpired()
   const queryClient = useQueryClient()
   const [selectedTaskId, setSelectedTaskId] = useState(null)
   const [createForm, setCreateForm] = useState(EMPTY_FORM)
@@ -261,7 +263,6 @@ export default function TaskList({ onSessionExpired, accessToken, userEmail }) {
                       taskId={task.id}
                       token={accessToken}
                       userEmail={userEmail}
-                      onSessionExpired={onSessionExpired}
                       onClose={() => setSelectedTaskId(null)}
                     />
                   )}

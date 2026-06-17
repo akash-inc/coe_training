@@ -1,5 +1,6 @@
 from fastapi import WebSocket
 
+
 class ConnectionManager:
     def __init__(self) -> None:
         self.active: dict[int, set[WebSocket]] = {}
@@ -21,3 +22,6 @@ class ConnectionManager:
                 await connection.send_json(message)
             except Exception:
                 self.disconnect(connection, task_id)
+
+
+manager = ConnectionManager()

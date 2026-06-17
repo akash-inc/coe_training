@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from elastic_apm_config import repository_span
 from models.comments import COMMENT_BODY_MAX_LENGTH, Comment
+from ports import SpanFactory, noop_span
 from models.tasks import Task, TaskCreate, TaskUpdate
 from orm_models import CommentModel, TaskModel
 
@@ -93,21 +93,22 @@ class CommentRepository(ABC):
 
 
 class SqlAlchemyTaskRepository(TaskRepository):
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, span_factory: SpanFactory = noop_span):
         self.session = session
+        self.span_factory = span_factory
 
     def list_all(self) -> list[Task]:
-        with repository_span("task.list_all"):
+        with self.span_factory("task.list_all"):
             rows = self.session.scalars(select(TaskModel).order_by(TaskModel.id)).all()
             return [_to_task(row) for row in rows]
 
     def get_by_id(self, task_id: int) -> Task | None:
-        with repository_span("task.get_by_id"):
+        with self.span_factory("task.get_by_id"):
             row = self.session.scalar(select(TaskModel).where(TaskModel.id == task_id))
             return _to_task(row) if row else None
 
     def exists(self, task_id: int) -> bool:
-        with repository_span("task.exists"):
+        with self.span_factory("task.exists"):
             subq = select(TaskModel.id).where(TaskModel.id == task_id).exists()
             return bool(self.session.scalar(select(subq)))
 
@@ -118,7 +119,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
         return row
 
     def create(self, payload: TaskCreate) -> Task:
-        with repository_span("task.create"):
+        with self.span_factory("task.create"):
             row = TaskModel(
                 title=payload.title.strip(),
                 description=payload.description.strip(),
@@ -129,7 +130,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
             return _to_task(row)
 
     def update_partial(self, task_id: int, payload: TaskUpdate) -> Task:
-        with repository_span("task.update_partial"):
+        with self.span_factory("task.update_partial"):
             row = self._get_row_or_raise(task_id)
             changes = payload.model_dump(exclude_unset=True)
             if "title" in changes and changes["title"] is not None:
@@ -144,7 +145,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
             return _to_task(row)
 
     def delete(self, task_id: int) -> None:
-        with repository_span("task.delete"):
+        with self.span_factory("task.delete"):
             row = self._get_row_or_raise(task_id)
             self.session.delete(row)
             try:
@@ -155,8 +156,9 @@ class SqlAlchemyTaskRepository(TaskRepository):
 
 
 class SqlAlchemyCommentRepository(CommentRepository):
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, span_factory: SpanFactory = noop_span):
         self.session = session
+        self.span_factory = span_factory
 
     def _get_row_or_raise(self, comment_id: int) -> CommentModel:
         row = self.session.scalar(select(CommentModel).where(CommentModel.id == comment_id))
@@ -165,7 +167,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
         return row
 
     def list_by_task_id(self, task_id: int) -> list[Comment]:
-        with repository_span("comment.list_by_task_id"):
+        with self.span_factory("comment.list_by_task_id"):
             rows = self.session.scalars(
                 select(CommentModel)
                 .where(CommentModel.task_id == task_id)
@@ -174,7 +176,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
             return [_to_comment(row) for row in rows]
 
     def create(self, task_id: int, body: str, author_email: str) -> Comment:
-        with repository_span("comment.create"):
+        with self.span_factory("comment.create"):
             if not author_email:
                 raise ValueError("Author email is required")
 
@@ -189,7 +191,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
             return _to_comment(row)
 
     def update(self, comment_id: int, body: str, author_email: str) -> Comment:
-        with repository_span("comment.update"):
+        with self.span_factory("comment.update"):
             row = self._get_row_or_raise(comment_id)
             if row.author_email != author_email:
                 raise PermissionError("Not authorized to update this comment")
@@ -199,7 +201,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
             return _to_comment(row)
 
     def delete(self, comment_id: int, author_email: str) -> Comment:
-        with repository_span("comment.delete"):
+        with self.span_factory("comment.delete"):
             row = self._get_row_or_raise(comment_id)
             if row.author_email != author_email:
                 raise PermissionError("Not authorized to delete this comment")
