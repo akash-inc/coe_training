@@ -31,6 +31,32 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
         // SPA fallback: offline navigations to /article/... still resolve.
         navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            // Feed listings: serve the cached page instantly, then refresh it in
+            // the background (stale-while-revalidate) so scrolling stays fast and
+            // data self-heals on the next view.
+            urlPattern:
+              /https:\/\/(hn\.algolia\.com\/api\/v1\/search|api\.github\.com\/search|api\.allorigins\.win)/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'devfeed-feeds',
+              expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Article bodies (READMEs, HN item text): effectively immutable, so
+            // cache-first lets them open offline with no network round-trip.
+            urlPattern: /https:\/\/(api\.github\.com\/repos|hn\.algolia\.com\/api\/v1\/items)/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'devfeed-articles',
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
     // `npm run analyze` emits dist/stats.html — an interactive treemap of the
