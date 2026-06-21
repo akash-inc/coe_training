@@ -1,21 +1,14 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useInfiniteFeed } from '../hooks/useInfiniteFeed'
 import { fetchHN } from '../api/hn'
-import FeedCard from '../components/FeedCard'
+import FeedList from '../components/FeedList'
 
-// useSuspenseQuery suspends until data is ready (skeletons show via the
-// enclosing Suspense fallback) and throws errors to the error boundary —
-// so there are no isPending/isError branches to hand-write.
 export default function HNPanel() {
-  const { data } = useSuspenseQuery({
-    queryKey: ['feed', 'hn', 0],
-    queryFn: () => fetchHN({ page: 0 }),
+  const feed = useInfiniteFeed({
+    queryKey: ['feed', 'hn'],
+    queryFn: ({ pageParam }) => fetchHN({ page: pageParam }),
+    initialPageParam: 0, // Algolia pages are 0-based
+    getNextPageParam: (last) =>
+      last.page + 1 < last.nbPages ? last.page + 1 : undefined,
   })
-
-  return (
-    <div className="feed-list">
-      {data.items.map((item) => (
-        <FeedCard key={item.id} item={item} />
-      ))}
-    </div>
-  )
+  return <FeedList {...feed} />
 }

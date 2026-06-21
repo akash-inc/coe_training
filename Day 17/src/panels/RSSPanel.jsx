@@ -1,18 +1,13 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useInfiniteFeed } from '../hooks/useInfiniteFeed'
 import { fetchRSS } from '../api/rss'
-import FeedCard from '../components/FeedCard'
+import FeedList from '../components/FeedList'
 
 export default function RSSPanel() {
-  const { data } = useSuspenseQuery({
-    queryKey: ['feed', 'rss', 0],
-    queryFn: () => fetchRSS({ cursor: 0 }),
+  const feed = useInfiniteFeed({
+    queryKey: ['feed', 'rss'],
+    queryFn: ({ pageParam }) => fetchRSS({ cursor: pageParam }),
+    initialPageParam: 0, // cursor = item offset into the parsed feed
+    getNextPageParam: (last) => last.nextCursor,
   })
-
-  return (
-    <div className="feed-list">
-      {data.items.map((item) => (
-        <FeedCard key={item.id} item={item} />
-      ))}
-    </div>
-  )
+  return <FeedList {...feed} />
 }
