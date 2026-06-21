@@ -1,38 +1,25 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { marked } from 'marked'
-import { fetchGitHubReadme } from '../api/github'
-import { fetchHNItem } from '../api/hn'
-import { fetchRSSItem } from '../api/rss'
+import { articleKey, loadArticle } from '../articleLoader'
 
-// Resolve {source,id} -> { title, html, externalUrl }. marked turns README
-// markdown / RSS HTML into renderable markup. (A production app would sanitize
-// the output with DOMPurify before dangerouslySetInnerHTML.)
-async function loadArticle(source, id) {
-  if (source === 'github') {
-    const md = await fetchGitHubReadme(id)
-    return { title: id, html: marked.parse(md), externalUrl: `https://github.com/${id}` }
-  }
-  if (source === 'rss') {
-    const item = await fetchRSSItem(id)
-    return { title: item.title, html: marked.parse(item.content || ''), externalUrl: item.url }
-  }
-  const item = await fetchHNItem(id)
-  return {
-    title: item.title,
-    html: item.text ? marked.parse(item.text) : '<p>This story links out — open it below.</p>',
-    externalUrl: item.url || `https://news.ycombinator.com/item?id=${id}`,
-  }
-}
-
+// marked lives only in this (lazy) route chunk. The cached data is raw
+// markdown/HTML; we render it here so a hover-prefetched card hits the cache.
+// (Production should sanitize with DOMPurify before dangerouslySetInnerHTML.)
 export default function ArticlePage() {
   const { source, id } = useParams()
   const decoded = decodeURIComponent(id)
 
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ['article', source, decoded],
+    queryKey: articleKey(source, decoded),
     queryFn: () => loadArticle(source, decoded),
   })
+
+  const html = useMemo(() => {
+    if (!data) return ''
+    return data.format === 'markdown' ? marked.parse(data.body) : data.body
+  }, [data])
 
   return (
     <main className="feed article">
@@ -45,7 +32,7 @@ export default function ArticlePage() {
           <a className="card-source-link" href={data.externalUrl} target="_blank" rel="noreferrer">
             Open original ↗
           </a>
-          <div className="article-body" dangerouslySetInnerHTML={{ __html: data.html }} />
+          <div className="article-body" dangerouslySetInnerHTML={{ __html: html }} />
         </>
       )}
     </main>

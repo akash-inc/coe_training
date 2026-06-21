@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { usePrefetchArticle } from '../hooks/usePrefetchArticle'
 
 const SOURCE_LABEL = { hn: 'HN', github: 'GitHub', rss: 'RSS' }
 
@@ -11,9 +12,14 @@ function formatTime(time) {
 
 export default function FeedCard({ item }) {
   const articlePath = `/article/${item.source}/${encodeURIComponent(item.sourceId)}`
+  const prefetch = usePrefetchArticle()
 
   return (
-    <article className="card">
+    <article
+      className="card"
+      onMouseEnter={() => prefetch(item)}
+      onFocus={() => prefetch(item)}
+    >
       <div className="card-meta">
         <span className={`badge badge-${item.source}`}>{SOURCE_LABEL[item.source]}</span>
         {item.author && <span className="card-author">{item.author}</span>}
