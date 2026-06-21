@@ -47,6 +47,14 @@ async function loadFeed() {
   return cache
 }
 
+// Single item for the article page — served from the same cached feed load.
+export async function fetchRSSItem(link) {
+  const all = await loadFeed()
+  const item = all.find((i) => i.sourceId === link || i.url === link)
+  if (!item) throw new Error('RSS item not found')
+  return item
+}
+
 export async function fetchRSS({ cursor = 0, perPage = 10 } = {}) {
   const all = await loadFeed()
   const slice = all.slice(cursor, cursor + perPage)

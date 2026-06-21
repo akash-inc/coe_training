@@ -16,6 +16,14 @@ function normalize(hit) {
   }
 }
 
+// Single story for the article page (text posts carry HTML in `text`).
+export async function fetchHNItem(objectID) {
+  const res = await fetch(`https://hn.algolia.com/api/v1/items/${objectID}`)
+  if (!res.ok) throw new Error(`HN item request failed (${res.status})`)
+  const d = await res.json()
+  return { title: d.title, url: d.url, text: d.text || '', author: d.author }
+}
+
 // page is 0-based (Algolia convention).
 export async function fetchHN({ page = 0, perPage = 20 } = {}) {
   const res = await fetch(`${BASE}?tags=story&hitsPerPage=${perPage}&page=${page}`)

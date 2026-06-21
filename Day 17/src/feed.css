@@ -117,6 +117,13 @@
   font-family: var(--mono);
 }
 
+.card-source-link {
+  margin-left: auto;
+  color: var(--text);
+  text-decoration: none;
+  &:hover { color: var(--accent); }
+}
+
 .feed-status {
   padding: 40px 0;
   text-align: center;
@@ -124,4 +131,33 @@
 }
 .feed-error {
   color: #ef4444;
+}
+
+/* Article detail page */
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  &:hover { color: var(--accent); }
+}
+.article-title {
+  font-size: 30px;
+  letter-spacing: -0.9px;
+  margin: 0 0 8px;
+}
+.article-body {
+  margin-top: 24px;
+  line-height: 1.6;
+
+  img { max-width: 100%; height: auto; }
+  pre {
+    background: var(--code-bg);
+    padding: 14px;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  h1, h2, h3 { margin-top: 28px; }
+  a { color: var(--accent); }
 }

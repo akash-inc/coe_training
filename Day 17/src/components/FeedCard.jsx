@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const SOURCE_LABEL = { hn: 'HN', github: 'GitHub', rss: 'RSS' }
 
 function formatTime(time) {
@@ -8,6 +10,8 @@ function formatTime(time) {
 }
 
 export default function FeedCard({ item }) {
+  const articlePath = `/article/${item.source}/${encodeURIComponent(item.sourceId)}`
+
   return (
     <article className="card">
       <div className="card-meta">
@@ -16,9 +20,7 @@ export default function FeedCard({ item }) {
         <span className="card-time">{formatTime(item.time)}</span>
       </div>
       <h3 className="card-title">
-        <a href={item.url} target="_blank" rel="noreferrer">
-          {item.title}
-        </a>
+        <Link to={articlePath}>{item.title}</Link>
       </h3>
       {item.summary && <p className="card-summary">{item.summary}</p>}
       <div className="card-stats">
@@ -26,6 +28,9 @@ export default function FeedCard({ item }) {
           <span>{item.source === 'github' ? '★' : '▲'} {item.points}</span>
         )}
         {item.source === 'hn' && <span>💬 {item.comments}</span>}
+        <a className="card-source-link" href={item.url} target="_blank" rel="noreferrer">
+          source ↗
+        </a>
       </div>
     </article>
   )
