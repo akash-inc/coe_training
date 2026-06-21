@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { QueryErrorResetBoundary } from '@tanstack/react-query'
 import FeedErrorFallback from '../components/FeedErrorFallback'
+import SkeletonList from '../components/SkeletonCard'
 
 // Each panel is a separate dynamic import, so Vite emits one chunk per source.
 // The chunk is only fetched when its tab is first activated (deferred loading) —
@@ -52,7 +53,9 @@ export default function FeedPage() {
               resetKeys={[active]}
               FallbackComponent={FeedErrorFallback}
             >
-              <Suspense fallback={<p className="feed-status">Loading panel…</p>}>
+              {/* Covers both the lazy chunk download and the suspense query —
+                  skeleton cards stand in until the feed is ready. */}
+              <Suspense fallback={<SkeletonList />}>
                 <ActivePanel />
               </Suspense>
             </ErrorBoundary>
