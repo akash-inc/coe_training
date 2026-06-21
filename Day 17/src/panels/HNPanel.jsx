@@ -3,13 +3,15 @@ import { fetchHN } from '../api/hn'
 import FeedCard from '../components/FeedCard'
 
 export default function HNPanel() {
-  const { data, isPending, isError, error } = useQuery({
+  // throwOnError lets the enclosing ErrorBoundary catch query failures
+  // instead of each panel hand-rolling its own error UI.
+  const { data, isPending } = useQuery({
     queryKey: ['feed', 'hn', 0],
     queryFn: () => fetchHN({ page: 0 }),
+    throwOnError: true,
   })
 
   if (isPending) return <p className="feed-status">Loading Hacker News…</p>
-  if (isError) return <p className="feed-status feed-error">{error.message}</p>
 
   return (
     <div className="feed-list">

@@ -1,4 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
+import { QueryErrorResetBoundary } from '@tanstack/react-query'
+import FeedErrorFallback from '../components/FeedErrorFallback'
 
 // Each panel is a separate dynamic import, so Vite emits one chunk per source.
 // The chunk is only fetched when its tab is first activated (deferred loading) —
@@ -39,10 +42,22 @@ export default function FeedPage() {
       </nav>
 
       <section className="panel">
-        {/* Suspense covers the chunk download for the active panel. */}
-        <Suspense fallback={<p className="feed-status">Loading panel…</p>}>
-          <ActivePanel />
-        </Suspense>
+        {/* Each panel gets its own boundary keyed by tab, so a failure in one
+            source never takes down the others. QueryErrorResetBoundary wires
+            Retry to re-run the failed query. */}
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <ErrorBoundary
+              onReset={reset}
+              resetKeys={[active]}
+              FallbackComponent={FeedErrorFallback}
+            >
+              <Suspense fallback={<p className="feed-status">Loading panel…</p>}>
+                <ActivePanel />
+              </Suspense>
+            </ErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
       </section>
     </main>
   )

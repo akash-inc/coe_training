@@ -3,13 +3,15 @@ import { fetchGitHub } from '../api/github'
 import FeedCard from '../components/FeedCard'
 
 export default function GitHubPanel() {
-  const { data, isPending, isError, error } = useQuery({
+  // throwOnError lets the enclosing ErrorBoundary catch query failures
+  // (a 403 rate-limit here stays isolated to the GitHub tab).
+  const { data, isPending } = useQuery({
     queryKey: ['feed', 'github', 1],
     queryFn: () => fetchGitHub({ page: 1 }),
+    throwOnError: true,
   })
 
   if (isPending) return <p className="feed-status">Loading GitHub…</p>
-  if (isError) return <p className="feed-status feed-error">{error.message}</p>
 
   return (
     <div className="feed-list">

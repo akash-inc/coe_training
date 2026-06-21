@@ -132,6 +132,25 @@
 .feed-error {
   color: #ef4444;
 }
+.error-detail {
+  font-size: 13px;
+  font-family: var(--mono);
+  opacity: 0.8;
+  margin-top: 4px;
+}
+.retry-btn {
+  margin-top: 14px;
+  appearance: none;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  &:hover { box-shadow: var(--shadow); }
+}
 
 /* Article detail page */
 .back-link {
