@@ -1,0 +1,127 @@
+.feed {
+  text-align: left;
+  padding: 32px;
+  flex-grow: 1;
+  @media (max-width: 1024px) {
+    padding: 20px;
+  }
+}
+
+.feed-header h1 {
+  margin: 0 0 4px;
+  font-size: 40px;
+  letter-spacing: -1.2px;
+}
+
+.feed-tagline {
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 24px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  appearance: none;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s;
+
+  &:hover {
+    color: var(--text-h);
+  }
+}
+
+.tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  background: var(--bg);
+  transition: box-shadow 0.2s, border-color 0.2s;
+
+  &:hover {
+    box-shadow: var(--shadow);
+    border-color: var(--accent-border);
+  }
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.badge-github { background: rgba(110, 84, 148, 0.15); }
+.badge-rss { background: rgba(234, 88, 12, 0.15); color: #ea580c; }
+
+.card-title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  line-height: 1.3;
+
+  a {
+    color: var(--text-h);
+    text-decoration: none;
+    &:hover { color: var(--accent); }
+  }
+}
+
+.card-summary {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.card-stats {
+  display: flex;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.feed-status {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text);
+}
+.feed-error {
+  color: #ef4444;
+}
