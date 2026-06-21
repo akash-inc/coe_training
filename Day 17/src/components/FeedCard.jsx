@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { usePrefetchArticle } from '../hooks/usePrefetchArticle'
 
@@ -10,7 +11,11 @@ function formatTime(time) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export default function FeedCard({ item }) {
+// memo so that appending a page only renders the *new* cards — existing cards
+// receive the same `item` reference (React Query keeps page objects stable) and
+// bail out. React Compiler already memoizes the mapped elements; this makes the
+// guarantee explicit and survives even if the compiler is disabled.
+function FeedCard({ item }) {
   const articlePath = `/article/${item.source}/${encodeURIComponent(item.sourceId)}`
   const prefetch = usePrefetchArticle()
 
@@ -41,3 +46,5 @@ export default function FeedCard({ item }) {
     </article>
   )
 }
+
+export default memo(FeedCard)
