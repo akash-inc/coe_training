@@ -1,9 +1,11 @@
-import { useState } from 'react'
-// Baseline: all panels are imported eagerly, so they share the main bundle.
-// Commit 1 converts these to lazy chunks loaded only when the tab is active.
-import HNPanel from '../panels/HNPanel'
-import GitHubPanel from '../panels/GitHubPanel'
-import RSSPanel from '../panels/RSSPanel'
+import { lazy, Suspense, useState } from 'react'
+
+// Each panel is a separate dynamic import, so Vite emits one chunk per source.
+// The chunk is only fetched when its tab is first activated (deferred loading) —
+// open the Network tab and watch GitHubPanel-*.js arrive only when you click GitHub.
+const HNPanel = lazy(() => import('../panels/HNPanel'))
+const GitHubPanel = lazy(() => import('../panels/GitHubPanel'))
+const RSSPanel = lazy(() => import('../panels/RSSPanel'))
 
 const TABS = [
   { id: 'hn', label: 'Hacker News', Panel: HNPanel },
@@ -37,7 +39,10 @@ export default function FeedPage() {
       </nav>
 
       <section className="panel">
-        <ActivePanel />
+        {/* Suspense covers the chunk download for the active panel. */}
+        <Suspense fallback={<p className="feed-status">Loading panel…</p>}>
+          <ActivePanel />
+        </Suspense>
       </section>
     </main>
   )
