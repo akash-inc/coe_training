@@ -12,7 +12,8 @@ export const parameters = {
   a11y: {
     config: {},
     options: { runOnly: ["wcag2a", "wcag2aa"] },
-    test: "todo"
+    // 'error' - fail the test run (and CI) on any a11y violation
+    test: "error"
   }
 }
 
@@ -41,7 +42,7 @@ const preview = {
       // 'todo' - show a11y violations in the test UI only
       // 'error' - fail CI on a11y violations
       // 'off' - skip a11y checks entirely
-      test: "todo"
+      test: "error"
     }
   },
 };
