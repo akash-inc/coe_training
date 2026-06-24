@@ -11,7 +11,7 @@ import { Card, Stat, Icon, HStack, Box, Text } from "@chakra-ui/react";
  */
 export function StatCard({ label, value, helpText, icon }) {
   return (
-    <Card.Root w="3xs">
+    <Card.Root w="full">
       <Card.Body>
         <HStack justify="space-between" align="start">
           <Box>

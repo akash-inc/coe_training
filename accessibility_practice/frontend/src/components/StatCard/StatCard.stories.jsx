@@ -1,10 +1,12 @@
-import { HStack } from "@chakra-ui/react";
+import { HStack, Box } from "@chakra-ui/react";
 import { LuBrain, LuTrendingUp, LuClock } from "react-icons/lu";
 import { StatCard } from "./StatCard";
 
 export default {
   title: "Flashcards/StatCard",
   component: StatCard,
+  // StatCard fills its container (w="full"); constrain the standalone preview.
+  decorators: [(Story) => <Box maxW="3xs"><Story /></Box>],
   args: { label: "Cards reviewed", value: "1,284", helpText: "+128 this week" },
 };
 

@@ -9,7 +9,7 @@ import { ProgressBar } from "../ProgressBar/ProgressBar";
  */
 export function DeckCard({ title, description, cardCount, progress = 0, category, onStudy }) {
   return (
-    <Card.Root w="sm">
+    <Card.Root w="full">
       <Card.Body gap={3}>
         <HStack justify="space-between" align="start">
           <Heading size="md">{title}</Heading>

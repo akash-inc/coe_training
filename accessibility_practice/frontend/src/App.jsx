@@ -1,10 +1,7 @@
-function App() {
+import { FlashcardApp } from "./demo/FlashcardApp";
 
-  return (
-    <>
-      Hello
-    </>
-  )
+function App() {
+  return <FlashcardApp />;
 }
 
-export default App
+export default App;
