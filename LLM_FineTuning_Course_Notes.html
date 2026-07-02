@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Fine-Tuning Course — Complete Notes</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent1: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #d29922;
+    --accent4: #f78166;
+    --accent5: #bc8cff;
+    --accent6: #39d353;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #1a1f35 40%, #0d2240 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(88,166,255,.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero h1 { font-size: 2.6rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 10px; }
+  .hero h1 span { color: var(--accent1); }
+  .hero .subtitle { font-size: 1.1rem; color: var(--text-muted); max-width: 700px; margin: 0 auto 22px; }
+  .badge-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    padding: 4px 14px; border-radius: 20px; font-size: .78rem; font-weight: 600;
+    border: 1px solid;
+  }
+  .badge-blue  { background: rgba(88,166,255,.15); color: var(--accent1); border-color: rgba(88,166,255,.4); }
+  .badge-green { background: rgba(63,185,80,.15);  color: var(--accent2); border-color: rgba(63,185,80,.4); }
+  .badge-amber { background: rgba(210,153,34,.15); color: var(--accent3); border-color: rgba(210,153,34,.4); }
+  .badge-purple{ background: rgba(188,140,255,.15);color: var(--accent5); border-color: rgba(188,140,255,.4); }
+
+  /* ── Layout ── */
+  .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 36px 0;
+  }
+  .toc h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 14px; }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+  .toc a { color: var(--accent1); text-decoration: none; font-size: .92rem; padding: 4px 0; display: block; }
+  .toc a:hover { text-decoration: underline; }
+  .toc-num { color: var(--text-muted); margin-right: 6px; }
+
+  /* ── Sections ── */
+  .section { margin: 48px 0; }
+  h2.sec-title {
+    font-size: 1.6rem; font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2.sec-title .icon { font-size: 1.4rem; }
+  .sec-divider { height: 2px; background: linear-gradient(90deg, var(--accent1) 0%, transparent 100%); margin-bottom: 24px; border-radius: 2px; }
+  h3.sub-title { font-size: 1.1rem; color: var(--accent3); margin: 24px 0 10px; }
+
+  p { margin-bottom: 12px; }
+
+  /* ── Cards ── */
+  .card-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 18px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent1); }
+  .card h4 { font-size: 1rem; margin-bottom: 8px; }
+  .card p { font-size: .88rem; color: var(--text-muted); margin: 0; }
+  .card .card-icon { font-size: 1.6rem; margin-bottom: 10px; }
+
+  /* ── Tables ── */
+  .tbl-wrap { overflow-x: auto; margin: 18px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th { background: var(--surface2); color: var(--accent1); padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+  td { padding: 9px 14px; border: 1px solid var(--border); color: var(--text); }
+  tr:nth-child(even) td { background: rgba(255,255,255,.03); }
+
+  /* ── Code ── */
+  pre, code {
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    font-size: .85rem;
+  }
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 14px 0;
+  }
+  code { color: var(--accent5); }
+
+  /* ── Callout ── */
+  .callout {
+    border-left: 4px solid;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: .9rem;
+  }
+  .callout-blue  { border-color: var(--accent1); background: rgba(88,166,255,.08); }
+  .callout-green { border-color: var(--accent2); background: rgba(63,185,80,.08); }
+  .callout-amber { border-color: var(--accent3); background: rgba(210,153,34,.08); }
+  .callout-red   { border-color: var(--accent4); background: rgba(247,129,102,.08); }
+
+  /* ── Tags ── */
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: .78rem; font-weight: 600; margin: 2px; }
+  .tag-blue { background: rgba(88,166,255,.2); color: var(--accent1); }
+  .tag-green { background: rgba(63,185,80,.2); color: var(--accent2); }
+  .tag-amber { background: rgba(210,153,34,.2); color: var(--accent3); }
+  .tag-purple { background: rgba(188,140,255,.2); color: var(--accent5); }
+  .tag-red { background: rgba(247,129,102,.2); color: var(--accent4); }
+
+  /* ── SVG diagrams ── */
+  .diagram-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+  .diagram-box svg { max-width: 100%; height: auto; }
+  .diagram-caption { font-size: .82rem; color: var(--text-muted); margin-top: 10px; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 0;
+    text-align: center;
+    font-size: .82rem;
+    color: var(--text-muted);
+    margin-top: 60px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 1.8rem; }
+    .card-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ HERO ════════════════ -->
+<div class="hero">
+  <h1>LLM <span>Fine-Tuning</span> Course</h1>
+  <p class="subtitle">From Supervised Fine-Tuning to RLHF, LoRA, and Multimodal — complete structured notes with diagrams</p>
+  <div class="badge-row">
+    <span class="badge badge-blue">Supervised Fine-Tuning</span>
+    <span class="badge badge-green">LoRA / QLoRA</span>
+    <span class="badge badge-amber">RLHF / DPO</span>
+    <span class="badge badge-purple">HuggingFace · Unsloth · Axolotl</span>
+  </div>
+</div>
+
+<!-- ════════════════ WRAPPER ════════════════ -->
+<div class="wrapper">
+
+  <!-- ── TOC ── -->
+  <nav class="toc">
+    <h2>Table of Contents</h2>
+    <div class="toc-grid">
+      <a href="#overview"><span class="toc-num">01</span>Course Overview</a>
+      <a href="#pipeline"><span class="toc-num">02</span>LLM Training Pipeline</a>
+      <a href="#pretraining"><span class="toc-num">03</span>Unsupervised Pre-training</a>
+      <a href="#sft"><span class="toc-num">04</span>Supervised Fine-Tuning (SFT)</a>
+      <a href="#peft"><span class="toc-num">05</span>PEFT &amp; LoRA Deep Dive</a>
+      <a href="#data-formats"><span class="toc-num">06</span>Data Formats</a>
+      <a href="#non-instruction"><span class="toc-num">07</span>Non-Instruction Fine-Tuning</a>
+      <a href="#instruction"><span class="toc-num">08</span>Instruction Fine-Tuning</a>
+      <a href="#preference"><span class="toc-num">09</span>Preference Alignment</a>
+      <a href="#dpo"><span class="toc-num">10</span>DPO Formula &amp; Math</a>
+      <a href="#libraries"><span class="toc-num">11</span>Libraries &amp; Frameworks</a>
+      <a href="#models"><span class="toc-num">12</span>Model Family Breakdown</a>
+      <a href="#mindmap"><span class="toc-num">13</span>Full Course Mind Map</a>
+      <a href="#pipeline-impl"><span class="toc-num">14</span>Implementation Flow</a>
+    </div>
+  </nav>
+
+  <!-- ════════════════ 01 OVERVIEW ════════════════ -->
+  <section class="section" id="overview">
+    <h2 class="sec-title"><span class="icon">📘</span> Course Overview</h2>
+    <div class="sec-divider"></div>
+    <p>This course, developed by <strong>Sunonny Savvita</strong> (7 years of Data Science &amp; GenAI experience), teaches LLM fine-tuning from fundamentals to advanced techniques. The progression covers every layer of the modern fine-tuning stack.</p>
+
+    <div class="card-row">
+      <div class="card">
+        <div class="card-icon">🏗️</div>
+        <h4>Supervised Fine-Tuning (SFT)</h4>
+        <p>Full and partial parameter training. LoRA, QLoRA, DoRA and other PEFT methods. Non-instruction and instruction datasets.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🧭</div>
+        <h4>Preference Alignment</h4>
+        <p>RLHF via PPO, RLAIF, and the modern DPO technique. Understanding the math behind the DPO loss function.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h4>Frameworks</h4>
+        <p>Hands-on with HuggingFace, LLaMA Factory, Unsloth, and Axolotl. Side-by-side comparison of each ecosystem.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h4>Advanced Topics</h4>
+        <p>SLM fine-tuning, multimodal fine-tuning, and embedding fine-tuning — all with end-to-end practicals.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ 02 PIPELINE ════════════════ -->
+  <section class="section" id="pipeline">
+    <h2 class="sec-title"><span class="icon">🔄</span> LLM Training Pipeline — 3 Stages</h2>
+    <div class="sec-divider"></div>
+    <p>Every modern LLM (LLaMA, GPT, Mistral, Gemini, DeepSeek) follows the same three-stage training pipeline before deployment.</p>
+
+    <!-- SVG Flowchart: 3-stage pipeline -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- Stage boxes -->
+        <!-- Stage 1 -->
+        <rect x="20" y="60" width="240" height="140" rx="12" fill="#1a2640" stroke="#58a6ff" stroke-width="2"/>
+        <text x="140" y="92" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">STAGE 1</text>
+        <text x="140" y="113" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Unsupervised</text>
+        <text x="140" y="131" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Pre-Training</text>
+        <text x="140" y="155" text-anchor="middle" fill="#8b949e" font-size="11">Self-supervised learning</text>
+        <text x="140" y="172" text-anchor="middle" fill="#8b949e" font-size="11">Next-token prediction</text>
+        <text x="140" y="189" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">→ Base Model</text>
+
+        <!-- Arrow 1→2 -->
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#8b949e"/>
+          </marker>
+        </defs>
+        <line x1="262" y1="130" x2="318" y2="130" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="290" y="122" text-anchor="middle" fill="#8b949e" font-size="10">SFT</text>
+
+        <!-- Stage 2 -->
+        <rect x="320" y="60" width="260" height="140" rx="12" fill="#1a2a1e" stroke="#3fb950" stroke-width="2"/>
+        <text x="450" y="92" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">STAGE 2</text>
+        <text x="450" y="113" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Supervised</text>
+        <text x="450" y="131" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Fine-Tuning (SFT)</text>
+        <text x="450" y="155" text-anchor="middle" fill="#8b949e" font-size="11">Non-instruction (domain)</text>
+        <text x="450" y="172" text-anchor="middle" fill="#8b949e" font-size="11">Instruction (chat/QA)</text>
+        <text x="450" y="189" text-anchor="middle" fill="#d29922" font-size="11" font-weight="600">→ Instruction Model</text>
+
+        <!-- Arrow 2→3 -->
+        <line x1="582" y1="130" x2="638" y2="130" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="610" y="122" text-anchor="middle" fill="#8b949e" font-size="10">Align</text>
+
+        <!-- Stage 3 -->
+        <rect x="640" y="60" width="240" height="140" rx="12" fill="#2a1a2e" stroke="#bc8cff" stroke-width="2"/>
+        <text x="760" y="92" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="700">STAGE 3</text>
+        <text x="760" y="113" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Preference</text>
+        <text x="760" y="131" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Alignment</text>
+        <text x="760" y="155" text-anchor="middle" fill="#8b949e" font-size="11">RLHF / RLAIF / DPO</text>
+        <text x="760" y="172" text-anchor="middle" fill="#8b949e" font-size="11">Human-preferred outputs</text>
+        <text x="760" y="189" text-anchor="middle" fill="#f78166" font-size="11" font-weight="600">→ Aligned Model</text>
+
+        <!-- Data sources labels -->
+        <text x="140" y="228" text-anchor="middle" fill="#58a6ff" font-size="10">Data: Common Crawl, Wikipedia, Books</text>
+        <text x="450" y="228" text-anchor="middle" fill="#3fb950" font-size="10">Data: PDF/plain-text · Q&amp;A pairs</text>
+        <text x="760" y="228" text-anchor="middle" fill="#bc8cff" font-size="10">Data: Prompt + Chosen + Rejected</text>
+      </svg>
+      <p class="diagram-caption">The universal 3-stage LLM training pipeline applicable to LLaMA, GPT, Mistral, DeepSeek, and Gemini.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ 03 PRE-TRAINING ════════════════ -->
+  <section class="section" id="pretraining">
+    <h2 class="sec-title"><span class="icon">🌐</span> Stage 1 — Unsupervised Pre-Training</h2>
+    <div class="sec-divider"></div>
+
+    <p>Also called <strong>self-supervised learning</strong>. The model is trained on massive raw text — no manual labels needed. The <em>label</em> is automatically the next word in the sequence.</p>
+
+    <div class="card-row">
+      <div class="card">
+        <h4>🗂️ Data Sources</h4>
+        <p>Common Crawl (internet), Wikipedia, encyclopedias, books, research papers, multilingual corpora, GitHub code.</p>
+      </div>
+      <div class="card">
+        <h4>🎯 Objective</h4>
+        <p><strong>Next-token prediction</strong> — also called language modelling. Because it is performed at massive scale, it becomes <em>Large Language Modelling</em>.</p>
+      </div>
+      <div class="card">
+        <h4>📤 Output</h4>
+        <p>A <strong>Base Model</strong> (e.g. LLaMA-base, Mistral-base). It understands language patterns but cannot follow instructions or have conversations.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-amber">
+      <strong>Why can't most companies do this?</strong> Pre-training requires massive GPU infrastructure and terabytes of data. Companies like Meta (LLaMA), OpenAI (GPT), Google (Gemini), and Mistral AI perform this stage. Everyone else fine-tunes from their released base models.
+    </div>
+
+    <!-- Context window table -->
+    <h3 class="sub-title">GPT Model Evolution — Context Window Growth</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Model</th><th>Max Tokens</th><th>Approx. Words</th><th>Release Year</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GPT-1</td><td>512</td><td>~350</td><td>2018</td></tr>
+          <tr><td>GPT-2</td><td>1,024</td><td>~750</td><td>2019</td></tr>
+          <tr><td>GPT-3</td><td>2,048</td><td>~1,500</td><td>2020</td></tr>
+          <tr><td>GPT-3.5</td><td>4,096</td><td>~3,000</td><td>2022</td></tr>
+          <tr><td>GPT-4</td><td>128,000</td><td>~100,000</td><td>2023</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ════════════════ 04 SFT ════════════════ -->
+  <section class="section" id="sft">
+    <h2 class="sec-title"><span class="icon">🎓</span> Stage 2 — Supervised Fine-Tuning (SFT)</h2>
+    <div class="sec-divider"></div>
+
+    <p>SFT refines the base model for specific tasks or behaviours. It splits into two orthogonal axes: <strong>parameter-level</strong> (how many weights to update) and <strong>data-level</strong> (what format the data takes).</p>
+
+    <!-- SVG: SFT taxonomy tree -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- Root -->
+        <rect x="380" y="20" width="200" height="48" rx="8" fill="#21262d" stroke="#58a6ff" stroke-width="2"/>
+        <text x="480" y="48" text-anchor="middle" fill="#58a6ff" font-size="15" font-weight="700">SFT (Stage 2)</text>
+
+        <!-- Branches from root -->
+        <line x1="480" y1="68" x2="240" y2="110" stroke="#8b949e" stroke-width="1.5"/>
+        <line x1="480" y1="68" x2="720" y2="110" stroke="#8b949e" stroke-width="1.5"/>
+
+        <!-- Parameter Level -->
+        <rect x="100" y="110" width="280" height="44" rx="8" fill="#1a2640" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="240" y="136" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">Parameter Level</text>
+
+        <!-- Data Level -->
+        <rect x="580" y="110" width="280" height="44" rx="8" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1.5"/>
+        <text x="720" y="136" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="700">Data Level</text>
+
+        <!-- From Parameter Level -->
+        <line x1="180" y1="154" x2="130" y2="200" stroke="#8b949e" stroke-width="1.5"/>
+        <line x1="300" y1="154" x2="350" y2="200" stroke="#8b949e" stroke-width="1.5"/>
+
+        <!-- Full Fine-Tuning -->
+        <rect x="20" y="200" width="210" height="48" rx="8" fill="#21262d" stroke="#f78166" stroke-width="1.5"/>
+        <text x="125" y="222" text-anchor="middle" fill="#f78166" font-size="12" font-weight="700">Full Fine-Tuning</text>
+        <text x="125" y="240" text-anchor="middle" fill="#8b949e" font-size="10">Train ALL weights &amp; biases</text>
+
+        <!-- Partial Fine-Tuning -->
+        <rect x="250" y="200" width="210" height="48" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="355" y="222" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Partial Fine-Tuning</text>
+        <text x="355" y="240" text-anchor="middle" fill="#8b949e" font-size="10">Train subset of parameters</text>
+
+        <!-- From Full Fine-Tuning -->
+        <line x1="125" y1="248" x2="125" y2="290" stroke="#f78166" stroke-width="1.5"/>
+        <rect x="50" y="290" width="150" height="38" rx="6" fill="#2e1a1a" stroke="#f78166" stroke-width="1"/>
+        <text x="125" y="307" text-anchor="middle" fill="#f78166" font-size="10">Requires huge GPU</text>
+        <text x="125" y="322" text-anchor="middle" fill="#f78166" font-size="10">Multi-GPU setup</text>
+
+        <!-- From Partial: Old school -->
+        <line x1="310" y1="248" x2="280" y2="290" stroke="#8b949e" stroke-width="1.5"/>
+        <line x1="400" y1="248" x2="430" y2="290" stroke="#8b949e" stroke-width="1.5"/>
+
+        <rect x="210" y="290" width="150" height="38" rx="6" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="285" y="307" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">Old-School</text>
+        <text x="285" y="322" text-anchor="middle" fill="#8b949e" font-size="9">Freeze layers + retrain last</text>
+
+        <!-- PEFT -->
+        <rect x="370" y="290" width="130" height="38" rx="6" fill="#1a2640" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="435" y="311" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">PEFT Methods</text>
+        <text x="435" y="323" text-anchor="middle" fill="#8b949e" font-size="9">Single GPU ✓</text>
+
+        <!-- PEFT techniques row -->
+        <line x1="435" y1="328" x2="435" y2="360" stroke="#58a6ff" stroke-width="1"/>
+        <!-- Spread 6 boxes -->
+        <g font-size="9" text-anchor="middle">
+          <rect x="20" y="360" width="80" height="30" rx="5" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/><text x="60" y="379" fill="#58a6ff">LoRA</text>
+          <rect x="110" y="360" width="80" height="30" rx="5" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/><text x="150" y="379" fill="#58a6ff">QLoRA</text>
+          <rect x="200" y="360" width="80" height="30" rx="5" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/><text x="240" y="379" fill="#58a6ff">DoRA</text>
+          <rect x="290" y="360" width="100" height="30" rx="5" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/><text x="340" y="379" fill="#58a6ff">Adapters</text>
+          <rect x="400" y="360" width="80" height="30" rx="5" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/><text x="440" y="379" fill="#58a6ff">BitFit</text>
+          <rect x="490" y="360" width="60" height="30" rx="5" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/><text x="520" y="379" fill="#58a6ff">IA³</text>
+        </g>
+        <!-- Line from peft to boxes region -->
+        <line x1="435" y1="360" x2="270" y2="360" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2"/>
+        <line x1="435" y1="360" x2="520" y2="360" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2"/>
+
+        <!-- From Data Level -->
+        <line x1="660" y1="154" x2="660" y2="200" stroke="#8b949e" stroke-width="1.5"/>
+        <line x1="780" y1="154" x2="780" y2="200" stroke="#8b949e" stroke-width="1.5"/>
+
+        <!-- Non-instruction -->
+        <rect x="570" y="200" width="195" height="48" rx="8" fill="#21262d" stroke="#d29922" stroke-width="1.5"/>
+        <text x="667" y="222" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Non-Instruction FT</text>
+        <text x="667" y="240" text-anchor="middle" fill="#8b949e" font-size="10">Plain text / domain docs</text>
+
+        <!-- Instruction FT -->
+        <rect x="775" y="200" width="175" height="48" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="1.5"/>
+        <text x="862" y="222" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">Instruction FT</text>
+        <text x="862" y="240" text-anchor="middle" fill="#8b949e" font-size="10">Input → Output format</text>
+
+        <!-- Sub-notes -->
+        <rect x="570" y="290" width="195" height="50" rx="6" fill="#2a2010" stroke="#d29922" stroke-width="1"/>
+        <line x1="667" y1="248" x2="667" y2="290" stroke="#d29922" stroke-width="1.5"/>
+        <text x="667" y="310" text-anchor="middle" fill="#d29922" font-size="9">Goal: Domain vocabulary</text>
+        <text x="667" y="324" text-anchor="middle" fill="#8b949e" font-size="9">Output: Continuous text</text>
+
+        <rect x="775" y="290" width="175" height="50" rx="6" fill="#1a1a2e" stroke="#bc8cff" stroke-width="1"/>
+        <line x1="862" y1="248" x2="862" y2="290" stroke="#bc8cff" stroke-width="1.5"/>
+        <text x="862" y="310" text-anchor="middle" fill="#bc8cff" font-size="9">Goal: Chat / QA assistant</text>
+        <text x="862" y="324" text-anchor="middle" fill="#8b949e" font-size="9">Output: Structured answers</text>
+
+        <!-- Axis labels at bottom -->
+        <text x="240" y="430" text-anchor="middle" fill="#8b949e" font-size="11" font-style="italic">← Parameter axis (HOW MUCH to train)</text>
+        <text x="720" y="430" text-anchor="middle" fill="#8b949e" font-size="11" font-style="italic">← Data axis (WHAT format to use)</text>
+      </svg>
+      <p class="diagram-caption">SFT Taxonomy — parameter-level and data-level split.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ 05 PEFT ════════════════ -->
+  <section class="section" id="peft">
+    <h2 class="sec-title"><span class="icon">⚡</span> PEFT &amp; LoRA Deep Dive</h2>
+    <div class="sec-divider"></div>
+
+    <p><strong>Parameter Efficient Fine-Tuning (PEFT)</strong> — instead of retraining all billions of parameters, we introduce a small set of trainable parameters that steer the model's behaviour. This makes fine-tuning feasible on a single GPU.</p>
+
+    <h3 class="sub-title">LoRA — Low-Rank Adaptation (Core Idea)</h3>
+    <p>LoRA injects two small trainable matrices (A and B) alongside each frozen weight matrix W. The final weight update is <code>ΔW = A × B</code> where the rank r of A and B is much smaller than the original dimensions.</p>
+
+    <!-- SVG: LoRA mechanism -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- Frozen W -->
+        <rect x="50" y="40" width="120" height="120" rx="8" fill="#1a2640" stroke="#58a6ff" stroke-width="2"/>
+        <text x="110" y="95" text-anchor="middle" fill="#58a6ff" font-size="20" font-weight="700">W</text>
+        <text x="110" y="115" text-anchor="middle" fill="#8b949e" font-size="11">Frozen</text>
+        <text x="110" y="132" text-anchor="middle" fill="#8b949e" font-size="11">Pre-trained</text>
+
+        <!-- Arrow -->
+        <line x1="170" y1="100" x2="220" y2="100" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="195" y="92" text-anchor="middle" fill="#8b949e" font-size="10">output</text>
+
+        <!-- Plus -->
+        <text x="330" y="110" text-anchor="middle" fill="#3fb950" font-size="32" font-weight="300">+</text>
+
+        <!-- LoRA A -->
+        <rect x="380" y="50" width="60" height="100" rx="6" fill="#1a2a1e" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="410" y="93" text-anchor="middle" fill="#3fb950" font-size="16" font-weight="700">A</text>
+        <text x="410" y="111" text-anchor="middle" fill="#8b949e" font-size="9">d × r</text>
+        <text x="410" y="125" text-anchor="middle" fill="#8b949e" font-size="9">Trainable</text>
+
+        <!-- × -->
+        <text x="455" y="110" text-anchor="middle" fill="#d29922" font-size="20">×</text>
+
+        <!-- LoRA B -->
+        <rect x="470" y="80" width="100" height="40" rx="6" fill="#2a2010" stroke="#d29922" stroke-width="1.5"/>
+        <text x="520" y="103" text-anchor="middle" fill="#d29922" font-size="16" font-weight="700">B</text>
+        <text x="520" y="118" text-anchor="middle" fill="#8b949e" font-size="9">r × d — Trainable</text>
+
+        <!-- = label -->
+        <line x1="580" y1="100" x2="630" y2="100" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Result -->
+        <rect x="635" y="60" width="70" height="80" rx="6" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1.5"/>
+        <text x="670" y="97" text-anchor="middle" fill="#bc8cff" font-size="14" font-weight="700">ΔW</text>
+        <text x="670" y="114" text-anchor="middle" fill="#8b949e" font-size="9">= A × B</text>
+        <text x="670" y="127" text-anchor="middle" fill="#8b949e" font-size="9">Low-rank</text>
+
+        <!-- label at bottom -->
+        <text x="360" y="180" text-anchor="middle" fill="#8b949e" font-size="11">LoRA adds ΔW = A×B to frozen weight W. Only A and B are trained. r ≪ d</text>
+      </svg>
+      <p class="diagram-caption">LoRA inserts trainable low-rank matrices A and B. Only ~0.1% of parameters are trained.</p>
+    </div>
+
+    <h3 class="sub-title">LoRA Config Parameters</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Parameter</th><th>Description</th><th>Typical Value</th></tr></thead>
+        <tbody>
+          <tr><td><code>r</code> (rank)</td><td>Rank of the low-rank matrices A and B. Controls parameter count.</td><td>4 – 64</td></tr>
+          <tr><td><code>lora_alpha</code></td><td>Scaling factor — balances adaptation strength vs. original weights.</td><td>16 – 128</td></tr>
+          <tr><td><code>lora_dropout</code></td><td>Dropout probability for regularisation.</td><td>0.05</td></tr>
+          <tr><td><code>target_modules</code></td><td>Which layers to apply LoRA to (e.g. Q, V attention projections).</td><td>["q_proj","v_proj"]</td></tr>
+          <tr><td><code>task_type</code></td><td>Type of downstream task.</td><td>CAUSAL_LM</td></tr>
+          <tr><td><code>bias</code></td><td>Whether to train bias terms.</td><td>"none"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">All PEFT Techniques Compared</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Technique</th><th>Full Name</th><th>Core Idea</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag tag-blue">LoRA</span></td>
+            <td>Low-Rank Adaptation</td>
+            <td>Inject trainable low-rank matrices alongside frozen weights</td>
+            <td>Most popular; baseline for all others</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-green">QLoRA</span></td>
+            <td>Quantised LoRA</td>
+            <td>Load model in 4-bit or 8-bit; apply LoRA on top</td>
+            <td>Memory efficient; enables large models on small GPUs</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-amber">DoRA</span></td>
+            <td>Weight Decomposition Low-Rank Adaptation</td>
+            <td>Decomposes W into magnitude + direction; adapts direction</td>
+            <td>Can outperform LoRA on some tasks</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-purple">Adapters</span></td>
+            <td>Adapter Layers</td>
+            <td>Insert small bottleneck layers inside transformer blocks</td>
+            <td>Inspired by LoRA; plug-and-play modules</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-red">BitFit</span></td>
+            <td>Bias-term Fine-Tuning</td>
+            <td>Only train bias parameters in the network</td>
+            <td>Extremely parameter-efficient; simple</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-blue">IA³</span></td>
+            <td>Infused Adapter by Inhibiting and Amplifying Inner Activations</td>
+            <td>Learn scaling vectors to rescale activations</td>
+            <td>Improves LoRA; part of PEFT library</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-green">Prefix Tuning</span></td>
+            <td>—</td>
+            <td>Prepend trainable soft tokens (prefix) to every layer</td>
+            <td>Keeps model weights fully frozen</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-amber">Prompt Tuning</span></td>
+            <td>—</td>
+            <td>Learn soft prompt tokens prepended to input only</td>
+            <td>Lightest form of tuning; only input layer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-green">
+      <strong>Single GPU friendliness:</strong> All PEFT methods above can run on a single GPU with a reasonably sized model, making them accessible to individuals and small teams. QLoRA is the most memory-efficient option for very large models.
+    </div>
+  </section>
+
+  <!-- ════════════════ 06 DATA FORMATS ════════════════ -->
+  <section class="section" id="data-formats">
+    <h2 class="sec-title"><span class="icon">🗃️</span> Data Formats for Each Stage</h2>
+    <div class="sec-divider"></div>
+
+    <!-- SVG: data format comparison -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- Box 1: Plain text -->
+        <rect x="20" y="20" width="250" height="260" rx="10" fill="#1a2640" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="145" y="50" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Non-Instruction FT</text>
+        <line x1="40" y1="60" x2="250" y2="60" stroke="#30363d" stroke-width="1"/>
+        <text x="145" y="80" text-anchor="middle" fill="#8b949e" font-size="10">Format: Plain text column</text>
+        <!-- Mock table -->
+        <rect x="35" y="90" width="210" height="22" rx="3" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+        <text x="140" y="105" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">text</text>
+        <rect x="35" y="114" width="210" height="34" rx="3" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+        <text x="140" y="127" text-anchor="middle" fill="#e6edf3" font-size="9">Metformin improves insulin</text>
+        <text x="140" y="141" text-anchor="middle" fill="#e6edf3" font-size="9">sensitivity in the liver...</text>
+        <rect x="35" y="150" width="210" height="34" rx="3" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+        <text x="140" y="163" text-anchor="middle" fill="#e6edf3" font-size="9">Clinical trials demonstrate</text>
+        <text x="140" y="177" text-anchor="middle" fill="#e6edf3" font-size="9">combining atorvastatin...</text>
+        <text x="145" y="210" text-anchor="middle" fill="#8b949e" font-size="10">Goal: Domain knowledge</text>
+        <text x="145" y="226" text-anchor="middle" fill="#8b949e" font-size="10">Source: PDF / TXT docs</text>
+        <text x="145" y="252" text-anchor="middle" fill="#3fb950" font-size="10">Label = next token (auto)</text>
+        <text x="145" y="268" text-anchor="middle" fill="#3fb950" font-size="10">Self-supervised</text>
+
+        <!-- Box 2: Instruction -->
+        <rect x="310" y="20" width="280" height="260" rx="10" fill="#1a2a1e" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="450" y="50" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">Instruction FT (SFT)</text>
+        <line x1="330" y1="60" x2="570" y2="60" stroke="#30363d" stroke-width="1"/>
+        <text x="450" y="80" text-anchor="middle" fill="#8b949e" font-size="10">Format: Instruction / Input / Output</text>
+        <!-- Mock table -->
+        <rect x="325" y="90" width="250" height="22" rx="3" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+        <text x="380" y="105" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">instruction</text>
+        <text x="470" y="105" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">input</text>
+        <text x="545" y="105" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">output</text>
+        <rect x="325" y="114" width="250" height="38" rx="3" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+        <text x="380" y="131" text-anchor="middle" fill="#e6edf3" font-size="8">Explain mechanism</text>
+        <text x="380" y="143" text-anchor="middle" fill="#e6edf3" font-size="8">of metformin</text>
+        <text x="470" y="131" text-anchor="middle" fill="#8b949e" font-size="8">(none)</text>
+        <text x="545" y="131" text-anchor="middle" fill="#e6edf3" font-size="8">Metformin works</text>
+        <text x="545" y="143" text-anchor="middle" fill="#e6edf3" font-size="8">by...</text>
+        <text x="450" y="180" text-anchor="middle" fill="#8b949e" font-size="10">Variants: user/assistant,</text>
+        <text x="450" y="194" text-anchor="middle" fill="#8b949e" font-size="10">context/response, system/user/asst</text>
+        <text x="450" y="220" text-anchor="middle" fill="#8b949e" font-size="10">Goal: Chatbot / QA ability</text>
+        <text x="450" y="252" text-anchor="middle" fill="#3fb950" font-size="10">Has human-curated labels</text>
+        <text x="450" y="268" text-anchor="middle" fill="#3fb950" font-size="10">→ TRUE supervised learning</text>
+
+        <!-- Box 3: Preference -->
+        <rect x="630" y="20" width="250" height="260" rx="10" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1.5"/>
+        <text x="755" y="50" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="700">Preference Alignment</text>
+        <line x1="650" y1="60" x2="860" y2="60" stroke="#30363d" stroke-width="1"/>
+        <text x="755" y="80" text-anchor="middle" fill="#8b949e" font-size="10">Format: Prompt / Chosen / Rejected</text>
+        <!-- Mock table -->
+        <rect x="640" y="90" width="230" height="22" rx="3" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+        <text x="695" y="105" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">prompt</text>
+        <text x="765" y="105" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">chosen</text>
+        <text x="840" y="105" text-anchor="middle" fill="#f78166" font-size="10" font-weight="600">rejected</text>
+        <rect x="640" y="114" width="230" height="38" rx="3" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+        <text x="695" y="131" text-anchor="middle" fill="#e6edf3" font-size="8">How do I</text>
+        <text x="695" y="143" text-anchor="middle" fill="#e6edf3" font-size="8">lose weight?</text>
+        <text x="765" y="131" text-anchor="middle" fill="#3fb950" font-size="8">Safe weight</text>
+        <text x="765" y="143" text-anchor="middle" fill="#3fb950" font-size="8">loss takes...</text>
+        <text x="840" y="131" text-anchor="middle" fill="#f78166" font-size="8">Stop</text>
+        <text x="840" y="143" text-anchor="middle" fill="#f78166" font-size="8">eating.</text>
+        <text x="755" y="180" text-anchor="middle" fill="#8b949e" font-size="10">Chosen = preferred answer</text>
+        <text x="755" y="194" text-anchor="middle" fill="#8b949e" font-size="10">Rejected = poor answer</text>
+        <text x="755" y="220" text-anchor="middle" fill="#8b949e" font-size="10">Goal: Safe, helpful, honest</text>
+        <text x="755" y="252" text-anchor="middle" fill="#bc8cff" font-size="10">Datasets: HH-RLHF, UltraFeedback</text>
+        <text x="755" y="268" text-anchor="middle" fill="#bc8cff" font-size="10">Technique: DPO / RLHF</text>
+      </svg>
+      <p class="diagram-caption">The three distinct data formats used across all three training stages.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ 07 NON-INSTRUCTION ════════════════ -->
+  <section class="section" id="non-instruction">
+    <h2 class="sec-title"><span class="icon">📄</span> Non-Instruction Fine-Tuning</h2>
+    <div class="sec-divider"></div>
+
+    <p>Used to give a base model <strong>domain-specific knowledge</strong> from unstructured documents (PDFs, TXT files, company documentation) before teaching it to follow instructions.</p>
+
+    <div class="callout callout-blue">
+      <strong>Best practice:</strong> Before doing instruction fine-tuning, first do non-instruction fine-tuning on your domain corpus. This teaches the model your domain's vocabulary, terminology, and tone — making subsequent instruction fine-tuning far more effective.
+    </div>
+
+    <!-- SVG: data prep pipeline -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 860 130" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <defs>
+          <marker id="arr2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#58a6ff"/>
+          </marker>
+        </defs>
+        <!-- Steps -->
+        <g text-anchor="middle" font-size="11">
+          <!-- 1 -->
+          <rect x="10" y="30" width="120" height="55" rx="8" fill="#21262d" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="70" y="55" fill="#58a6ff" font-weight="700">1. Load PDF</text>
+          <text x="70" y="73" fill="#8b949e">Extract raw text</text>
+          <!-- arrow -->
+          <line x1="131" y1="57" x2="161" y2="57" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <!-- 2 -->
+          <rect x="162" y="30" width="130" height="55" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="227" y="55" fill="#3fb950" font-weight="700">2. Clean + Filter</text>
+          <text x="227" y="73" fill="#8b949e">Remove noise</text>
+          <!-- arrow -->
+          <line x1="293" y1="57" x2="323" y2="57" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <!-- 3 -->
+          <rect x="324" y="30" width="140" height="55" rx="8" fill="#21262d" stroke="#d29922" stroke-width="1.5"/>
+          <text x="394" y="55" fill="#d29922" font-weight="700">3. Chunking</text>
+          <text x="394" y="73" fill="#8b949e">Split to context len</text>
+          <!-- arrow -->
+          <line x1="465" y1="57" x2="495" y2="57" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <!-- 4 -->
+          <rect x="496" y="30" width="130" height="55" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="1.5"/>
+          <text x="561" y="55" fill="#bc8cff" font-weight="700">4. Tokenise</text>
+          <text x="561" y="73" fill="#8b949e">Token IDs + labels</text>
+          <!-- arrow -->
+          <line x1="627" y1="57" x2="657" y2="57" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <!-- 5 -->
+          <rect x="658" y="30" width="130" height="55" rx="8" fill="#21262d" stroke="#f78166" stroke-width="1.5"/>
+          <text x="723" y="55" fill="#f78166" font-weight="700">5. Train (LoRA)</text>
+          <text x="723" y="73" fill="#8b949e">Next-token pred.</text>
+          <!-- arrow -->
+          <line x1="789" y1="57" x2="819" y2="57" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <!-- result -->
+          <rect x="820" y="36" width="35" height="40" rx="6" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/>
+          <text x="837" y="61" fill="#58a6ff" font-size="9">✓ Model</text>
+        </g>
+      </svg>
+      <p class="diagram-caption">Non-instruction fine-tuning pipeline for domain-specific documents.</p>
+    </div>
+
+    <h3 class="sub-title">Key Libraries</h3>
+    <pre><code>pip install transformers datasets accelerate bitsandbytes peft trl pymupdf</code></pre>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Library</th><th>Creator</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>transformers</code></td><td>HuggingFace</td><td>Model loading, AutoTokenizer, AutoModelForCausalLM, Trainer</td></tr>
+          <tr><td><code>datasets</code></td><td>HuggingFace</td><td>Dataset loading, formatting, mapping</td></tr>
+          <tr><td><code>accelerate</code></td><td>HuggingFace</td><td>Multi-GPU training distribution</td></tr>
+          <tr><td><code>bitsandbytes</code></td><td>Tim Dettmers</td><td>4-bit / 8-bit quantisation for memory-efficient loading</td></tr>
+          <tr><td><code>peft</code></td><td>HuggingFace</td><td>LoRA, QLoRA, DoRA, prefix-tuning configs</td></tr>
+          <tr><td><code>trl</code></td><td>HuggingFace</td><td>SFT Trainer, DPO Trainer, RLHF components</td></tr>
+          <tr><td><code>pymupdf / fitz</code></td><td>Community</td><td>Extract text from PDF files</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ════════════════ 08 INSTRUCTION FT ════════════════ -->
+  <section class="section" id="instruction">
+    <h2 class="sec-title"><span class="icon">💬</span> Instruction Fine-Tuning</h2>
+    <div class="sec-divider"></div>
+
+    <p>Teaches the model to understand prompts and generate structured, task-relevant responses. This is what turned GPT-3 (base) into ChatGPT. OpenAI used Reddit, Quora, Stack Overflow, and GitHub issues as instruction data.</p>
+
+    <h3 class="sub-title">Why Base Models Fail at Instructions</h3>
+    <div class="card-row">
+      <div class="card">
+        <h4>❌ Base Model (no SFT)</h4>
+        <p>Input: <em>"Write three points on metformin mechanism."</em><br><br>Output: <em>"write three points on metformin mechanism is request…"</em> — it just predicts the next token, not an answer.</p>
+      </div>
+      <div class="card">
+        <h4>✅ Instruction Fine-Tuned</h4>
+        <p>Input: <em>"Write three points on metformin mechanism."</em><br><br>Output: <em>"1. Metformin inhibits complex I… 2. It activates AMPK… 3. It reduces hepatic glucose production…"</em></p>
+      </div>
+    </div>
+
+    <h3 class="sub-title">Data Preparation — Three Ways to Generate</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Method</th><th>Scale</th><th>Quality</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Manual creation by experts</td><td>Low</td><td>Very High</td><td>Not practical for large datasets</td></tr>
+          <tr><td>2</td><td>Human annotation team</td><td>Medium</td><td>High</td><td>Expensive; bottleneck is human bandwidth</td></tr>
+          <tr><td>3</td><td><strong>LLM Synthetic Data</strong></td><td>High</td><td>High</td><td>Feed plain text to GPT-4/Claude → get Q&amp;A pairs. Industry standard.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">ChatGPT Instruction Data Sources</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;">
+      <span class="tag tag-blue">Reddit conversations</span>
+      <span class="tag tag-blue">Quora Q&amp;A</span>
+      <span class="tag tag-blue">Stack Overflow</span>
+      <span class="tag tag-blue">Stack Exchange</span>
+      <span class="tag tag-blue">GitHub Issues</span>
+      <span class="tag tag-blue">Open community forums</span>
+      <span class="tag tag-blue">HuggingFace discussions</span>
+    </div>
+
+    <h3 class="sub-title">Token Masking Strategy</h3>
+    <p>An advanced technique: mask all tokens <em>before</em> the response with <code>-100</code> (ignored by the loss function), so the model only learns to predict the response tokens.</p>
+    <pre><code># Mask labels up to the response marker
+response_start = input_ids.index(response_marker_token)
+labels[:response_start] = -100  # model doesn't learn from instruction part</code></pre>
+  </section>
+
+  <!-- ════════════════ 09 PREFERENCE ════════════════ -->
+  <section class="section" id="preference">
+    <h2 class="sec-title"><span class="icon">🧭</span> Preference Alignment</h2>
+    <div class="sec-divider"></div>
+
+    <p>Even a well-trained instruction model can give answers that are technically correct but <strong>rude, unsafe, or misaligned with human values</strong>. Preference alignment solves this.</p>
+
+    <!-- Example comparison cards -->
+    <div class="card-row">
+      <div class="card" style="border-color: #f78166;">
+        <h4>❌ Without Alignment</h4>
+        <p><em>Q: "How do I lose 10 kg in one week?"</em><br><br>A: "Stop eating, drink only water, take fat burner pills. This will reduce weight quickly."</p>
+        <p style="color:#f78166;font-size:.8rem;margin-top:8px;">Rude · Medically dangerous · Misaligned</p>
+      </div>
+      <div class="card" style="border-color: #3fb950;">
+        <h4>✅ With Preference Alignment</h4>
+        <p><em>Q: "How do I lose 10 kg in one week?"</em><br><br>A: "Rapid weight loss at that pace is unsafe and medically harmful. A safer approach is 0.5–1 kg per week through balanced diet and activity. Please consult a doctor."</p>
+        <p style="color:#3fb950;font-size:.8rem;margin-top:8px;">Safe · Helpful · Human-aligned</p>
+      </div>
+    </div>
+
+    <h3 class="sub-title">Three Preference Alignment Techniques</h3>
+
+    <!-- SVG: preference techniques comparison -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 880 220" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- RLHF -->
+        <rect x="20" y="20" width="250" height="180" rx="10" fill="#1a2640" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="145" y="50" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="700">RLHF</text>
+        <text x="145" y="68" text-anchor="middle" fill="#8b949e" font-size="10">Reinforcement Learning</text>
+        <text x="145" y="82" text-anchor="middle" fill="#8b949e" font-size="10">from Human Feedback</text>
+        <line x1="35" y1="92" x2="255" y2="92" stroke="#30363d" stroke-width="1"/>
+        <text x="145" y="112" text-anchor="middle" fill="#e6edf3" font-size="10">Algorithm: PPO</text>
+        <text x="145" y="128" text-anchor="middle" fill="#8b949e" font-size="10">(Proximal Policy Optimisation)</text>
+        <text x="145" y="148" text-anchor="middle" fill="#8b949e" font-size="10">Trains a reward model first</text>
+        <text x="145" y="164" text-anchor="middle" fill="#8b949e" font-size="10">Used by: OpenAI (InstructGPT)</text>
+        <text x="145" y="185" text-anchor="middle" fill="#f78166" font-size="10">⚠ Complex · RL-based · Slow</text>
+
+        <!-- RLAIF -->
+        <rect x="310" y="20" width="250" height="180" rx="10" fill="#1a2a1e" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="435" y="50" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="700">RLAIF</text>
+        <text x="435" y="68" text-anchor="middle" fill="#8b949e" font-size="10">Reinforcement Learning</text>
+        <text x="435" y="82" text-anchor="middle" fill="#8b949e" font-size="10">from AI Feedback</text>
+        <line x1="325" y1="92" x2="545" y2="92" stroke="#30363d" stroke-width="1"/>
+        <text x="435" y="112" text-anchor="middle" fill="#e6edf3" font-size="10">Algorithm: PPO / KTO / IPO</text>
+        <text x="435" y="128" text-anchor="middle" fill="#8b949e" font-size="10">AI generates preference labels</text>
+        <text x="435" y="148" text-anchor="middle" fill="#8b949e" font-size="10">Scalable (no human needed)</text>
+        <text x="435" y="164" text-anchor="middle" fill="#8b949e" font-size="10">Introduced by: Anthropic</text>
+        <text x="435" y="185" text-anchor="middle" fill="#d29922" font-size="10">⚡ Scalable · RL-based</text>
+
+        <!-- DPO -->
+        <rect x="600" y="20" width="260" height="180" rx="10" fill="#2a1a2e" stroke="#bc8cff" stroke-width="2"/>
+        <text x="730" y="50" text-anchor="middle" fill="#bc8cff" font-size="14" font-weight="700">DPO ⭐ Recommended</text>
+        <text x="730" y="68" text-anchor="middle" fill="#8b949e" font-size="10">Direct Preference</text>
+        <text x="730" y="82" text-anchor="middle" fill="#8b949e" font-size="10">Optimisation</text>
+        <line x1="615" y1="92" x2="845" y2="92" stroke="#30363d" stroke-width="1"/>
+        <text x="730" y="112" text-anchor="middle" fill="#e6edf3" font-size="10">Simple supervised learning</text>
+        <text x="730" y="128" text-anchor="middle" fill="#8b949e" font-size="10">No reward model needed</text>
+        <text x="730" y="148" text-anchor="middle" fill="#8b949e" font-size="10">Uses: chosen + rejected pairs</text>
+        <text x="730" y="164" text-anchor="middle" fill="#8b949e" font-size="10">By: Stanford University (2024)</td>
+        <text x="730" y="185" text-anchor="middle" fill="#3fb950" font-size="10">✅ Simple · Fast · State-of-art</text>
+      </svg>
+      <p class="diagram-caption">Three preference alignment techniques. DPO is the current industry standard.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ 10 DPO FORMULA ════════════════ -->
+  <section class="section" id="dpo">
+    <h2 class="sec-title"><span class="icon">📐</span> DPO — Formula &amp; Intuition</h2>
+    <div class="sec-divider"></div>
+
+    <p>DPO replaces complex RL training with a simple supervised classification loss. It directly optimises the model to prefer chosen responses over rejected ones.</p>
+
+    <!-- SVG: DPO formula breakdown -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- Formula box -->
+        <rect x="40" y="20" width="780" height="80" rx="10" fill="#1a2640" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="430" y="50" text-anchor="middle" fill="#8b949e" font-size="12">DPO Loss Function</text>
+        <text x="430" y="80" text-anchor="middle" fill="#e6edf3" font-size="17" font-family="'Fira Code',monospace">
+          L_DPO = -E [ log σ( β · (log π_θ(y+|x)/π_ref(y+|x) - log π_θ(y-|x)/π_ref(y-|x)) ) ]
+        </text>
+
+        <!-- Term annotations -->
+        <!-- π_θ -->
+        <rect x="40" y="130" width="160" height="65" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+        <text x="120" y="155" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">π_θ</text>
+        <text x="120" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Preference-aligned</text>
+        <text x="120" y="186" text-anchor="middle" fill="#8b949e" font-size="10">model (being trained)</text>
+
+        <!-- π_ref -->
+        <rect x="220" y="130" width="160" height="65" rx="8" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+        <text x="300" y="155" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">π_ref</text>
+        <text x="300" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Reference model</text>
+        <text x="300" y="186" text-anchor="middle" fill="#8b949e" font-size="10">(instruction-tuned)</text>
+
+        <!-- y+ -->
+        <rect x="400" y="130" width="160" height="65" rx="8" fill="#1a2a1e" stroke="#3fb950" stroke-width="1"/>
+        <text x="480" y="155" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">y+</text>
+        <text x="480" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Chosen (preferred)</text>
+        <text x="480" y="186" text-anchor="middle" fill="#8b949e" font-size="10">response</text>
+
+        <!-- y- -->
+        <rect x="580" y="130" width="160" height="65" rx="8" fill="#2e1a1a" stroke="#f78166" stroke-width="1"/>
+        <text x="660" y="155" text-anchor="middle" fill="#f78166" font-size="12" font-weight="700">y-</text>
+        <text x="660" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Rejected response</text>
+        <text x="660" y="186" text-anchor="middle" fill="#8b949e" font-size="10">(poor answer)</text>
+
+        <!-- β -->
+        <rect x="760" y="130" width="80" height="65" rx="8" fill="#2a2010" stroke="#d29922" stroke-width="1"/>
+        <text x="800" y="155" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">β</text>
+        <text x="800" y="172" text-anchor="middle" fill="#8b949e" font-size="10">Scaling</text>
+        <text x="800" y="186" text-anchor="middle" fill="#8b949e" font-size="10">0.1–0.5</text>
+
+        <!-- Intuition row -->
+        <rect x="40" y="225" width="780" height="70" rx="10" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+        <text x="430" y="250" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Intuition</text>
+        <text x="430" y="270" text-anchor="middle" fill="#e6edf3" font-size="11">Maximise: log-prob of chosen MINUS log-prob of rejected (relative to reference model)</text>
+        <text x="430" y="287" text-anchor="middle" fill="#8b949e" font-size="10">If result is positive → model prefers chosen → loss decreases → model aligns with human preference ✓</text>
+      </svg>
+      <p class="diagram-caption">DPO loss function decomposed. The model learns by comparing chosen vs rejected responses against a reference model.</p>
+    </div>
+
+    <div class="callout callout-green">
+      <strong>Why DPO beats RLHF for practitioners:</strong> RLHF requires training a separate reward model and running a full RL loop (PPO). DPO collapses this into a single supervised pass over (prompt, chosen, rejected) triplets — much simpler and faster to converge.
+    </div>
+  </section>
+
+  <!-- ════════════════ 11 LIBRARIES ════════════════ -->
+  <section class="section" id="libraries">
+    <h2 class="sec-title"><span class="icon">🔧</span> Libraries &amp; Frameworks</h2>
+    <div class="sec-divider"></div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>Strengths</th><th>Best For</th><th>GPU Req.</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>🤗 HuggingFace</strong><br>(transformers + peft + trl)</td>
+            <td>Maximum flexibility, huge model zoo, research-grade control</td>
+            <td>Custom training loops, research, debugging</td>
+            <td>1–8+ GPUs</td>
+          </tr>
+          <tr>
+            <td><strong>⚡ Unsloth</strong></td>
+            <td>2–5× faster training, 60% less VRAM, drop-in replacement</td>
+            <td>Fast LoRA/QLoRA fine-tuning on consumer GPUs</td>
+            <td>Single GPU ✓</td>
+          </tr>
+          <tr>
+            <td><strong>🦙 LLaMA Factory</strong></td>
+            <td>GUI + CLI interface, many model architectures, all PEFT methods</td>
+            <td>No-code / low-code fine-tuning experiments</td>
+            <td>1+ GPUs</td>
+          </tr>
+          <tr>
+            <td><strong>🦅 Axolotl</strong></td>
+            <td>YAML config-driven, multi-GPU native, battle-tested in production</td>
+            <td>Production fine-tuning, multi-GPU clusters</td>
+            <td>Multi-GPU</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">Minimum Viable Code — LoRA Fine-Tuning (HuggingFace)</h3>
+    <pre><code>from peft import LoraConfig, get_peft_model, TaskType
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
+
+# 1. Load base model in 8-bit
+model = AutoModelForCausalLM.from_pretrained(model_id, load_in_8bit=True, device_map="auto")
+
+# 2. Configure LoRA
+lora_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=16,                           # rank
+    lora_alpha=32,                  # scaling factor
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none"
+)
+
+# 3. Wrap model with LoRA
+model = get_peft_model(model, lora_config)
+
+# 4. Define training arguments
+args = TrainingArguments(
+    output_dir="./my-lora-model",
+    num_train_epochs=3,
+    per_device_train_batch_size=4,
+    learning_rate=2e-4,
+    fp16=True,
+    logging_steps=10,
+)
+
+# 5. Train
+trainer = Trainer(model=model, args=args, train_dataset=tokenized_data)
+trainer.train()</code></pre>
+  </section>
+
+  <!-- ════════════════ 12 MODEL FAMILIES ════════════════ -->
+  <section class="section" id="models">
+    <h2 class="sec-title"><span class="icon">🏠</span> Model Family Breakdown</h2>
+    <div class="sec-divider"></div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Family</th><th>Stage 1: Pre-train</th><th>Stage 2: SFT</th><th>Stage 3: Alignment</th><th>Availability</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>LLaMA (Meta)</strong></td>
+            <td>Trillions of tokens; Common Crawl, books, code</td>
+            <td>Instruction-tuned variants (Llama-3-Instruct)</td>
+            <td>RLHF + safety filters</td>
+            <td>Open weights (base + instruct)</td>
+          </tr>
+          <tr>
+            <td><strong>GPT (OpenAI)</strong></td>
+            <td>GPT-3 (2020): base only</td>
+            <td>InstructGPT (2021): SFT + RLHF</td>
+            <td>Heavy RLHF + safety (GPT-3.5, GPT-4)</td>
+            <td>Closed-source API only</td>
+          </tr>
+          <tr>
+            <td><strong>Mistral</strong></td>
+            <td>Mistral-7B base (2023)</td>
+            <td>Mistral-7B-Instruct variants</td>
+            <td>Some models with RLHF + DPO</td>
+            <td>Open weights</td>
+          </tr>
+          <tr>
+            <td><strong>DeepSeek</strong></td>
+            <td>All model variants (V1 → R1)</td>
+            <td>DeepSeek-Coder (code SFT)</td>
+            <td>DeepSeek-R1 with human feedback</td>
+            <td>Open weights (China)</td>
+          </tr>
+          <tr>
+            <td><strong>Gemini (Google)</strong></td>
+            <td>Gemini base</td>
+            <td>Instruction-tuned variants</td>
+            <td>RLHF + multimodal alignment</td>
+            <td>Closed API + some open</td>
+          </tr>
+          <tr>
+            <td><strong>Claude (Anthropic)</strong></td>
+            <td>Large pre-training corpus</td>
+            <td>Sonnet, Haiku, Opus</td>
+            <td>RLAIF (Constitutional AI)</td>
+            <td>Closed API</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SVG: Model name evolution chart -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 860 180" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <text x="430" y="22" text-anchor="middle" fill="#8b949e" font-size="12">Model naming convention: Base → SFT → Aligned</text>
+
+        <!-- LLaMA row -->
+        <text x="90" y="55" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">LLaMA</text>
+        <rect x="130" y="40" width="150" height="30" rx="6" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/>
+        <text x="205" y="59" text-anchor="middle" fill="#e6edf3" font-size="10">llama-3.1-8B (base)</text>
+        <line x1="280" y1="55" x2="310" y2="55" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)"/>
+        <rect x="312" y="40" width="180" height="30" rx="6" fill="#1a2a1e" stroke="#3fb950" stroke-width="1"/>
+        <text x="402" y="59" text-anchor="middle" fill="#e6edf3" font-size="10">llama-3-8B-instruct</text>
+        <line x1="492" y1="55" x2="522" y2="55" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)"/>
+        <rect x="524" y="40" width="200" height="30" rx="6" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1"/>
+        <text x="624" y="59" text-anchor="middle" fill="#e6edf3" font-size="10">llama-3-8B-chat (aligned)</text>
+
+        <!-- GPT row -->
+        <text x="90" y="105" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">GPT</text>
+        <rect x="130" y="90" width="140" height="30" rx="6" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/>
+        <text x="200" y="109" text-anchor="middle" fill="#e6edf3" font-size="10">GPT-3 (base, 2020)</text>
+        <line x1="270" y1="105" x2="300" y2="105" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)"/>
+        <rect x="302" y="90" width="180" height="30" rx="6" fill="#1a2a1e" stroke="#3fb950" stroke-width="1"/>
+        <text x="392" y="109" text-anchor="middle" fill="#e6edf3" font-size="10">InstructGPT (SFT+RLHF)</text>
+        <line x1="482" y1="105" x2="512" y2="105" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)"/>
+        <rect x="514" y="90" width="210" height="30" rx="6" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1"/>
+        <text x="619" y="109" text-anchor="middle" fill="#e6edf3" font-size="10">ChatGPT / GPT-4 (aligned)</text>
+
+        <!-- Mistral row -->
+        <text x="90" y="155" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">Mistral</text>
+        <rect x="130" y="140" width="140" height="30" rx="6" fill="#1a2640" stroke="#58a6ff" stroke-width="1"/>
+        <text x="200" y="159" text-anchor="middle" fill="#e6edf3" font-size="10">Mistral-7B (base)</text>
+        <line x1="270" y1="155" x2="300" y2="155" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)"/>
+        <rect x="302" y="140" width="170" height="30" rx="6" fill="#1a2a1e" stroke="#3fb950" stroke-width="1"/>
+        <text x="387" y="159" text-anchor="middle" fill="#e6edf3" font-size="10">Mistral-7B-Instruct-v0.3</text>
+        <line x1="472" y1="155" x2="502" y2="155" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)"/>
+        <rect x="504" y="140" width="200" height="30" rx="6" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1"/>
+        <text x="604" y="159" text-anchor="middle" fill="#e6edf3" font-size="10">Mistral with DPO/RLHF</text>
+      </svg>
+      <p class="diagram-caption">Naming patterns reveal which training stages a model has completed.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ 13 MINDMAP ════════════════ -->
+  <section class="section" id="mindmap">
+    <h2 class="sec-title"><span class="icon">🗺️</span> Full Course Mind Map</h2>
+    <div class="sec-divider"></div>
+
+    <div class="diagram-box">
+      <svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+
+        <!-- Central node -->
+        <ellipse cx="500" cy="350" rx="100" ry="50" fill="#1a2640" stroke="#58a6ff" stroke-width="2.5"/>
+        <text x="500" y="345" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="800">LLM</text>
+        <text x="500" y="363" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="800">Fine-Tuning</text>
+
+        <!-- ── Branch: Pre-training ── -->
+        <line x1="400" y1="320" x2="240" y2="180" stroke="#3fb950" stroke-width="1.5"/>
+        <ellipse cx="200" cy="160" rx="90" ry="35" fill="#1a2a1e" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="200" y="155" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">1. Pre-Training</text>
+        <text x="200" y="170" text-anchor="middle" fill="#8b949e" font-size="9">Self-supervised</text>
+        <!-- sub nodes -->
+        <line x1="150" y1="130" x2="100" y2="80" stroke="#3fb950" stroke-width="1"/>
+        <rect x="20" y="55" width="130" height="30" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+        <text x="85" y="74" text-anchor="middle" fill="#3fb950" font-size="9">Next-token prediction</text>
+
+        <line x1="200" y1="125" x2="200" y2="75" stroke="#3fb950" stroke-width="1"/>
+        <rect x="120" y="50" width="165" height="30" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+        <text x="202" y="69" text-anchor="middle" fill="#3fb950" font-size="9">Common Crawl · Books · Web</text>
+
+        <line x1="250" y1="128" x2="300" y2="80" stroke="#3fb950" stroke-width="1"/>
+        <rect x="245" y="55" width="130" height="30" rx="6" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+        <text x="310" y="74" text-anchor="middle" fill="#3fb950" font-size="9">Output: Base Model</text>
+
+        <!-- ── Branch: SFT ── -->
+        <line x1="500" y1="300" x2="500" y2="160" stroke="#d29922" stroke-width="1.5"/>
+        <ellipse cx="500" cy="130" rx="100" ry="35" fill="#2a2010" stroke="#d29922" stroke-width="1.5"/>
+        <text x="500" y="125" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">2. SFT</text>
+        <text x="500" y="140" text-anchor="middle" fill="#8b949e" font-size="9">Supervised Fine-Tuning</text>
+        <!-- sub left -->
+        <line x1="440" y1="100" x2="380" y2="60" stroke="#d29922" stroke-width="1"/>
+        <rect x="290" y="38" width="145" height="30" rx="6" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="362" y="57" text-anchor="middle" fill="#d29922" font-size="9">Non-instruction FT</text>
+        <!-- sub right -->
+        <line x1="560" y1="100" x2="620" y2="60" stroke="#d29922" stroke-width="1"/>
+        <rect x="575" y="38" width="130" height="30" rx="6" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="640" y="57" text-anchor="middle" fill="#d29922" font-size="9">Instruction FT (SFT)</text>
+
+        <!-- ── Branch: PEFT ── -->
+        <line x1="570" y1="310" x2="760" y2="190" stroke="#58a6ff" stroke-width="1.5"/>
+        <ellipse cx="810" cy="170" rx="100" ry="38" fill="#1a2640" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="810" y="165" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">3. PEFT Methods</text>
+        <text x="810" y="180" text-anchor="middle" fill="#8b949e" font-size="9">Parameter Efficient</text>
+        <!-- peft children -->
+        <line x1="820" y1="132" x2="840" y2="80" stroke="#58a6ff" stroke-width="1"/>
+        <rect x="790" y="55" width="100" height="28" rx="5" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+        <text x="840" y="73" text-anchor="middle" fill="#58a6ff" font-size="9">LoRA / QLoRA</text>
+
+        <line x1="880" y1="155" x2="930" y2="120" stroke="#58a6ff" stroke-width="1"/>
+        <rect x="890" y="100" width="100" height="28" rx="5" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+        <text x="940" y="118" text-anchor="middle" fill="#58a6ff" font-size="9">DoRA / IA³</text>
+
+        <line x1="870" y1="205" x2="920" y2="225" stroke="#58a6ff" stroke-width="1"/>
+        <rect x="890" y="215" width="100" height="28" rx="5" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+        <text x="940" y="233" text-anchor="middle" fill="#58a6ff" font-size="9">Adapters / BitFit</text>
+
+        <!-- ── Branch: Preference Alignment ── -->
+        <line x1="590" y1="370" x2="760" y2="380" stroke="#bc8cff" stroke-width="1.5"/>
+        <ellipse cx="840" cy="385" rx="110" ry="40" fill="#2a1a2e" stroke="#bc8cff" stroke-width="1.5"/>
+        <text x="840" y="380" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">4. Preference</text>
+        <text x="840" y="396" text-anchor="middle" fill="#bc8cff" font-size="9">Alignment / RLHF</text>
+        <!-- children -->
+        <line x1="900" y1="350" x2="940" y2="300" stroke="#bc8cff" stroke-width="1"/>
+        <rect x="895" y="272" width="90" height="28" rx="5" fill="#21262d" stroke="#bc8cff" stroke-width="1"/>
+        <text x="940" y="290" text-anchor="middle" fill="#bc8cff" font-size="9">RLHF (PPO)</text>
+
+        <line x1="955" y1="385" x2="980" y2="430" stroke="#bc8cff" stroke-width="1"/>
+        <rect x="940" y="430" width="55" height="28" rx="5" fill="#21262d" stroke="#bc8cff" stroke-width="1"/>
+        <text x="967" y="448" text-anchor="middle" fill="#bc8cff" font-size="9">DPO</text>
+
+        <line x1="950" y1="405" x2="975" y2="480" stroke="#bc8cff" stroke-width="1"/>
+        <rect x="935" y="480" width="80" height="28" rx="5" fill="#21262d" stroke="#bc8cff" stroke-width="1"/>
+        <text x="975" y="498" text-anchor="middle" fill="#bc8cff" font-size="9">RLAIF</text>
+
+        <!-- ── Branch: Frameworks ── -->
+        <line x1="500" y1="400" x2="500" y2="540" stroke="#f78166" stroke-width="1.5"/>
+        <ellipse cx="500" cy="570" rx="110" ry="35" fill="#2e1a1a" stroke="#f78166" stroke-width="1.5"/>
+        <text x="500" y="565" text-anchor="middle" fill="#f78166" font-size="11" font-weight="700">5. Frameworks</text>
+        <text x="500" y="580" text-anchor="middle" fill="#8b949e" font-size="9">Tooling Ecosystem</text>
+        <!-- children -->
+        <line x1="400" y1="580" x2="280" y2="610" stroke="#f78166" stroke-width="1"/>
+        <rect x="195" y="596" width="100" height="28" rx="5" fill="#21262d" stroke="#f78166" stroke-width="1"/>
+        <text x="245" y="614" text-anchor="middle" fill="#f78166" font-size="9">HuggingFace</text>
+
+        <line x1="450" y1="600" x2="390" y2="650" stroke="#f78166" stroke-width="1"/>
+        <rect x="330" y="640" width="90" height="28" rx="5" fill="#21262d" stroke="#f78166" stroke-width="1"/>
+        <text x="375" y="658" text-anchor="middle" fill="#f78166" font-size="9">Unsloth</text>
+
+        <line x1="550" y1="600" x2="610" y2="650" stroke="#f78166" stroke-width="1"/>
+        <rect x="565" y="640" width="115" height="28" rx="5" fill="#21262d" stroke="#f78166" stroke-width="1"/>
+        <text x="622" y="658" text-anchor="middle" fill="#f78166" font-size="9">LLaMA Factory</text>
+
+        <line x1="600" y1="580" x2="720" y2="610" stroke="#f78166" stroke-width="1"/>
+        <rect x="690" y="596" width="80" height="28" rx="5" fill="#21262d" stroke="#f78166" stroke-width="1"/>
+        <text x="730" y="614" text-anchor="middle" fill="#f78166" font-size="9">Axolotl</text>
+
+        <!-- ── Branch: Data formats ── -->
+        <line x1="410" y1="370" x2="240" y2="390" stroke="#39d353" stroke-width="1.5"/>
+        <ellipse cx="160" cy="400" rx="100" ry="38" fill="#1a2e1a" stroke="#39d353" stroke-width="1.5"/>
+        <text x="160" y="394" text-anchor="middle" fill="#39d353" font-size="11" font-weight="700">6. Data Formats</text>
+        <text x="160" y="410" text-anchor="middle" fill="#8b949e" font-size="9">3 types of datasets</text>
+
+        <line x1="80" y1="375" x2="40" y2="320" stroke="#39d353" stroke-width="1"/>
+        <rect x="5" y="296" width="100" height="28" rx="5" fill="#21262d" stroke="#39d353" stroke-width="1"/>
+        <text x="55" y="314" text-anchor="middle" fill="#39d353" font-size="9">Plain text (PDF)</text>
+
+        <line x1="65" y1="410" x2="20" y2="440" stroke="#39d353" stroke-width="1"/>
+        <rect x="5" y="430" width="95" height="28" rx="5" fill="#21262d" stroke="#39d353" stroke-width="1"/>
+        <text x="52" y="448" text-anchor="middle" fill="#39d353" font-size="9">Instr / Response</text>
+
+        <line x1="100" y1="435" x2="60" y2="480" stroke="#39d353" stroke-width="1"/>
+        <rect x="5" y="470" width="115" height="28" rx="5" fill="#21262d" stroke="#39d353" stroke-width="1"/>
+        <text x="62" y="488" text-anchor="middle" fill="#39d353" font-size="9">Chosen / Rejected</text>
+
+        <!-- ── Branch: Advanced ── -->
+        <line x1="420" y1="395" x2="250" y2="550" stroke="#d29922" stroke-width="1.5"/>
+        <ellipse cx="180" cy="580" rx="105" ry="38" fill="#2a2010" stroke="#d29922" stroke-width="1.5"/>
+        <text x="180" y="574" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">7. Advanced Topics</text>
+        <text x="180" y="590" text-anchor="middle" fill="#8b949e" font-size="9">Beyond text LLMs</text>
+
+        <line x1="100" y1="570" x2="40" y2="555" stroke="#d29922" stroke-width="1"/>
+        <rect x="5" y="541" width="95" height="28" rx="5" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="52" y="559" text-anchor="middle" fill="#d29922" font-size="9">SLM Fine-Tuning</text>
+
+        <line x1="100" y1="595" x2="40" y2="620" stroke="#d29922" stroke-width="1"/>
+        <rect x="5" y="608" width="115" height="28" rx="5" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="62" y="626" text-anchor="middle" fill="#d29922" font-size="9">Multimodal Fine-Tuning</text>
+
+        <line x1="160" y1="618" x2="160" y2="660" stroke="#d29922" stroke-width="1"/>
+        <rect x="100" y="660" width="130" height="28" rx="5" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="165" y="678" text-anchor="middle" fill="#d29922" font-size="9">Embedding Fine-Tuning</text>
+      </svg>
+      <p class="diagram-caption">Complete course mind map — all major topics and their relationships.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════ 14 IMPLEMENTATION FLOW ════════════════ -->
+  <section class="section" id="pipeline-impl">
+    <h2 class="sec-title"><span class="icon">🚀</span> End-to-End Implementation Flow</h2>
+    <div class="sec-divider"></div>
+
+    <p>The recommended strategy for building a domain-specific LLM from a foundation model:</p>
+
+    <!-- SVG: implementation flow -->
+    <div class="diagram-box">
+      <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <defs>
+          <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#58a6ff"/>
+          </marker>
+        </defs>
+
+        <!-- Step 0 -->
+        <rect x="20" y="20" width="170" height="70" rx="10" fill="#21262d" stroke="#8b949e" stroke-width="1.5"/>
+        <text x="105" y="48" text-anchor="middle" fill="#8b949e" font-size="12" font-weight="700">🌐 Base Model</text>
+        <text x="105" y="65" text-anchor="middle" fill="#8b949e" font-size="10">e.g. LLaMA-3.1-8B</text>
+        <text x="105" y="79" text-anchor="middle" fill="#8b949e" font-size="9">Foundation: general knowledge</text>
+
+        <line x1="190" y1="55" x2="230" y2="55" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <!-- Step 1 -->
+        <rect x="232" y="20" width="185" height="70" rx="10" fill="#1a2640" stroke="#d29922" stroke-width="2"/>
+        <text x="324" y="44" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">📄 Step 1</text>
+        <text x="324" y="60" text-anchor="middle" fill="#e6edf3" font-size="11">Non-Instruction FT</text>
+        <text x="324" y="77" text-anchor="middle" fill="#8b949e" font-size="9">Train on domain PDF / plain text</text>
+
+        <line x1="417" y1="55" x2="457" y2="55" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <!-- Step 2 -->
+        <rect x="459" y="20" width="185" height="70" rx="10" fill="#1a2a1e" stroke="#3fb950" stroke-width="2"/>
+        <text x="551" y="44" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">💬 Step 2</text>
+        <text x="551" y="60" text-anchor="middle" fill="#e6edf3" font-size="11">Instruction FT</text>
+        <text x="551" y="77" text-anchor="middle" fill="#8b949e" font-size="9">Train on Q&amp;A / instruction pairs</text>
+
+        <line x1="644" y1="55" x2="684" y2="55" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr3)"/>
+
+        <!-- Step 3 -->
+        <rect x="686" y="20" width="190" height="70" rx="10" fill="#2a1a2e" stroke="#bc8cff" stroke-width="2"/>
+        <text x="781" y="44" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">🧭 Step 3</text>
+        <text x="781" y="60" text-anchor="middle" fill="#e6edf3" font-size="11">DPO Alignment</text>
+        <text x="781" y="77" text-anchor="middle" fill="#8b949e" font-size="9">Train on chosen/rejected pairs</text>
+
+        <!-- Output boxes -->
+        <line x1="105" y1="90" x2="105" y2="140" stroke="#8b949e" stroke-width="1.5"/>
+        <rect x="20" y="140" width="170" height="60" rx="8" fill="#21262d" stroke="#8b949e" stroke-width="1"/>
+        <text x="105" y="165" text-anchor="middle" fill="#e6edf3" font-size="10">Knows general language</text>
+        <text x="105" y="181" text-anchor="middle" fill="#8b949e" font-size="9">Cannot follow instructions</text>
+
+        <line x1="324" y1="90" x2="324" y2="140" stroke="#d29922" stroke-width="1.5"/>
+        <rect x="232" y="140" width="185" height="60" rx="8" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="324" y="165" text-anchor="middle" fill="#d29922" font-size="10">Knows domain vocabulary</text>
+        <text x="324" y="181" text-anchor="middle" fill="#8b949e" font-size="9">Terminology + tone learned</text>
+
+        <line x1="551" y1="90" x2="551" y2="140" stroke="#3fb950" stroke-width="1.5"/>
+        <rect x="459" y="140" width="185" height="60" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+        <text x="551" y="165" text-anchor="middle" fill="#3fb950" font-size="10">Answers structured questions</text>
+        <text x="551" y="181" text-anchor="middle" fill="#8b949e" font-size="9">Domain chatbot capability</text>
+
+        <line x1="781" y1="90" x2="781" y2="140" stroke="#bc8cff" stroke-width="1.5"/>
+        <rect x="686" y="140" width="190" height="60" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="1"/>
+        <text x="781" y="165" text-anchor="middle" fill="#bc8cff" font-size="10">Safe, helpful, human-aligned</text>
+        <text x="781" y="181" text-anchor="middle" fill="#8b949e" font-size="9">Production-ready model</text>
+
+        <!-- Decision diamonds row -->
+        <text x="450" y="250" text-anchor="middle" fill="#8b949e" font-size="12">When to apply each step:</text>
+
+        <rect x="20" y="270" width="255" height="70" rx="8" fill="#21262d" stroke="#d29922" stroke-width="1"/>
+        <text x="147" y="295" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">Non-Instruction FT</text>
+        <text x="147" y="312" text-anchor="middle" fill="#8b949e" font-size="9">✓ You have domain docs (PDF, TXT)</text>
+        <text x="147" y="327" text-anchor="middle" fill="#8b949e" font-size="9">✓ Model needs domain vocabulary</text>
+
+        <rect x="295" y="270" width="255" height="70" rx="8" fill="#21262d" stroke="#3fb950" stroke-width="1"/>
+        <text x="422" y="295" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">Instruction FT</text>
+        <text x="422" y="312" text-anchor="middle" fill="#8b949e" font-size="9">✓ You need chatbot / QA behaviour</text>
+        <text x="422" y="327" text-anchor="middle" fill="#8b949e" font-size="9">✓ You have Q&amp;A pairs (or can generate)</text>
+
+        <rect x="570" y="270" width="305" height="70" rx="8" fill="#21262d" stroke="#bc8cff" stroke-width="1"/>
+        <text x="722" y="295" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">DPO Alignment</text>
+        <text x="722" y="312" text-anchor="middle" fill="#8b949e" font-size="9">✓ Model tone / safety is not satisfactory</text>
+        <text x="722" y="327" text-anchor="middle" fill="#8b949e" font-size="9">✓ You can collect or generate preference pairs</text>
+
+        <!-- Legend -->
+        <rect x="20" y="370" width="860" height="40" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+        <text x="30" y="393" fill="#3fb950" font-size="10">✅ All steps optional</text>
+        <text x="160" y="393" fill="#8b949e" font-size="10">|</text>
+        <text x="175" y="393" fill="#d29922" font-size="10">Step 1 alone = domain adaptation</text>
+        <text x="400" y="393" fill="#8b949e" font-size="10">|</text>
+        <text x="415" y="393" fill="#3fb950" font-size="10">Steps 1+2 = domain chatbot</text>
+        <text x="610" y="393" fill="#8b949e" font-size="10">|</text>
+        <text x="625" y="393" fill="#bc8cff" font-size="10">Steps 1+2+3 = production-grade model</text>
+      </svg>
+      <p class="diagram-caption">Decision framework for building a domain-specific LLM. Each step is optional — apply based on your requirements.</p>
+    </div>
+
+    <h3 class="sub-title">Key Hyperparameters Reference</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Parameter</th><th>What it controls</th><th>Typical value</th></tr></thead>
+        <tbody>
+          <tr><td><code>num_train_epochs</code></td><td>How many full passes through the data</td><td>1–5</td></tr>
+          <tr><td><code>per_device_train_batch_size</code></td><td>Samples per forward pass on each GPU</td><td>2–16</td></tr>
+          <tr><td><code>gradient_accumulation_steps</code></td><td>Simulates larger batch by accumulating gradients</td><td>4–16</td></tr>
+          <tr><td><code>learning_rate</code></td><td>Step size for optimizer; too high = diverge, too low = slow</td><td>1e-4 – 5e-4</td></tr>
+          <tr><td><code>save_steps</code></td><td>Checkpoint frequency (every N steps)</td><td>500 – 2000</td></tr>
+          <tr><td><code>save_total_limit</code></td><td>Max number of checkpoints to keep on disk</td><td>2 – 5</td></tr>
+          <tr><td><code>fp16</code></td><td>Use float16 precision (faster, less memory)</td><td>true</td></tr>
+          <tr><td><code>max_length</code></td><td>Truncate/pad sequences to this token length</td><td>512 – 4096</td></tr>
+          <tr><td><code>temperature</code> (inference)</td><td>Randomness in generation; 0 = deterministic</td><td>0.1 – 1.0</td></tr>
+          <tr><td><code>repetition_penalty</code> (inference)</td><td>Penalise repeating tokens; > 1.0 reduces repetition</td><td>1.1 – 1.3</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">Summary Checklist — Before You Fine-Tune</h3>
+    <div class="card-row">
+      <div class="card" style="border-color:#3fb950;">
+        <h4>✅ Data</h4>
+        <p>Do you have domain text (PDFs)? Can you generate/collect instruction pairs? Do you have preference labels or can synthesise them via LLM?</p>
+      </div>
+      <div class="card" style="border-color:#58a6ff;">
+        <h4>✅ Infrastructure</h4>
+        <p>PEFT (LoRA/QLoRA) runs on single GPU. Full fine-tuning needs multi-GPU. Google Colab Pro gives access to A100/H100.</p>
+      </div>
+      <div class="card" style="border-color:#bc8cff;">
+        <h4>✅ Model Selection</h4>
+        <p>Pick based on task: LLaMA-3.1-8B for general, Mistral-7B for reasoning, smaller TinyLLaMA for experiments on free GPU.</p>
+      </div>
+      <div class="card" style="border-color:#d29922;">
+        <h4>✅ Evaluation</h4>
+        <p>Track training loss. Compare base model vs fine-tuned on same prompts. For instruction FT, test structured Q&A. For DPO, test tone and safety.</p>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /wrapper -->
+
+<footer>
+  <div class="wrapper">
+    <p>LLM Fine-Tuning Course Notes | Based on course by <strong>Sunonny Savvita</strong></p>
+    <p style="margin-top:6px;">Covers: Supervised Fine-Tuning · LoRA / QLoRA / DoRA · RLHF · DPO · HuggingFace · Unsloth · Axolotl · Multimodal Fine-Tuning</p>
+  </div>
+</footer>
+
+</body>
+</html>
